@@ -12,3 +12,5 @@ body[data-page=accueil] .home-main{display:grid;grid-template-rows:minmax(190px,
 @media(max-height:480px){body[data-page=accueil] .home-main{overflow:auto}.site-footer{position:relative}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
 #publicHeader{padding-top:env(safe-area-inset-top,0px)}
+/* Header: circular event logo and the flyer’s navy/turquoise palette. */
+#publicHeader{background:#082d45}.site-header{background:linear-gradient(110deg,#061d31,#082d45 45%,#087f90);border-bottom-color:#ffca24}.header-event strong{color:#ffdc2a}.header-event small{display:block;color:#fff3ce;font-size:12px;font-weight:700;letter-spacing:.3px;margin-top:5px}.header-logo:first-child img{border-radius:50%;object-fit:contain}.site-nav a{color:#fff7da}.site-nav a[aria-current=page]{background:#ffda25;color:#082d45}.site-nav a:hover{background:#ffc72d;color:#082d45}.sponsor-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}.sponsor-logo img{max-width:110px}@media(max-width:600px){.header-event small{font-size:9px;letter-spacing:0;margin-top:5px}.sponsor-grid{gap:5px}.sponsor-bricorama{max-width:100%}}
