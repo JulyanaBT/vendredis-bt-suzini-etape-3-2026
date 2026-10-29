@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin — Les Vendredis du BT Suzini — Étape 3</title>
+
+  <style>
+    :root{
+      --palm:#0b7a3b;
+      --palm-dark:#064d28;
+      --palm-light:#15a658;
+      --navy:#06284a;
+      --navy-dark:#03172b;
+      --sun:#ffd21f;
+      --sun-dark:#f3b800;
+      --sand:#f4d9a4;
+      --sand-light:#fff4d4;
+      --pink:#d83d7f;
+      --text:#17212b;
+      --muted:#667085;
+      --card:rgba(255,255,255,.94);
+      --shadow:0 16px 40px rgba(16,24,40,.12);
+      --container:1180px;
+    }
+
+    *{box-sizing:border-box;}
+
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 10% 0%, rgba(255,210,31,.22), transparent 26%),
+        radial-gradient(circle at 90% 8%, rgba(11,122,59,.18), transparent 26%),
+        linear-gradient(180deg,#eaf9ff 0%,#fff4d4 46%,#ffffff 100%);
+    }
+
+    a{color:inherit;text-decoration:none;}
+
+    .container{
+      width:min(var(--container), calc(100% - 28px));
+      margin:0 auto;
+    }
+
+    main{
+      padding-top:calc(var(--admin-total-top, 230px) + 42px);
+      padding-bottom:42px;
+    }
+
+    .section{margin-top:22px;}
+
+    .panel{
+      background:var(--card);
+      border:1px solid rgba(255,255,255,.7);
+      border-radius:28px;
+      box-shadow:var(--shadow);
+      padding:20px;
+    }
+
+    .panel-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      margin-bottom:16px;
+    }
+
+    .panel-title{
+      margin:0;
+      font-size:28px;
+      line-height:1.05;
+      letter-spacing:-.03em;
+      color:var(--navy-dark);
+    }
+
+    .panel-text{
+      margin:8px 0 0;
+      color:var(--muted);
+      font-size:15px;
+      line-height:1.55;
+    }
+
+    .panel-tag{
+      flex-shrink:0;
+      padding:8px 13px;
+      border-radius:999px;
+      background:#e6f7ee;
+      color:var(--palm-dark);
+      font-size:12px;
+      font-weight:1000;
+      text-transform:uppercase;
+      letter-spacing:.06em;
+    }
+
+    .status-box{
+      margin-top:14px;
+      padding:14px 16px;
+      border-radius:18px;
+      background:linear-gradient(135deg,rgba(11,122,59,.10),rgba(255,210,31,.16));
+      border:1px solid rgba(11,122,59,.18);
+      color:#475467;
+      font-size:14px;
+      line-height:1.55;
+    }
+
+    .status-box strong{
+      color:var(--palm-dark);
+      font-weight:1000;
+    }
+
+    .admin-list{
+      margin:14px 0 0;
+      padding-left:20px;
+      color:#475467;
+      line-height:1.6;
+      font-size:15px;
+      font-weight:700;
+    }
+
+    .admin-list strong{
+      color:var(--navy-dark);
+      font-weight:1000;
+    }
+
+    .grid-main{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:10px;
+      margin-top:16px;
+    }
+
+    .entry-card{
+      position:relative;
+      overflow:hidden;
+      border-radius:20px;
+      min-height:96px;
+      padding:15px;
+      color:#fff;
+      box-shadow:0 10px 22px rgba(16,24,40,.12);
+      display:block;
+    }
+
+    .entry-kicker{
+      font-size:12px;
+      font-weight:900;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      opacity:.9;
+      margin-bottom:6px;
+    }
+
+    .entry-title{
+      font-size:24px;
+      line-height:1.02;
+      letter-spacing:-.03em;
+      font-weight:1000;
+      margin:0 0 6px;
+    }
+
+    .entry-sub{
+      font-size:14px;
+      line-height:1.35;
+      opacity:.96;
+      max-width:96%;
+      font-weight:700;
+    }
+
+    .card-green{background:linear-gradient(135deg,var(--palm-dark),var(--palm),var(--palm-light));}
+    .card-navy{background:linear-gradient(135deg,var(--navy-dark),var(--navy),#0d4f82);}
+    .card-sun{background:linear-gradient(135deg,#b38300,var(--sun-dark),var(--sun));color:var(--navy-dark);}
+    .card-pink{background:linear-gradient(135deg,#8f1f4f,var(--pink),#ff6fa5);}
+    .card-white{
+      color:#12324c;
+      background:linear-gradient(135deg,#ffffff,#fff4d4);
+      box-shadow:inset 0 0 0 1px rgba(11,122,59,.12), 0 10px 22px rgba(16,24,40,.10);
+    }
+
+    @media (min-width:760px){
+      .panel{padding:24px;}
+      .grid-main{grid-template-columns:1fr 1fr;}
+    }
+
+    @media (max-width:759px){
+      main{
+        padding-top:calc(var(--admin-total-top, 222px) + 34px);
+      }
+    }
+  </style>
+<meta name="theme-color" content="#06393d"><meta name="description" content="Les Vendredis du BT Suzini, étape 3. Double dames et double hommes au TC Suzini le vendredi 6 novembre 2026."><link rel="manifest" href="../manifest.webmanifest"><link rel="stylesheet" href="../assets/site.css"><link rel="stylesheet" href="../assets/install.css"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="BT Suzini"><link rel="apple-touch-icon" href="../assets/img/icon-180.png"></head>
+
+<body data-zone-selector="select">
+
+<div id="adminHeader"></div>
+
+<main class="container">
+
+  <section class="section panel" id="accessDenied" style="display:none;">
+    <h2 class="panel-title">⛔ Accès refusé</h2>
+    <p class="panel-text">Cette page est réservée aux administrateurs.</p>
+  </section>
+
+  <section class="section panel" id="pageContent" style="display:none;">
+    <div class="panel-head">
+      <div>
+        <h2 class="panel-title">🎛️ Espace administrateur</h2>
+        <p class="panel-text">
+          Utilise le bandeau principal pour accéder aux différentes pages de gestion.
+          Le sous-bandeau permet de sélectionner l’épreuve concernée.
+        </p>
+      </div>
+      <div class="panel-tag">Admin</div>
+    </div>
+
+    <div class="status-box">
+      Zone active :
+      <strong>Seniors — <span id="zoneLabel">Double Messieurs</span></strong>
+    </div>
+
+    <div class="grid-main">
+      <a class="entry-card card-green" href="inscriptions.html">
+        <div class="entry-kicker">Ouverture</div>
+        <h3 class="entry-title">Inscriptions</h3>
+        <div class="entry-sub">Ouvrir, suspendre ou clôturer les inscriptions.</div>
+      </a>
+
+      <a class="entry-card card-navy" href="equipes.html">
+        <div class="entry-kicker">Participants</div>
+        <h3 class="entry-title">Équipes</h3>
+        <div class="entry-sub">Consulter et gérer les équipes inscrites.</div>
+      </a>
+
+      <a class="entry-card card-sun" href="tirage.html">
+        <div class="entry-kicker">Tableaux</div>
+        <h3 class="entry-title">Tirage</h3>
+        <div class="entry-sub">Préparer ou consulter le tirage des tableaux.</div>
+      </a>
+
+      <a class="entry-card card-pink" href="programmation.html">
+        <div class="entry-kicker">Planning</div>
+        <h3 class="entry-title">Programmation</h3>
+        <div class="entry-sub">Organiser les matchs, terrains et horaires.</div>
+      </a>
+
+      <a class="entry-card card-white" href="roles.html">
+        <div class="entry-kicker">Accès</div>
+        <h3 class="entry-title">Rôles</h3>
+        <div class="entry-sub">Créer les accès organisateurs, JAT et arbitres.</div>
+      </a>
+
+      <a class="entry-card card-white" href="../index.html">
+        <div class="entry-kicker">Public</div>
+        <h3 class="entry-title">Vue publique</h3>
+        <div class="entry-sub">Retourner à la page d’accueil du tournoi.</div>
+      </a>
+    </div>
+
+    <div class="status-box">
+      ✅ Le bandeau admin est commun. Toute modification du menu se fait depuis :
+      <strong>assets/js/admin-header.js</strong>.
+    </div>
+  </section>
+
+</main>
+
+
+
+
+
+<script type="module" src="../assets/js/preview.js"></script><script type="module" src="../assets/js/pull-refresh.js"></script><script type="module" src="../assets/js/install.js"></script><script type="module" src="../assets/js/supabase-site.js"></script></body>
+</html>

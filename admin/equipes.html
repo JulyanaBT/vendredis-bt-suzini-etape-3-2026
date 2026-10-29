@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin — Équipes — Les Vendredis du BT Suzini — Étape 3</title>
+
+  <style>
+    :root{
+      --clay:#c65a1e;
+      --clay-dark:#8e3a13;
+      --clay-light:#ee8a3a;
+      --sky:#27bced;
+      --aqua:#00a9c8;
+      --blue:#075b9a;
+      --blue-dark:#063b72;
+      --text:#17212b;
+      --muted:#667085;
+      --card:rgba(255,255,255,.94);
+      --shadow:0 16px 40px rgba(16,24,40,.12);
+      --container:1180px;
+    }
+
+    *{box-sizing:border-box;}
+
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 20% 0%, rgba(39,188,237,.22), transparent 28%),
+        radial-gradient(circle at 85% 10%, rgba(0,169,200,.16), transparent 26%),
+        linear-gradient(180deg,#f4fcff 0%,#e9f8ff 48%,#fff 100%);
+    }
+
+    a{color:inherit;text-decoration:none;}
+
+    .container{
+      width:min(var(--container), calc(100% - 28px));
+      margin:0 auto;
+    }
+
+    main{
+      padding-top:calc(var(--admin-total-top, 230px) + 42px);
+      padding-bottom:42px;
+    }
+
+    .section{margin-top:22px;}
+
+    .panel{
+      background:var(--card);
+      border:1px solid rgba(255,255,255,.6);
+      border-radius:28px;
+      box-shadow:var(--shadow);
+      padding:20px;
+    }
+
+    .panel-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      margin-bottom:16px;
+    }
+
+    .panel-title{
+      margin:0;
+      font-size:28px;
+      line-height:1.05;
+      letter-spacing:-.03em;
+    }
+
+    .panel-text{
+      margin:8px 0 0;
+      color:var(--muted);
+      font-size:15px;
+      line-height:1.55;
+    }
+
+    .panel-tag{
+      flex-shrink:0;
+      padding:8px 13px;
+      border-radius:999px;
+      background:#e4f7ff;
+      color:var(--blue-dark);
+      font-size:12px;
+      font-weight:1000;
+      text-transform:uppercase;
+      letter-spacing:.06em;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:10px;
+    }
+
+    .btn{
+      appearance:none;
+      border:1px solid rgba(16,24,40,.10);
+      background:#fff;
+      border-radius:18px;
+      min-height:54px;
+      padding:13px 15px;
+      font-size:15px;
+      font-weight:1000;
+      cursor:pointer;
+      color:#1c2430;
+      text-align:center;
+      box-shadow:0 8px 16px rgba(16,24,40,.04);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-family:inherit;
+    }
+
+    .btn.primary{
+      background:linear-gradient(180deg,var(--blue),var(--blue-dark));
+      color:#fff;
+      border-color:var(--blue);
+    }
+
+    .status-box{
+      margin-top:14px;
+      padding:14px 16px;
+      border-radius:18px;
+      background:linear-gradient(135deg,rgba(39,188,237,.12),rgba(198,90,30,.08));
+      border:1px solid rgba(39,188,237,.22);
+      color:#475467;
+      font-size:14px;
+      line-height:1.5;
+    }
+
+    .muted{
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.45;
+    }
+
+    .team-card{
+      border:1px solid rgba(16,24,40,.08);
+      border-radius:20px;
+      background:#fff;
+      box-shadow:0 8px 18px rgba(16,24,40,.06);
+      padding:14px;
+      display:grid;
+      gap:12px;
+    }
+
+    .team-head{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+    }
+
+    .team-name{
+      font-weight:1000;
+      font-size:18px;
+      line-height:1.15;
+      word-break:break-word;
+    }
+
+    .badges{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:12px;
+      border:1px solid #eee;
+      background:#fafafa;
+      color:#333;
+      white-space:nowrap;
+      font-weight:1000;
+    }
+
+    .pill.epreuve{
+      border-color:#d9e6ff;
+      background:#f3f7ff;
+      color:var(--blue-dark);
+    }
+
+    .pill.rank{
+      border-color:#d9e6ff;
+      background:#f3f7ff;
+      color:var(--blue-dark);
+    }
+
+    .player{
+      display:grid;
+      gap:3px;
+      padding:2px 0;
+      background:transparent;
+      border:none;
+    }
+
+    .player-title{
+      font-weight:1000;
+      color:var(--blue-dark);
+      margin-bottom:4px;
+    }
+
+    .player-line{
+      font-size:14px;
+      line-height:1.35;
+      color:#1f2937;
+    }
+
+    .player-line strong{
+      color:#667085;
+      font-weight:900;
+      display:inline-block;
+      min-width:76px;
+    }
+
+    .actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .btnx{
+      padding:9px 12px;
+      border-radius:999px;
+      border:1px solid #ddd;
+      background:#fff;
+      cursor:pointer;
+      font-weight:1000;
+      color:#111;
+      font-family:inherit;
+    }
+
+    .btnx:hover{background:#f5f5f5;}
+    .btnx.danger{border-color:#f1b2b2;}
+    .btnx.danger:hover{background:#ffecec;}
+
+    details{
+      border-top:1px solid rgba(16,24,40,.08);
+      padding-top:8px;
+    }
+
+    details summary{
+      cursor:pointer;
+      list-style:none;
+      font-weight:1000;
+      color:var(--blue-dark);
+    }
+
+    details summary::-webkit-details-marker{display:none;}
+
+    @media (min-width:760px){
+      .panel{padding:24px;}
+      .grid.three{grid-template-columns:1fr 1fr 1fr;}
+    }
+
+    @media (max-width:759px){
+      main{
+        padding-top:calc(var(--admin-total-top, 222px) + 34px);
+      }
+
+      .panel-title{font-size:24px;}
+    }
+  </style>
+<meta name="theme-color" content="#06393d"><meta name="description" content="Les Vendredis du BT Suzini, étape 3. Double dames et double hommes au TC Suzini le vendredi 6 novembre 2026."><link rel="manifest" href="../manifest.webmanifest"><link rel="stylesheet" href="../assets/site.css"><link rel="stylesheet" href="../assets/install.css"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="BT Suzini"><link rel="apple-touch-icon" href="../assets/img/icon-180.png"></head>
+
+<body data-zone-selector="select">
+
+<div id="adminHeader"></div>
+
+<main class="container">
+
+  <section class="section panel" id="accessDenied" style="display:none;">
+    <h2 class="panel-title">⛔ Accès refusé</h2>
+    <p class="panel-text">Cette page est réservée aux administrateurs.</p>
+  </section>
+
+  <section class="section panel" id="panelSummary" style="display:none;">
+    <div class="panel-head">
+      <div>
+        <h2 class="panel-title">📌 Résumé</h2>
+        <p class="panel-text" id="counts">Chargement…</p>
+      </div>
+      <div class="panel-tag">Équipes</div>
+    </div>
+
+    <div class="status-box" id="hint">Chargement…</div>
+    <p class="muted" id="status" style="margin-top:10px;">Connexion…</p>
+  </section>
+
+  <section class="section panel" id="panelList" style="display:none;">
+    <div class="panel-head">
+      <div>
+        <h2 class="panel-title">👥 Équipes</h2>
+        <p class="panel-text">Gestion des équipes inscrites et de leur affichage public.</p>
+      </div>
+      <div class="panel-tag">Liste</div>
+    </div>
+
+    <div class="grid three" style="margin-bottom:12px;">
+      <button class="btn" id="btnRefresh">🔄 Rafraîchir</button>
+      <button class="btn" id="btnExpand">🧩 Tout développer</button>
+      <button class="btn" id="btnCollapse">🧊 Tout réduire</button>
+    </div>
+
+    <div id="list" style="display:grid;gap:12px;"></div>
+  </section>
+
+</main>
+
+
+
+
+
+<script type="module" src="../assets/js/preview.js"></script><script type="module" src="../assets/js/pull-refresh.js"></script><script type="module" src="../assets/js/install.js"></script><script type="module" src="../assets/js/supabase-site.js"></script></body>
+</html>

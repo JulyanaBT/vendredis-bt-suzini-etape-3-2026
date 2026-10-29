@@ -1,0 +1,32 @@
+import {config} from './supabase-config.js';
+async function rpc(name,body={}){
+ let response;
+ try{response=await fetch(config.supabaseUrl+'/rest/v1/rpc/'+name,{method:'POST',headers:{apikey:config.publishableKey,'Content-Type':'application/json'},body:JSON.stringify(body),cache:'no-store',signal:AbortSignal.timeout(12000)});}catch{throw new Error('Connexion interrompue. Vérifiez auprès du club avant de réessayer une inscription.');}
+ const data=await response.json();if(!response.ok)throw new Error(data?.code==='P0001'?data.message:'Service temporairement indisponible. Réessayez plus tard.');return data;
+}
+const form=document.getElementById('signupForm'),button=document.getElementById('submitBtn'),status=document.getElementById('status');
+let registrationOpen=false;
+if(button)button.disabled=true;
+async function loadStatus(){
+ try{const data=await rpc('suzini_e3_status');registrationOpen=data?.open===true;
+ for(const note of document.querySelectorAll('[data-site-status]'))note.textContent=registrationOpen?'BT250 · Inscriptions ouvertes jusqu’au 4 novembre.':'Site en préparation · Les inscriptions ne sont pas encore ouvertes.';
+ if(form){button.disabled=!registrationOpen;button.textContent=registrationOpen?'Valider l’inscription':'Inscriptions prochainement';status.textContent=registrationOpen?'10 € par joueur · Inscription par équipe, sans compte joueur.':'Les inscriptions ne sont pas encore ouvertes. Vous pouvez consulter les informations du tournoi.';}
+ }catch(error){if(form){status.textContent=error.message;button.textContent='Inscriptions indisponibles';}}
+}
+if(document.body.dataset.space==='public')loadStatus();
+if(form){
+ for(const id of ['p1FirstName','p1LastName','p2FirstName','p2LastName'])document.getElementById(id).maxLength=60;
+ for(const id of ['p1Phone','p2Phone'])document.getElementById(id).maxLength=24;
+ for(const id of ['p1Licence','p2Licence']){const input=document.getElementById(id);input.maxLength=8;input.pattern='[0-9]{7}[A-Za-z]';}
+ const privacy=document.createElement('p');privacy.className='panel-text';privacy.textContent='Les prénoms et initiales des noms sont affichés dans la liste des équipes. Les numéros de licence et de téléphone sont réservés à l’organisation pour la gestion de ce tournoi.';button.before(privacy);
+ form.addEventListener('submit',async event=>{event.preventDefault();if(!registrationOpen||button.disabled||!form.reportValidity())return;button.disabled=true;status.textContent='Enregistrement en cours…';
+ try{await rpc('suzini_e3_register',{p_team:Object.fromEntries(new FormData(form))});document.getElementById('successBox').style.display='block';status.textContent='Inscription enregistrée.';form.reset();}
+ catch(error){status.textContent=error.message;}finally{button.disabled=!registrationOpen;}});
+}
+const list=document.getElementById('rankedList');
+if(list){let teams=[],division=localStorage.getItem('suzini_etape3_public_epreuve')||'DM';
+ function render(){const rows=teams.filter(team=>team.division===division);list.replaceChildren();document.getElementById('currentLabel').textContent=division==='DD'?'Double Dames':'Double Messieurs';document.getElementById('rankedCount').textContent=rows.length;status.textContent=rows.length?'Équipes inscrites à cette étape.':'Aucune équipe inscrite pour le moment.';
+ for(const team of rows){const card=document.createElement('article');card.className='preview-message';const title=document.createElement('h2');title.textContent=team.team_name;const players=document.createElement('p');players.textContent=team.player1+' · '+team.player2;card.append(title,players);list.append(card);}}
+ document.addEventListener('publicZoneChange',event=>{division=event.detail.epreuve;render();});
+ rpc('suzini_e3_teams').then(data=>{teams=data||[];render();}).catch(error=>{status.textContent=error.message;});
+}

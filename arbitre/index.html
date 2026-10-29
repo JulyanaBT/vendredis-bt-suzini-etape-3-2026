@@ -1,0 +1,664 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Arbitre — Live scores — Les Vendredis du BT Suzini — Étape 3</title>
+
+  <style>
+    :root{
+      --palm:#0b7a3b;
+      --palm-dark:#064d28;
+      --palm-light:#15a658;
+      --navy:#06284a;
+      --navy-dark:#03172b;
+      --sun:#ffd21f;
+      --sun-dark:#f3b800;
+      --text:#17212b;
+      --muted:#667085;
+      --card:rgba(255,255,255,.96);
+      --shadow:0 16px 40px rgba(16,24,40,.12);
+      --container:1180px;
+      --top-h:92px;
+    }
+
+    *{box-sizing:border-box;}
+    html,body{max-width:100%;overflow-x:hidden;}
+
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 10% 0%, rgba(255,210,31,.20), transparent 26%),
+        radial-gradient(circle at 90% 8%, rgba(11,122,59,.16), transparent 26%),
+        linear-gradient(180deg,#eaf9ff 0%,#fff4d4 52%,#fff 100%);
+    }
+
+    .container{
+      width:min(var(--container), calc(100% - 24px));
+      margin:0 auto;
+    }
+
+    .topbar{
+      position:fixed;
+      top:0;
+      left:0;
+      right:0;
+      z-index:1000;
+      background:
+        radial-gradient(circle at 8% 0%, rgba(255,210,31,.30), transparent 28%),
+        linear-gradient(135deg,var(--palm-dark),var(--palm),var(--palm-light));
+      box-shadow:0 10px 26px rgba(6,77,40,.34);
+      border-bottom:4px solid var(--sun);
+      padding:10px 0;
+    }
+
+    .topbar-row{
+      min-height:72px;
+      display:grid;
+      grid-template-columns:58px minmax(0,1fr) auto;
+      align-items:center;
+      gap:12px;
+    }
+
+    .top-logo{
+      width:58px;
+      height:58px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .top-logo img{
+      max-width:100%;
+      max-height:100%;
+      object-fit:contain;
+      filter:drop-shadow(0 6px 10px rgba(0,0,0,.22));
+    }
+
+    .title{
+      color:#fff;
+      font-weight:1000;
+      font-size:20px;
+      line-height:1.05;
+      text-shadow:0 6px 18px rgba(0,0,0,.26);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .subtitle{
+      color:var(--sun);
+      font-size:12px;
+      font-weight:1000;
+      margin-top:4px;
+      text-transform:uppercase;
+      letter-spacing:.06em;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .top-actions{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      min-width:0;
+    }
+
+    .role-pill,
+    .top-link{
+      padding:8px 12px;
+      border-radius:999px;
+      background:rgba(255,255,255,.92);
+      color:var(--navy-dark);
+      font-size:12px;
+      font-weight:1000;
+      white-space:nowrap;
+      border:1px solid rgba(255,255,255,.35);
+      text-decoration:none;
+      cursor:pointer;
+    }
+
+    .top-link{
+      border:none;
+      font-family:inherit;
+    }
+
+    .match-strip{
+      position:fixed;
+      top:var(--top-h);
+      left:0;
+      right:0;
+      z-index:999;
+      background:rgba(255,255,255,.94);
+      backdrop-filter:blur(10px);
+      border-bottom:1px solid rgba(16,24,40,.08);
+      box-shadow:0 6px 14px rgba(16,24,40,.05);
+      padding:9px 0;
+    }
+
+    .strip-scroll{
+      display:flex;
+      gap:8px;
+      overflow-x:auto;
+      padding-bottom:2px;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+    }
+
+    .strip-scroll::-webkit-scrollbar{display:none;}
+
+    .strip-btn{
+      flex:0 0 auto;
+      border:1px solid rgba(6,40,74,.14);
+      background:#fff;
+      border-radius:999px;
+      padding:9px 12px;
+      font-size:12px;
+      font-weight:1000;
+      color:#1c2430;
+      cursor:pointer;
+      box-shadow:0 5px 12px rgba(16,24,40,.06);
+      max-width:245px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      font-family:inherit;
+    }
+
+    .strip-btn.active{
+      background:linear-gradient(180deg,var(--sun),var(--sun-dark));
+      color:var(--navy-dark);
+      border-color:var(--sun-dark);
+    }
+
+    .strip-btn.mine{
+      border-color:rgba(22,163,74,.35);
+      background:#f0fdf4;
+    }
+
+    .strip-btn.mine.active{
+      background:linear-gradient(180deg,#15803d,#166534);
+      color:#fff;
+    }
+
+    .strip-empty{
+      color:var(--muted);
+      font-size:13px;
+      font-weight:800;
+      padding:8px 0;
+    }
+
+    main{
+      padding-top:calc(var(--top-h) + 62px + 18px);
+      padding-bottom:46px;
+    }
+
+    .panel{
+      background:var(--card);
+      border:1px solid rgba(255,255,255,.7);
+      border-radius:24px;
+      box-shadow:var(--shadow);
+      padding:18px;
+      margin-top:16px;
+    }
+
+    .panel-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      margin-bottom:14px;
+    }
+
+    .panel-title{
+      margin:0;
+      font-size:25px;
+      line-height:1.05;
+      letter-spacing:-.03em;
+      color:var(--navy-dark);
+    }
+
+    .panel-text{
+      margin:6px 0 0;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.4;
+    }
+
+    .tag{
+      flex-shrink:0;
+      padding:8px 12px;
+      border-radius:999px;
+      background:#e6f7ee;
+      color:var(--palm-dark);
+      font-size:12px;
+      font-weight:1000;
+      text-transform:uppercase;
+      letter-spacing:.06em;
+    }
+
+    .btn{
+      appearance:none;
+      border:1px solid rgba(16,24,40,.10);
+      background:#fff;
+      border-radius:999px;
+      min-height:42px;
+      padding:10px 16px;
+      font-size:14px;
+      font-weight:1000;
+      cursor:pointer;
+      color:var(--navy-dark);
+      text-align:center;
+      box-shadow:0 6px 14px rgba(16,24,40,.05);
+      white-space:nowrap;
+      font-family:inherit;
+    }
+
+    .btn.primary{
+      background:linear-gradient(180deg,var(--sun),var(--sun-dark));
+      color:var(--navy-dark);
+      border-color:var(--sun-dark);
+    }
+
+    .btn.danger{
+      background:#fff5f5;
+      color:#8a1f1f;
+      border-color:#f1b2b2;
+    }
+
+    .btn.green{
+      background:#ecfdf5;
+      color:#166534;
+      border-color:#bbf7d0;
+    }
+
+    .btn:disabled{
+      opacity:.5;
+      cursor:not-allowed;
+    }
+
+    .score-board{
+      display:grid;
+      gap:12px;
+      margin-top:14px;
+    }
+
+    .team-score{
+      border-radius:22px;
+      border:2px solid rgba(16,24,40,.08);
+      background:#fff;
+      padding:14px;
+      display:grid;
+      grid-template-columns:minmax(0,1fr) 52px 52px 52px 62px;
+      gap:7px;
+      align-items:center;
+      box-shadow:0 8px 18px rgba(16,24,40,.06);
+    }
+
+    .team-score.server{
+      border-color:#16a34a;
+      background:linear-gradient(135deg,#ecfdf5,#fff);
+    }
+
+    .team-score.games-mode{
+      grid-template-columns:minmax(0,1fr) 52px 52px 62px;
+    }
+
+    .team-name{
+      min-width:0;
+      font-size:17px;
+      font-weight:1000;
+      line-height:1.15;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .serve-label{
+      display:inline-flex;
+      margin-top:5px;
+      padding:4px 8px;
+      border-radius:999px;
+      background:#dcfce7;
+      color:#166534;
+      font-size:11px;
+      font-weight:1000;
+    }
+
+    .score-box{
+      min-height:52px;
+      border-radius:16px;
+      background:#f8fafc;
+      border:1px solid rgba(16,24,40,.08);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      font-weight:1000;
+    }
+
+    .score-box.hidden{display:none;}
+
+    .score-label{
+      font-size:9px;
+      color:#667085;
+      text-transform:uppercase;
+      letter-spacing:.04em;
+      margin-bottom:3px;
+      text-align:center;
+    }
+
+    .score-value{
+      font-size:20px;
+      line-height:1;
+      color:#111827;
+    }
+
+    .controls{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      margin-top:14px;
+    }
+
+    .control-card{
+      border-radius:20px;
+      background:#fff;
+      border:1px solid rgba(16,24,40,.08);
+      padding:14px;
+      box-shadow:0 8px 18px rgba(16,24,40,.05);
+    }
+
+    .control-title{
+      font-weight:1000;
+      margin-bottom:10px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .control-row{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+    }
+
+    .big-btn{
+      min-height:58px;
+      border-radius:18px;
+      border:1px solid rgba(16,24,40,.10);
+      background:#f8fafc;
+      font-size:20px;
+      font-weight:1000;
+      cursor:pointer;
+      font-family:inherit;
+    }
+
+    .big-btn.plus{
+      background:#ecfdf5;
+      color:#166534;
+      border-color:#bbf7d0;
+    }
+
+    .big-btn.minus{
+      background:#fff5f5;
+      color:#8a1f1f;
+      border-color:#f1b2b2;
+    }
+
+    .mode-toggle{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-top:14px;
+    }
+
+    .mode-btn{
+      border:1px solid rgba(16,24,40,.10);
+      background:#fff;
+      border-radius:18px;
+      padding:12px;
+      font-weight:1000;
+      cursor:pointer;
+      font-family:inherit;
+    }
+
+    .mode-btn.active{
+      background:linear-gradient(180deg,var(--sun),var(--sun-dark));
+      color:var(--navy-dark);
+      border-color:var(--sun-dark);
+    }
+
+    .actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:12px;
+    }
+
+    .muted{
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.45;
+    }
+
+    .empty{
+      padding:16px;
+      border-radius:18px;
+      background:linear-gradient(135deg,rgba(11,122,59,.10),rgba(255,210,31,.16));
+      border:1px solid rgba(11,122,59,.18);
+      color:#475467;
+      font-weight:800;
+    }
+
+    @media (max-width:759px){
+      :root{--top-h:86px;}
+
+      .container{
+        width:min(var(--container), calc(100% - 18px));
+      }
+
+      .topbar-row{
+        grid-template-columns:46px minmax(0,1fr) auto;
+        min-height:62px;
+        gap:8px;
+      }
+
+      .top-logo{
+        width:46px;
+        height:46px;
+      }
+
+      .title{font-size:17px;}
+      .subtitle{font-size:10px;}
+
+      .top-link{
+        display:none;
+      }
+
+      .panel{
+        padding:14px;
+      }
+
+      .panel-title{font-size:23px;}
+
+      .team-score{
+        grid-template-columns:minmax(0,1fr) 44px 44px 44px 52px;
+        gap:5px;
+        padding:11px;
+      }
+
+      .team-score.games-mode{
+        grid-template-columns:minmax(0,1fr) 44px 44px 52px;
+      }
+
+      .team-name{font-size:14px;}
+      .score-box{min-height:46px;}
+      .score-value{font-size:18px;}
+      .score-label{font-size:8px;}
+
+      .controls{grid-template-columns:1fr;}
+      .mode-btn{font-size:13px;}
+      .actions .btn{flex:1 1 auto;}
+    }
+  </style>
+<meta name="theme-color" content="#06393d"><meta name="description" content="Les Vendredis du BT Suzini, étape 3. Double dames et double hommes au TC Suzini le vendredi 6 novembre 2026."><link rel="manifest" href="../manifest.webmanifest"><link rel="stylesheet" href="../assets/site.css"><link rel="stylesheet" href="../assets/install.css"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="BT Suzini"><link rel="apple-touch-icon" href="../assets/img/icon-180.png"></head>
+
+<body>
+
+<header class="topbar">
+  <div class="container topbar-row">
+    <div class="top-logo">
+      <img src="../assets/img/logo-suzini.png" alt="Tennis Club de Suzini">
+    </div>
+
+    <div style="min-width:0;">
+      <div class="title">🎾 Mode arbitre</div>
+      <div class="subtitle">Scores live — Les Vendredis du BT Suzini — Étape 3</div>
+    </div>
+
+    <div class="top-actions">
+      <a class="top-link" href="../index.html">Accueil</a>
+      <div class="role-pill" id="rolePill">Connexion…</div>
+    </div>
+  </div>
+</header>
+
+<div class="match-strip">
+  <div class="container">
+    <div class="strip-scroll" id="matchStrip">
+      <div class="strip-empty">Chargement des matchs envoyés…</div>
+    </div>
+  </div>
+</div>
+
+<main class="container">
+
+  <section class="panel" id="accessDenied" style="display:none;">
+    <h1 class="panel-title">⛔ Accès refusé</h1>
+    <p class="panel-text">Cette page est réservée aux arbitres, JAT et administrateurs.</p>
+  </section>
+
+  <section class="panel" id="pageContent" style="display:none;">
+    <div class="panel-head">
+      <div>
+        <h1 class="panel-title">Match en direct</h1>
+        <p class="panel-text" id="matchInfo">Sélectionne un match dans le bandeau.</p>
+      </div>
+      <div class="tag" id="matchStatus">Live</div>
+    </div>
+
+    <div id="emptyBox" class="empty">
+      Aucun match sélectionné. Utilise le bandeau en haut pour prendre ou afficher un match.
+    </div>
+
+    <div id="scoreUI" style="display:none;">
+
+      <div class="score-board">
+        <div class="team-score" id="teamBoxTop">
+          <div class="team-name">
+            <span id="teamTopName">Équipe haut</span>
+            <div class="serve-label" id="serveTop" style="display:none;">Service</div>
+          </div>
+
+          <div class="score-box" id="pointsBoxTop">
+            <div class="score-label">Pts</div>
+            <div class="score-value" id="pointsTop">0</div>
+          </div>
+
+          <div class="score-box">
+            <div class="score-label">Set 1</div>
+            <div class="score-value" id="set1Top">0</div>
+          </div>
+
+          <div class="score-box">
+            <div class="score-label">Set 2</div>
+            <div class="score-value" id="set2Top">0</div>
+          </div>
+
+          <div class="score-box">
+            <div class="score-label">STB</div>
+            <div class="score-value" id="stbTop">0</div>
+          </div>
+        </div>
+
+        <div class="team-score" id="teamBoxBottom">
+          <div class="team-name">
+            <span id="teamBottomName">Équipe bas</span>
+            <div class="serve-label" id="serveBottom" style="display:none;">Service</div>
+          </div>
+
+          <div class="score-box" id="pointsBoxBottom">
+            <div class="score-label">Pts</div>
+            <div class="score-value" id="pointsBottom">0</div>
+          </div>
+
+          <div class="score-box">
+            <div class="score-label">Set 1</div>
+            <div class="score-value" id="set1Bottom">0</div>
+          </div>
+
+          <div class="score-box">
+            <div class="score-label">Set 2</div>
+            <div class="score-value" id="set2Bottom">0</div>
+          </div>
+
+          <div class="score-box">
+            <div class="score-label">STB</div>
+            <div class="score-value" id="stbBottom">0</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div class="control-card">
+          <div class="control-title" id="controlTitleTop">Équipe haut</div>
+          <div class="control-row">
+            <button class="big-btn plus" id="btnPlusTop" type="button">+1</button>
+            <button class="big-btn minus" id="btnMinusTop" type="button">−1</button>
+          </div>
+        </div>
+
+        <div class="control-card">
+          <div class="control-title" id="controlTitleBottom">Équipe bas</div>
+          <div class="control-row">
+            <button class="big-btn plus" id="btnPlusBottom" type="button">+1</button>
+            <button class="big-btn minus" id="btnMinusBottom" type="button">−1</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="btnModePoints" type="button">Saisie point par point</button>
+        <button class="mode-btn" id="btnModeGames" type="button">Saisie jeu par jeu</button>
+      </div>
+
+      <div class="actions">
+        <button class="btn green" id="btnTakeMatch" type="button">🙋 Prendre ce match</button>
+        <button class="btn" id="btnServerTop" type="button">Service équipe du haut</button>
+        <button class="btn" id="btnServerBottom" type="button">Service équipe du bas</button>
+        <button class="btn danger" id="btnResetLocal" type="button">↩️ Remettre ce score à zéro</button>
+      </div>
+
+      <div class="actions">
+        <button class="btn primary" id="btnValidateSet1" type="button">✅ Valider set 1</button>
+        <button class="btn primary" id="btnValidateSet2" type="button">✅ Valider set 2</button>
+        <button class="btn primary" id="btnValidateSTB" type="button">✅ Valider STB</button>
+        <button class="btn primary" id="btnSendFinal" type="button">📤 Envoyer score final au JAT</button>
+      </div>
+
+      <p class="muted" style="margin-top:12px;">
+        L’équipe au service est toujours affichée en haut. Le JAT garde la validation finale du résultat.
+      </p>
+    </div>
+  </section>
+
+</main>
+
+
+
+<script type="module" src="../assets/js/preview.js"></script><script type="module" src="../assets/js/pull-refresh.js"></script><script type="module" src="../assets/js/install.js"></script><script type="module" src="../assets/js/supabase-site.js"></script></body>
+</html>

@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin — Rôles — Les Vendredis du BT Suzini — Étape 3</title>
+
+  <style>
+    :root{
+      --clay:#c65a1e; --clay-dark:#8e3a13; --clay-light:#ee8a3a;
+      --sky:#27bced; --aqua:#00a9c8; --blue:#075b9a; --blue-dark:#063b72;
+      --text:#17212b; --muted:#667085; --card:rgba(255,255,255,.94);
+      --shadow:0 16px 40px rgba(16,24,40,.12);
+      --container:1180px;
+    }
+
+    *{box-sizing:border-box;}
+
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 20% 0%, rgba(39,188,237,.22), transparent 28%),
+        radial-gradient(circle at 85% 10%, rgba(0,169,200,.16), transparent 26%),
+        linear-gradient(180deg,#f4fcff 0%,#e9f8ff 48%,#fff 100%);
+    }
+
+    a{color:inherit;text-decoration:none;}
+    .container{width:min(var(--container), calc(100% - 28px));margin:0 auto;}
+
+    main{
+      padding-top:calc(var(--admin-total-top, 230px) + 42px);
+      padding-bottom:42px;
+    }
+
+    .section{margin-top:22px;}
+
+    .panel{
+      background:var(--card);
+      border:1px solid rgba(255,255,255,.6);
+      border-radius:28px;
+      box-shadow:var(--shadow);
+      padding:20px;
+    }
+
+    .panel-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px;}
+    .panel-title{margin:0;font-size:28px;line-height:1.05;letter-spacing:-.03em;}
+    .panel-text{margin:8px 0 0;color:var(--muted);font-size:15px;line-height:1.55;}
+    .panel-tag{
+      flex-shrink:0;padding:8px 13px;border-radius:999px;background:#e4f7ff;color:var(--blue-dark);
+      font-size:12px;font-weight:1000;text-transform:uppercase;letter-spacing:.06em;
+    }
+
+    .grid{display:grid;grid-template-columns:1fr;gap:10px;}
+    .field{display:grid;gap:8px;}
+    .field label{font-weight:1000;color:#1c2430;}
+
+    input, select{
+      width:100%;border-radius:16px;border:1px solid rgba(16,24,40,.10);
+      background:#fff;padding:13px 14px;font-size:16px;color:#17212b;outline:none;
+      font-family:inherit;
+    }
+
+    .btn{
+      appearance:none;border:1px solid rgba(16,24,40,.10);background:#fff;
+      border-radius:18px;min-height:54px;padding:13px 15px;font-size:15px;
+      font-weight:1000;cursor:pointer;color:#1c2430;text-align:center;
+      box-shadow:0 8px 16px rgba(16,24,40,.04);
+      display:flex;align-items:center;justify-content:center;
+    }
+
+    .btn.primary{background:linear-gradient(180deg,var(--blue),var(--blue-dark));color:#fff;border-color:var(--blue);}
+    .btn.clay{background:linear-gradient(135deg,var(--clay),var(--clay-light));color:#fff;border-color:var(--clay);}
+    .btn.danger{background:#fff5f5;color:#8a1f1f;border-color:#f1b2b2;}
+    .btn.whatsapp{background:#ecfff3;color:#087a35;border-color:#b8efca;}
+    .btn:disabled{opacity:.55;cursor:not-allowed;}
+
+    .status-box{
+      margin-top:12px;padding:14px 16px;border-radius:18px;
+      background:linear-gradient(135deg,rgba(39,188,237,.12),rgba(198,90,30,.08));
+      border:1px solid rgba(39,188,237,.22);color:#475467;font-size:14px;line-height:1.5;
+    }
+
+    .muted{color:var(--muted);font-size:14px;line-height:1.45;}
+    .sep{border:none;border-top:1px solid rgba(16,24,40,.08);margin:18px 0;}
+
+    .role-card,
+    .invite-card{
+      border-radius:20px;
+      padding:14px;
+      background:#fff;
+      border:1px solid rgba(16,24,40,.08);
+      box-shadow:0 8px 18px rgba(16,24,40,.06);
+      display:grid;
+      gap:10px;
+    }
+
+    .role-top{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+    }
+
+    .role-name{font-size:18px;font-weight:1000;line-height:1.15;}
+    .role-email{margin-top:4px;color:#475467;font-size:14px;font-weight:800;word-break:break-word;}
+    .role-uid{
+      margin-top:6px;color:#667085;font-size:12px;
+      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+      word-break:break-all;
+    }
+
+    .badge{
+      display:inline-flex;align-items:center;justify-content:center;
+      padding:6px 10px;border-radius:999px;font-size:12px;font-weight:1000;
+      text-transform:uppercase;white-space:nowrap;
+    }
+
+    .badge.admin{background:linear-gradient(135deg,var(--clay),var(--clay-light));color:#fff;}
+    .badge.jat{background:linear-gradient(135deg,#5322a8,#a457f0);color:#fff;}
+    .badge.arbitre{background:linear-gradient(135deg,var(--blue),var(--sky));color:#fff;}
+    .badge.pending{background:#fff7e6;color:#9a5b00;border:1px solid #ffd37a;}
+
+    details.role-details{border-top:1px solid rgba(16,24,40,.08);padding-top:8px;}
+    details.role-details summary{cursor:pointer;font-weight:1000;color:var(--blue-dark);list-style:none;}
+    details.role-details summary::-webkit-details-marker{display:none;}
+
+    .role-actions{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:8px;
+      margin-top:10px;
+    }
+
+    @media (min-width:760px){
+      .panel{padding:24px;}
+      .grid.two{grid-template-columns:1fr 1fr;}
+      .grid.three{grid-template-columns:1fr 1fr 1fr;}
+      .role-actions{grid-template-columns:1fr 1fr 1fr;}
+    }
+
+    @media (max-width:759px){
+      main{
+        padding-top:calc(var(--admin-total-top, 222px) + 34px);
+      }
+    }
+  </style>
+<meta name="theme-color" content="#06393d"><meta name="description" content="Les Vendredis du BT Suzini, étape 3. Double dames et double hommes au TC Suzini le vendredi 6 novembre 2026."><link rel="manifest" href="../manifest.webmanifest"><link rel="stylesheet" href="../assets/site.css"><link rel="stylesheet" href="../assets/install.css"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="BT Suzini"><link rel="apple-touch-icon" href="../assets/img/icon-180.png"></head>
+
+<body data-zone-selector="none">
+
+<div id="adminHeader"></div>
+
+<main class="container">
+
+  <section class="section panel" id="accessDenied" style="display:none;">
+    <h2 class="panel-title">⛔ Accès refusé</h2>
+    <p class="panel-text">Cette page est réservée aux administrateurs.</p>
+  </section>
+
+  <section class="section panel" id="pageContent" style="display:none;">
+    <div class="panel-head">
+      <div>
+        <h2 class="panel-title">🔐 Gestion des accès</h2>
+        <p class="panel-text">
+          Crée des invitations WhatsApp et gère les rôles actifs pour l’Les Vendredis du BT Suzini — Étape 3.
+        </p>
+      </div>
+      <div class="panel-tag">Admin</div>
+    </div>
+
+    <div class="status-box" id="adminStatus">
+      Connexion administrateur vérifiée.
+    </div>
+
+    <hr class="sep">
+
+    <h2 class="panel-title" style="font-size:24px;">➕ Créer une invitation</h2>
+    <p class="panel-text">
+      Tu indiques un nom ou un label et un rôle. L’utilisateur recevra un lien WhatsApp pour créer son compte.
+    </p>
+
+    <form id="inviteForm" class="grid" autocomplete="off" style="margin-top:14px;">
+      <div class="grid three">
+        <div class="field">
+          <label for="label">Nom / label *</label>
+          <input id="label" name="label" type="text" required placeholder="Ex : Barthelemy, Wilfried, Arbitre 1…">
+        </div>
+
+        <div class="field">
+          <label for="role">Rôle *</label>
+          <select id="role" name="role" required>
+            <option value="arbitre">Arbitre</option>
+            <option value="jat">Juge-arbitre</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="inviteCode">Code invitation</label>
+          <input id="inviteCode" name="inviteCode" type="text" value="SUZINI-ETAPE3-2026" readonly>
+        </div>
+      </div>
+
+      <button class="btn clay" id="createInviteBtn" type="submit">✅ Créer l’invitation</button>
+      <p class="muted" id="inviteStatus" role="status" aria-live="polite" style="margin:0;"></p>
+    </form>
+
+    <hr class="sep">
+
+    <h2 class="panel-title" style="font-size:24px;">📨 Invitations en attente</h2>
+    <p class="panel-text">Clique sur WhatsApp pour envoyer le lien d’activation.</p>
+
+    <p class="muted" id="invitesCount" style="margin-top:12px;">Chargement…</p>
+    <div id="invitesList" class="grid" style="margin-top:12px;"></div>
+
+    <hr class="sep">
+
+    <h2 class="panel-title" style="font-size:24px;">👥 Rôles existants</h2>
+    <p class="panel-text">
+      Déplie une carte pour modifier le rôle, le label ou supprimer l’accès.
+    </p>
+
+    <p class="muted" id="rolesCount" style="margin-top:12px;">Chargement…</p>
+    <div id="rolesList" class="grid" style="margin-top:12px;"></div>
+  </section>
+
+</main>
+
+
+
+
+
+<script type="module" src="../assets/js/preview.js"></script><script type="module" src="../assets/js/pull-refresh.js"></script><script type="module" src="../assets/js/install.js"></script><script type="module" src="../assets/js/supabase-site.js"></script></body>
+</html>

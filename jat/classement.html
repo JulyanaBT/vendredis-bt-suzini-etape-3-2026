@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JAT — Classements — Les Vendredis du BT Suzini — Étape 3</title>
+
+  <style>
+    :root{
+      --palm:#0b7a3b;
+      --palm-dark:#064d28;
+      --palm-light:#15a658;
+      --navy:#06284a;
+      --navy-dark:#03172b;
+      --sun:#ffd21f;
+      --sun-dark:#f3b800;
+      --text:#17212b;
+      --muted:#667085;
+      --card:rgba(255,255,255,.95);
+      --shadow:0 16px 40px rgba(16,24,40,.12);
+      --container:1180px;
+    }
+
+    *{box-sizing:border-box;}
+    html,body{max-width:100%;overflow-x:hidden;}
+
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 10% 0%, rgba(255,210,31,.20), transparent 26%),
+        radial-gradient(circle at 90% 8%, rgba(11,122,59,.16), transparent 26%),
+        linear-gradient(180deg,#eaf9ff 0%,#fff4d4 52%,#fff 100%);
+    }
+
+    a{color:inherit;text-decoration:none;}
+
+    .container{
+      width:min(var(--container), calc(100% - 28px));
+      margin:0 auto;
+    }
+
+    main{
+      padding-top:calc(var(--jat-total-top, 230px) + 34px);
+      padding-bottom:42px;
+    }
+
+    .section{margin-top:18px;}
+
+    .panel{
+      background:var(--card);
+      border:1px solid rgba(255,255,255,.7);
+      border-radius:24px;
+      box-shadow:var(--shadow);
+      padding:18px;
+    }
+
+    .panel-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      margin-bottom:14px;
+    }
+
+    .panel-title{
+      margin:0;
+      font-size:26px;
+      line-height:1.05;
+      letter-spacing:-.03em;
+      color:var(--navy-dark);
+    }
+
+    .panel-text{
+      margin:6px 0 0;
+      color:var(--muted);
+      font-size:15px;
+      line-height:1.45;
+    }
+
+    .panel-tag{
+      flex-shrink:0;
+      padding:8px 13px;
+      border-radius:999px;
+      background:#e6f7ee;
+      color:var(--palm-dark);
+      font-size:12px;
+      font-weight:1000;
+      text-transform:uppercase;
+      letter-spacing:.06em;
+    }
+
+    .status-box,
+    .warn,
+    .okbox{
+      margin-top:12px;
+      padding:14px 16px;
+      border-radius:18px;
+      font-size:14px;
+      line-height:1.5;
+    }
+
+    .status-box{
+      background:linear-gradient(135deg,rgba(11,122,59,.10),rgba(255,210,31,.16));
+      border:1px solid rgba(11,122,59,.18);
+      color:#475467;
+    }
+
+    .status-box strong{color:var(--navy-dark);}
+
+    .warn{
+      border:1px solid rgba(176,0,32,.25);
+      background:rgba(176,0,32,.06);
+      font-weight:900;
+      color:#7f1d1d;
+    }
+
+    .okbox{
+      border:1px solid rgba(16,185,129,.30);
+      background:#ecfdf5;
+      font-weight:900;
+      color:#064e3b;
+    }
+
+    .btn{
+      appearance:none;
+      border:1px solid rgba(16,24,40,.10);
+      background:#fff;
+      border-radius:999px;
+      min-height:46px;
+      padding:11px 16px;
+      font-size:14px;
+      font-weight:1000;
+      cursor:pointer;
+      color:var(--navy-dark);
+      text-align:center;
+      box-shadow:0 6px 14px rgba(16,24,40,.05);
+      font-family:inherit;
+      white-space:nowrap;
+    }
+
+    .btn.primary{
+      background:linear-gradient(180deg,var(--sun),var(--sun-dark));
+      color:var(--navy-dark);
+      border-color:var(--sun-dark);
+      box-shadow:0 10px 22px rgba(255,210,31,.22);
+    }
+
+    .btn.danger{
+      background:#fff5f5;
+      color:#8a1f1f;
+      border-color:#f1b2b2;
+    }
+
+    .btn:disabled{
+      opacity:.55;
+      cursor:not-allowed;
+    }
+
+    .actions-row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:14px;
+    }
+
+    .list{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      margin-top:12px;
+    }
+
+    .rank-card{
+      border-radius:18px;
+      border:1px solid rgba(16,24,40,.08);
+      padding:13px;
+      background:#fff;
+      box-shadow:0 8px 18px rgba(16,24,40,.06);
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+      justify-content:space-between;
+    }
+
+    .rk{
+      width:44px;
+      height:44px;
+      border-radius:15px;
+      border:1px solid rgba(0,0,0,.10);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:1000;
+      font-size:16px;
+      flex:0 0 auto;
+      background:#f8fafc;
+      color:var(--palm-dark);
+    }
+
+    .rmain{
+      min-width:0;
+      flex:1 1 auto;
+    }
+
+    .rtitle{
+      font-weight:1000;
+      line-height:1.15;
+      margin:0;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      font-size:16px;
+      color:var(--navy-dark);
+    }
+
+    .team-lines{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      margin-top:8px;
+    }
+
+    .team-line{
+      font-size:12px;
+      line-height:1.4;
+      word-break:break-word;
+      color:#475467;
+    }
+
+    .team-line strong{
+      font-weight:1000;
+      color:#17212b;
+    }
+
+    .tag{
+      border:1px solid rgba(0,0,0,.12);
+      border-radius:999px;
+      padding:5px 9px;
+      font-size:11px;
+      font-weight:1000;
+      white-space:nowrap;
+      opacity:.95;
+      flex:0 0 auto;
+      background:#e6f7ee;
+      color:var(--palm-dark);
+    }
+
+    .section-title{
+      margin:18px 0 8px;
+      font-size:20px;
+      line-height:1.1;
+      letter-spacing:-.02em;
+      color:var(--navy-dark);
+    }
+
+    .pending-list{
+      display:grid;
+      gap:12px;
+      margin-top:12px;
+    }
+
+    .pending-card{
+      border-radius:18px;
+      border:1px solid rgba(16,24,40,.08);
+      padding:13px;
+      background:#fff;
+      box-shadow:0 8px 18px rgba(16,24,40,.06);
+    }
+
+    .pending-card.courtA{
+      background:#fff8dd;
+      border-color:rgba(255,196,0,.35);
+    }
+
+    .pending-card.courtB{
+      background:#ffeef2;
+      border-color:rgba(255,0,60,.20);
+    }
+
+    .pending-head{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin-bottom:10px;
+      flex-wrap:wrap;
+    }
+
+    .p-slot,
+    .p-time,
+    .p-label{
+      font-size:12px;
+      font-weight:1000;
+      padding:5px 9px;
+      border-radius:999px;
+      background:#f8fafc;
+      color:#344054;
+    }
+
+    .p-label{
+      background:#e6f7ee;
+      color:var(--palm-dark);
+    }
+
+    .p-team{
+      font-size:16px;
+      font-weight:1000;
+      line-height:1.15;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .p-team.placeholder{
+      color:#667085;
+      font-style:italic;
+    }
+
+    .vs-line{
+      margin:9px 0 5px;
+      text-align:center;
+      font-weight:1000;
+      letter-spacing:2px;
+      opacity:.55;
+      font-size:12px;
+    }
+
+    .muted{
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.45;
+    }
+
+    @media (max-width:759px){
+      main{
+        padding-top:calc(var(--jat-total-top, 222px) + 28px);
+      }
+
+      .panel-title{font-size:24px;}
+
+      .rank-card{
+        gap:10px;
+      }
+
+      .rk{
+        width:40px;
+        height:40px;
+      }
+
+      .tag{
+        font-size:10px;
+        padding:5px 8px;
+      }
+
+      .p-team{
+        font-size:14px;
+      }
+    }
+
+    @media (min-width:760px){
+      .panel{padding:22px;}
+    }
+  </style>
+<meta name="theme-color" content="#06393d"><meta name="description" content="Les Vendredis du BT Suzini, étape 3. Double dames et double hommes au TC Suzini le vendredi 6 novembre 2026."><link rel="manifest" href="../manifest.webmanifest"><link rel="stylesheet" href="../assets/site.css"><link rel="stylesheet" href="../assets/install.css"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="BT Suzini"><link rel="apple-touch-icon" href="../assets/img/icon-180.png"></head>
+
+<body data-zone-selector="select">
+
+<div id="jatHeader"></div>
+
+<main class="container">
+
+  <section class="section panel" id="accessDenied" style="display:none;">
+    <h2 class="panel-title">⛔ Accès refusé</h2>
+    <p class="panel-text">Cette page est réservée au JAT et aux administrateurs.</p>
+  </section>
+
+  <section class="section panel" id="pageContent" style="display:none;">
+    <div class="panel-head">
+      <div>
+        <h1 class="panel-title">🏆 Classements</h1>
+        <p class="panel-text">
+          Classement final Double Messieurs, calculé depuis la programmation et les résultats.
+        </p>
+      </div>
+      <div class="panel-tag">JAT</div>
+    </div>
+
+    <div class="status-box">
+      Épreuve active :
+      <strong id="zoneLabel">Double Messieurs</strong>
+      <br>
+      Le classement final prend en compte les classements de poules uniquement après validation.
+    </div>
+  </section>
+
+  <section class="section panel" id="panelRank" style="display:none;">
+    <div class="panel-head">
+      <div>
+        <h2 class="panel-title">📋 Classement final</h2>
+        <p class="panel-text" id="statusText">Chargement…</p>
+      </div>
+      <div class="panel-tag">Direct</div>
+    </div>
+
+    <div class="actions-row">
+      <button class="btn primary" id="btnValidate" type="button" disabled>
+        ✅ Valider le classement final
+      </button>
+
+      <button class="btn danger" id="btnUnvalidate" type="button" style="display:none;">
+        ↩️ Annuler la validation
+      </button>
+    </div>
+
+    <div id="validatedBox" class="okbox" style="display:none;"></div>
+    <div id="warningBox" class="warn" style="display:none;"></div>
+
+    <div id="pendingBox" style="display:none;">
+      <h3 class="section-title">🕒 Matchs restant à jouer</h3>
+      <div id="pendingList"></div>
+    </div>
+
+    <h3 class="section-title">👥 Classement des équipes</h3>
+    <div id="teamList"></div>
+  </section>
+
+</main>
+
+
+
+
+
+<script type="module" src="../assets/js/preview.js"></script><script type="module" src="../assets/js/pull-refresh.js"></script><script type="module" src="../assets/js/install.js"></script><script type="module" src="../assets/js/supabase-site.js"></script></body>
+</html>

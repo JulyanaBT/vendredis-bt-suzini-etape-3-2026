@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JAT — Résultats — Les Vendredis du BT Suzini — Étape 3</title>
+
+  <style>
+    :root{
+      --palm:#0b7a3b; --palm-dark:#064d28; --palm-light:#15a658;
+      --navy:#06284a; --navy-dark:#03172b;
+      --sun:#ffd21f; --sun-dark:#f3b800;
+      --text:#17212b; --muted:#667085; --card:rgba(255,255,255,.95);
+      --shadow:0 16px 40px rgba(16,24,40,.12);
+      --container:1180px;
+    }
+
+    *{box-sizing:border-box;}
+    html,body{max-width:100%;overflow-x:hidden;}
+
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 10% 0%, rgba(255,210,31,.20), transparent 26%),
+        radial-gradient(circle at 90% 8%, rgba(11,122,59,.16), transparent 26%),
+        linear-gradient(180deg,#eaf9ff 0%,#fff4d4 52%,#fff 100%);
+    }
+
+    .container{width:min(var(--container), calc(100% - 28px));margin:0 auto;}
+    main{padding-top:calc(var(--jat-total-top, 230px) + 34px);padding-bottom:42px;}
+    .section{margin-top:18px;}
+
+    .panel{
+      background:var(--card);
+      border:1px solid rgba(255,255,255,.7);
+      border-radius:24px;
+      box-shadow:var(--shadow);
+      padding:18px;
+    }
+
+    .panel-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px;}
+    .panel-title{margin:0;font-size:26px;line-height:1.05;letter-spacing:-.03em;color:var(--navy-dark);}
+    .panel-text{margin:6px 0 0;color:var(--muted);font-size:15px;line-height:1.45;}
+
+    .panel-tag{
+      flex-shrink:0;
+      padding:8px 13px;
+      border-radius:999px;
+      background:#e6f7ee;
+      color:var(--palm-dark);
+      font-size:12px;
+      font-weight:1000;
+      text-transform:uppercase;
+      letter-spacing:.06em;
+    }
+
+    .status-box{
+      margin-top:12px;
+      padding:14px 16px;
+      border-radius:18px;
+      background:linear-gradient(135deg,rgba(11,122,59,.10),rgba(255,210,31,.16));
+      border:1px solid rgba(11,122,59,.18);
+      color:#475467;
+      font-size:14px;
+      line-height:1.5;
+    }
+
+    .grid{display:grid;gap:10px;}
+    .grid.two{grid-template-columns:1fr 1fr;}
+
+    .btn{
+      appearance:none;
+      border:1px solid rgba(16,24,40,.10);
+      background:#fff;
+      border-radius:999px;
+      min-height:42px;
+      padding:10px 16px;
+      font-size:14px;
+      font-weight:1000;
+      cursor:pointer;
+      color:var(--navy-dark);
+      text-align:center;
+      box-shadow:0 6px 14px rgba(16,24,40,.05);
+      white-space:nowrap;
+      font-family:inherit;
+    }
+
+    .btn.primary,
+    .btn.is-active{
+      background:linear-gradient(180deg,var(--sun),var(--sun-dark));
+      color:var(--navy-dark);
+      border-color:var(--sun-dark);
+    }
+
+    .btn.green{
+      background:linear-gradient(135deg,var(--palm),var(--palm-light));
+      color:#fff;
+      border-color:var(--palm);
+    }
+
+    .btn.danger{
+      background:#fff5f5;
+      color:#8a1f1f;
+      border-color:#f1b2b2;
+    }
+
+    .btn:disabled{opacity:.55;cursor:not-allowed;}
+
+    .match-list{display:grid;gap:14px;margin-top:12px;}
+
+    .match-card{
+      border-radius:20px;
+      border:1px solid rgba(16,24,40,.08);
+      padding:14px;
+      background:#fff;
+      box-shadow:0 8px 18px rgba(16,24,40,.06);
+    }
+
+    .match-card.courtA{background:#fff8dd;border-color:rgba(255,196,0,.35);}
+    .match-card.courtB{background:#ffeef2;border-color:rgba(255,0,60,.20);}
+
+    .match-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+
+    .m-slot,.m-time,.m-label{
+      font-size:12px;
+      font-weight:1000;
+      padding:5px 9px;
+      border-radius:999px;
+      background:#f8fafc;
+      color:#344054;
+    }
+
+    .m-label{background:#e6f7ee;color:var(--palm-dark);}
+
+    .score-grid{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) 52px 52px 52px;
+      gap:8px;
+      align-items:center;
+    }
+
+    .hdr{font-size:11px;font-weight:1000;color:#667085;text-align:center;}
+
+    .team-title{
+      font-size:15px;
+      font-weight:1000;
+      line-height:1.15;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .placeholder{color:#667085;font-style:italic;}
+
+    .sc{
+      width:52px;
+      height:42px;
+      border-radius:12px;
+      border:1px solid rgba(16,24,40,.14);
+      text-align:center;
+      font-weight:1000;
+      font-size:15px;
+      outline:none;
+      background:#fff;
+    }
+
+    .actions{margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+    .winner{font-size:13px;font-weight:1000;color:#475467;}
+    .winner.ok{color:#087a35;}
+
+    .standings{
+      margin-top:14px;
+      border-radius:16px;
+      background:#fff;
+      border:1px solid rgba(16,24,40,.08);
+      overflow:hidden;
+    }
+
+    table{width:100%;border-collapse:collapse;font-size:13px;}
+    th,td{padding:9px 7px;border-bottom:1px solid rgba(16,24,40,.08);text-align:center;}
+    th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left;}
+    th{background:#f8fafc;color:#475467;font-size:12px;text-transform:uppercase;}
+
+    .validation-box{
+      margin-top:12px;
+      padding:13px;
+      border-radius:16px;
+      border:1px solid rgba(16,24,40,.10);
+      background:#fff;
+      display:grid;
+      gap:10px;
+    }
+
+    .validation-ok{
+      background:#ecfdf5;
+      border-color:rgba(16,185,129,.30);
+      color:#064e3b;
+    }
+
+    .validation-warn{
+      background:#fff7e6;
+      border-color:#ffd37a;
+      color:#9a5b00;
+    }
+
+    .muted{color:var(--muted);font-size:14px;line-height:1.45;}
+
+    @media (max-width:759px){
+      main{padding-top:calc(var(--jat-total-top, 222px) + 28px);}
+      .panel-title{font-size:24px;}
+      .grid.two{grid-template-columns:1fr;}
+      .score-grid{grid-template-columns:minmax(0,1fr) 46px 46px 46px;}
+      .sc{width:46px;}
+    }
+  </style>
+<meta name="theme-color" content="#06393d"><meta name="description" content="Les Vendredis du BT Suzini, étape 3. Double dames et double hommes au TC Suzini le vendredi 6 novembre 2026."><link rel="manifest" href="../manifest.webmanifest"><link rel="stylesheet" href="../assets/site.css"><link rel="stylesheet" href="../assets/install.css"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="BT Suzini"><link rel="apple-touch-icon" href="../assets/img/icon-180.png"></head>
+
+<body data-zone-selector="none">
+
+<div id="jatHeader"></div>
+
+<main class="container">
+
+  <section class="section panel" id="accessDenied" style="display:none;">
+    <h2 class="panel-title">⛔ Accès refusé</h2>
+    <p class="panel-text">Cette page est réservée au JAT et aux administrateurs.</p>
+  </section>
+
+  <section class="section panel" id="pageContent" style="display:none;">
+    <div class="panel-head">
+      <div>
+        <h1 class="panel-title">🏆 Résultats JAT</h1>
+        <p class="panel-text">Saisie des scores et validation sportive du Double Messieurs.</p>
+      </div>
+      <div class="panel-tag">JAT</div>
+    </div>
+
+    <div class="status-box">
+      Double Dames : <strong>tournoi annulé</strong>.<br>
+      Les classements de poules doivent être validés avant d’être utilisés pour les phases finales.
+    </div>
+  </section>
+
+  <section class="section panel" id="panelResults" style="display:none;">
+    <div class="panel-head">
+      <div>
+        <h2 class="panel-title">🏁 Saisie des scores</h2>
+        <p class="panel-text" id="statusText">Chargement…</p>
+      </div>
+      <div class="panel-tag">Live</div>
+    </div>
+
+    <div id="adminList"></div>
+  </section>
+
+</main>
+
+
+
+
+
+<script type="module" src="../assets/js/preview.js"></script><script type="module" src="../assets/js/pull-refresh.js"></script><script type="module" src="../assets/js/install.js"></script><script type="module" src="../assets/js/supabase-site.js"></script></body>
+</html>

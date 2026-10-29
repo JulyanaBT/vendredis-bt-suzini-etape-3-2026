@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Les Vendredis du BT Suzini — Étape 3 - 6 novembre 2026</title>
+
+  <style>
+    :root{
+      --palm:#0b7a3b;
+      --palm-dark:#064d28;
+      --palm-light:#15a658;
+      --navy:#06284a;
+      --navy-dark:#03172b;
+      --sun:#ffd21f;
+      --sun-dark:#f3b800;
+      --sand-light:#fff4d4;
+      --pink:#d83d7f;
+      --text:#17212b;
+      --muted:#667085;
+      --card:rgba(255,255,255,.94);
+      --shadow:0 16px 40px rgba(16,24,40,.12);
+      --container:1180px;
+    }
+
+    *{box-sizing:border-box;}
+
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 10% 0%, rgba(255,210,31,.22), transparent 26%),
+        radial-gradient(circle at 90% 8%, rgba(11,122,59,.18), transparent 26%),
+        linear-gradient(180deg,#eaf9ff 0%,#fff4d4 46%,#ffffff 100%);
+    }
+
+    a{color:inherit;text-decoration:none;}
+
+    .container{
+      width:min(var(--container), calc(100% - 28px));
+      margin:0 auto;
+    }
+
+    main{
+      padding-top:calc(var(--public-total-top, 158px) + 20px);
+      padding-bottom:42px;
+    }
+
+    .section{margin-top:16px;}
+
+    .hero{
+      position:relative;
+      overflow:hidden;
+      border-radius:28px;
+      padding:24px 18px;
+      color:#fff;
+      background:
+        radial-gradient(circle at 12% 0%, rgba(255,210,31,.42), transparent 25%),
+        radial-gradient(circle at 85% 15%, rgba(244,217,164,.24), transparent 24%),
+        linear-gradient(135deg,var(--navy-dark),var(--navy) 42%,var(--palm) 100%);
+      box-shadow:var(--shadow);
+      border:3px solid rgba(255,210,31,.35);
+    }
+
+    .hero::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:
+        linear-gradient(0deg,rgba(244,217,164,.18),transparent 48%),
+        radial-gradient(circle at 50% 115%,rgba(255,210,31,.24),transparent 34%);
+      pointer-events:none;
+    }
+
+    .hero-inner{
+      position:relative;
+      z-index:1;
+      display:grid;
+      gap:14px;
+      text-align:center;
+    }
+
+    .hero-pills{
+      display:flex;
+      flex-wrap:wrap;
+      justify-content:center;
+      gap:8px;
+    }
+
+    .pill{
+      padding:8px 12px;
+      border-radius:999px;
+      background:rgba(255,255,255,.16);
+      color:#fff;
+      font-size:12px;
+      font-weight:1000;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.24);
+      backdrop-filter:blur(8px);
+    }
+
+    .hero-title{
+      margin:0;
+      font-size:clamp(34px,7vw,76px);
+      line-height:.88;
+      letter-spacing:-.06em;
+      font-weight:1000;
+      text-transform:uppercase;
+      text-shadow:0 12px 26px rgba(0,0,0,.32);
+    }
+
+    .hero-date{
+      display:inline-block;
+      margin-top:10px;
+      padding:8px 18px;
+      border-radius:18px;
+      font-size:clamp(25px,5vw,50px);
+      font-weight:1000;
+      color:var(--sun);
+      text-transform:uppercase;
+      background:rgba(3,23,43,.62);
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);
+    }
+
+    .hero-sub{
+      max-width:760px;
+      margin:8px auto 0;
+      font-size:15px;
+      line-height:1.45;
+      color:#fff8d8;
+      font-weight:800;
+    }
+
+    .hero-infos{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:10px;
+    }
+
+    .hero-info{
+      text-align:left;
+      padding:13px 14px;
+      border-radius:18px;
+      background:rgba(255,255,255,.88);
+      color:#12324c;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.5);
+    }
+
+    .hero-info strong{
+      display:block;
+      color:var(--palm-dark);
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      margin-bottom:4px;
+    }
+
+    .hero-info span{
+      display:block;
+      font-size:15px;
+      font-weight:1000;
+      line-height:1.25;
+      color:var(--navy-dark);
+    }
+
+    .hero-actions{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+
+    .hero-btn{
+      min-height:54px;
+      border-radius:18px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:13px 16px;
+      font-size:15px;
+      font-weight:1000;
+      box-shadow:0 12px 24px rgba(6,59,114,.18);
+    }
+
+    .hero-btn-primary{
+      background:linear-gradient(180deg,var(--sun),var(--sun-dark));
+      color:var(--navy-dark);
+    }
+
+    .hero-btn-secondary{
+      background:#fff;
+      color:var(--palm-dark);
+    }
+
+    .panel{
+      background:var(--card);
+      border:1px solid rgba(255,255,255,.7);
+      border-radius:24px;
+      box-shadow:var(--shadow);
+      padding:18px;
+    }
+
+    .panel-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      margin-bottom:14px;
+    }
+
+    .panel-title{
+      margin:0;
+      font-size:24px;
+      line-height:1.05;
+      letter-spacing:-.03em;
+      color:var(--navy-dark);
+    }
+
+    .panel-text{
+      margin:6px 0 0;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.35;
+    }
+
+    .panel-tag{
+      flex-shrink:0;
+      padding:8px 13px;
+      border-radius:999px;
+      background:#e6f7ee;
+      color:var(--palm-dark);
+      font-size:12px;
+      font-weight:1000;
+      text-transform:uppercase;
+      letter-spacing:.06em;
+    }
+
+    .grid-main{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:10px;
+    }
+
+    .entry-card{
+      position:relative;
+      overflow:hidden;
+      border-radius:20px;
+      min-height:96px;
+      padding:15px;
+      color:#fff;
+      box-shadow:0 10px 22px rgba(16,24,40,.12);
+    }
+
+    .entry-kicker{
+      font-size:12px;
+      font-weight:900;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      opacity:.9;
+      margin-bottom:6px;
+    }
+
+    .entry-title{
+      font-size:24px;
+      line-height:1.02;
+      letter-spacing:-.03em;
+      font-weight:1000;
+      margin:0 0 6px;
+    }
+
+    .entry-sub{
+      font-size:14px;
+      line-height:1.35;
+      opacity:.96;
+      max-width:96%;
+    }
+
+    .card-green{background:linear-gradient(135deg,var(--palm-dark),var(--palm),var(--palm-light));}
+    .card-navy{background:linear-gradient(135deg,var(--navy-dark),var(--navy),#0d4f82);}
+    .card-sun{background:linear-gradient(135deg,#b38300,var(--sun-dark),var(--sun));color:var(--navy-dark);}
+    .card-pink{background:linear-gradient(135deg,#8f1f4f,var(--pink),#ff6fa5);}
+    .card-white{
+      color:#12324c;
+      background:linear-gradient(135deg,#ffffff,#fff4d4);
+      box-shadow:inset 0 0 0 1px rgba(11,122,59,.12), 0 10px 22px rgba(16,24,40,.10);
+    }
+
+    .category-box{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:10px;
+    }
+
+    .category-item{
+      border-radius:16px;
+      padding:12px;
+      background:#fffaf0;
+      border:1px solid rgba(11,122,59,.14);
+      text-align:center;
+      font-weight:1000;
+      color:var(--palm-dark);
+    }
+
+    .category-item small{
+      color:var(--muted);
+      font-weight:900;
+    }
+
+    .note,
+    .status-box{
+      margin-top:12px;
+      padding:13px 14px;
+      border-radius:18px;
+      background:linear-gradient(135deg,rgba(11,122,59,.10),rgba(255,210,31,.16));
+      border:1px solid rgba(11,122,59,.18);
+      color:#475467;
+      font-size:14px;
+      line-height:1.45;
+    }
+
+    .status-box strong{color:var(--navy-dark);}
+
+    .mini-link{
+      min-height:50px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      border-radius:18px;
+      background:#fff;
+      border:1px solid rgba(16,24,40,.06);
+      color:#344054;
+      font-size:15px;
+      font-weight:900;
+      padding:12px 14px;
+      box-shadow:0 8px 18px rgba(16,24,40,.05);
+    }
+
+    .role-badge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:6px 12px;
+      border-radius:999px;
+      font-weight:1000;
+      font-size:12px;
+      letter-spacing:.06em;
+      text-transform:uppercase;
+      margin-left:8px;
+      vertical-align:middle;
+    }
+
+    .role-badge.admin{background:linear-gradient(135deg,var(--palm),var(--palm-light));color:#fff;}
+    .role-badge.jat{background:linear-gradient(135deg,#5322a8,#a457f0);color:#fff;}
+    .role-badge.arbitre{background:linear-gradient(135deg,var(--navy),#0d4f82);color:#fff;}
+    .role-badge.none{background:#eef2f6;color:#475467;}
+
+    @media (min-width:760px){
+      .hero{padding:36px 32px;}
+      .hero-infos{grid-template-columns:1fr 1fr 1fr;}
+
+      .hero-actions{
+        grid-template-columns:repeat(4,1fr);
+        max-width:980px;
+        margin-left:auto;
+        margin-right:auto;
+      }
+
+      .grid-main{grid-template-columns:1fr 1fr;}
+      .panel{padding:22px;}
+      .panel-title{font-size:28px;}
+    }
+
+    @media (max-width:759px){
+      main{
+        padding-top:calc(var(--public-total-top, 150px) + 16px);
+      }
+    }
+  </style>
+<meta name="theme-color" content="#06393d"><meta name="description" content="Les Vendredis du BT Suzini, étape 3. Double dames et double hommes au TC Suzini le vendredi 6 novembre 2026."><link rel="manifest" href="manifest.webmanifest"><link rel="stylesheet" href="assets/site.css"><link rel="stylesheet" href="assets/install.css"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="BT Suzini"><link rel="apple-touch-icon" href="assets/img/icon-180.png"></head>
+
+<body data-space="public">
+
+<div id="publicHeader"></div>
+
+<main class="container"><div class="install-info"><button type="button" data-install>＋ Sur mon écran d’accueil</button></div>
+
+  <section class="section">
+    <div class="hero">
+      <div class="hero-inner">
+
+        <div class="hero-pills">
+          <span class="pill">Vendredi 6 novembre 2026</span>
+          <span class="pill">TC Suzini · Guyane</span><span class="pill">BT250</span>
+          <span class="pill">Double Dames • Double Hommes</span>
+        </div>
+
+        <div>
+          <p class="edition-label">LES VENDREDIS DU</p><h1 class="hero-title">BT SUZINI<span>ÉTAPE 3</span></h1>
+          <div class="hero-date">VENDREDI 6 NOVEMBRE 2026</div>
+          <p class="hero-sub">
+  Un vendredi soir sur le sable du TC Suzini. Deux tournois, une même passion : le beach tennis.
+  Retrouvez ici les inscriptions, les équipes, la programmation,
+  les matchs en direct, les animations et la restauration.
+</p>
+        </div>
+
+        <div class="hero-infos">
+          <div class="hero-info">
+            <strong>Lieu</strong>
+            <span>Tennis Club de Suzini</span>
+          </div>
+
+          <div class="hero-info">
+            <strong>Rendez-vous</strong>
+            <span>18 h</span>
+          </div>
+
+          <div class="hero-info">
+            <strong>Inscription · avant le 4 novembre</strong>
+            <span>10 € / joueur</span>
+          </div>
+        </div>
+
+        <div class="hero-actions">
+  <a class="hero-btn hero-btn-primary"
+     href="public/inscriptions.html">
+    📝 S’inscrire
+  </a>
+
+  <a class="hero-btn hero-btn-secondary"
+     href="public/equipes.html">
+    👥 Équipes
+  </a>
+
+  <a class="hero-btn hero-btn-secondary"
+     href="public/restauration.html">
+    🍽️ Restauration
+  </a>
+
+  <a class="hero-btn hero-btn-secondary"
+     href="public/animations.html">
+    🎉 Animations
+  </a>
+</div>
+
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="panel">
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title">Deux épreuves au programme</h2>
+          <p class="panel-text">Tournoi seniors ouvert en Double Dames et Double Hommes uniquement.</p>
+        </div>
+        <div class="panel-tag">Seniors</div>
+      </div>
+
+      <div class="category-box">
+        <div class="category-item">Double Dames<br><small>Seniors</small></div>
+        <div class="category-item">Double Hommes<br><small>Seniors</small></div>
+      </div>
+
+      <div class="note">
+        Les inscriptions se font par équipe. Le formulaire permet de renseigner les deux joueurs de l’équipe.
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="panel">
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title">Accès rapide</h2>
+          <p class="panel-text">Les pages indispensables pour participer et suivre le tournoi.</p>
+        </div>
+        <div class="panel-tag">Tournoi</div>
+      </div>
+
+      <div class="grid-main">
+        <a class="entry-card card-green" href="public/inscriptions.html">
+          <div class="entry-kicker">Inscriptions</div>
+          <h3 class="entry-title">S’inscrire</h3>
+          <div class="entry-sub">Inscrire une équipe en Double Dames ou Double Hommes.</div>
+        </a>
+
+        <a class="entry-card card-navy" href="public/equipes.html">
+          <div class="entry-kicker">Participants</div>
+          <h3 class="entry-title">Équipes</h3>
+          <div class="entry-sub">Voir les équipes engagées par épreuve.</div>
+        </a>
+
+        <a class="entry-card card-sun" href="public/programmation.html">
+          <div class="entry-kicker">Planning</div>
+          <h3 class="entry-title">Programmation</h3>
+          <div class="entry-sub">Horaires, terrains et déroulement du tournoi.</div>
+        </a>
+
+        <a class="entry-card card-pink" href="public/matchs-direct.html">
+          <div class="entry-kicker">Live</div>
+          <h3 class="entry-title">Matchs en direct</h3>
+          <div class="entry-sub">Suivre les matchs et les scores en direct.</div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="panel">
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title">Infos pratiques</h2>
+          <p class="panel-text">Règlement, tirage, restauration et contact organisation.</p>
+        </div>
+        <div class="panel-tag">Infos</div>
+      </div>
+
+      <div class="grid-main">
+        <a class="entry-card card-navy" href="public/reglement.html">
+          <div class="entry-kicker">Compétition</div>
+          <h3 class="entry-title">Règlement</h3>
+          <div class="entry-sub">Formats, règles et conditions de participation.</div>
+        </a>
+
+        <a class="entry-card card-green" href="public/tirage.html">
+          <div class="entry-kicker">Tableaux</div>
+          <h3 class="entry-title">Tirage</h3>
+          <div class="entry-sub">Consulter le tirage et la composition des tableaux.</div>
+        </a>
+
+        <a class="entry-card card-sun" href="public/restauration.html">
+          <div class="entry-kicker">Sur place</div>
+          <h3 class="entry-title">Restauration</h3>
+          <div class="entry-sub">Repas, buvette et infos restauration.</div>
+        </a>
+
+        <a class="entry-card card-white" href="public/contact.html">
+          <div class="entry-kicker">Besoin d’aide</div>
+          <h3 class="entry-title">Contact</h3>
+          <div class="entry-sub">Contacter l’organisation du tournoi.</div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="panel">
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title">Espace organisateurs</h2>
+          <p class="panel-text">Accès sécurisé pour l’administration, le juge-arbitre et les arbitres.</p>
+        </div>
+        <div class="panel-tag">Sécurisé</div>
+      </div>
+
+      <div class="grid-main">
+        <a class="entry-card card-green" href="#" id="btnAdmin">
+          <div class="entry-kicker">Gestion</div>
+          <h3 class="entry-title">Admin</h3>
+          <div class="entry-sub">Administration générale du tournoi.</div>
+        </a>
+
+        <a class="entry-card card-navy" href="#" id="btnJAT">
+          <div class="entry-kicker">Officiel</div>
+          <h3 class="entry-title">Juge-arbitre</h3>
+          <div class="entry-sub">Gestion sportive et suivi officiel.</div>
+        </a>
+
+        <a class="entry-card card-pink" href="#" id="btnArbitre">
+          <div class="entry-kicker">Terrain</div>
+          <h3 class="entry-title">Arbitre</h3>
+          <div class="entry-sub">Suivi terrain et saisies autorisées.</div>
+        </a>
+
+        <a class="entry-card card-white" href="public/equipes.html">
+          <div class="entry-kicker">Lecture</div>
+          <h3 class="entry-title">Vue publique</h3>
+          <div class="entry-sub">Retour aux informations visibles par tous.</div>
+        </a>
+      </div>
+
+      <div class="status-box">
+        <strong>Statut :</strong>
+        <span id="authHint">Vérification de la connexion…</span>
+        <span id="roleBadge" class="role-badge none" style="display:none;"></span>
+      </div>
+
+      <div style="margin-top:12px;">
+        <a class="mini-link" href="#" id="btnLogout">🚪 Déconnexion</a>
+      </div>
+    </div>
+  </section>
+
+<section class="section"><div class="panel flyer-panel"><div><p class="edition-label">LE RENDEZ-VOUS BEACH TENNIS</p><h2>Les Vendredis du BT Suzini</h2><p>Retrouvez le projet d’affiche du circuit. Cette troisième étape se joue le 6 novembre au TC Suzini.</p><p class="panel-text">BT250 · Début à 18 h · 10 € par joueur · Clôture des inscriptions le 4 novembre 2026.</p></div><a href="assets/img/flyer-projet.jpeg"><img src="assets/img/flyer-projet.jpeg" alt="Projet de flyer des Vendredis du BT Suzini" loading="lazy"></a></div></section></main>
+
+<script type="module" src="assets/js/public-header.js"></script>
+
+
+
+<script type="module" src="assets/js/preview.js"></script><script type="module" src="assets/js/pull-refresh.js"></script><script type="module" src="assets/js/install.js"></script><script type="module" src="assets/js/supabase-site.js"></script></body>
+</html>

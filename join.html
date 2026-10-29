@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Activation compte — Les Vendredis du BT Suzini — Étape 3</title>
+
+  <style>
+    :root{
+      --palm:#0b7a3b;
+      --palm-dark:#064d28;
+      --palm-light:#15a658;
+      --navy:#06284a;
+      --navy-dark:#03172b;
+      --sun:#ffd21f;
+      --sun-dark:#f3b800;
+      --sand-light:#fff4d4;
+      --text:#17212b;
+      --muted:#667085;
+      --shadow:0 16px 40px rgba(16,24,40,.12);
+      --header-h:150px;
+      --container:1180px;
+    }
+
+    *{box-sizing:border-box;}
+
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 10% 0%, rgba(255,210,31,.22), transparent 26%),
+        radial-gradient(circle at 90% 8%, rgba(11,122,59,.18), transparent 26%),
+        linear-gradient(180deg,#eaf9ff 0%,#fff4d4 52%,#fff 100%);
+      min-height:100vh;
+    }
+
+    img{display:block;max-width:100%;}
+
+    .container{
+      width:min(var(--container), calc(100% - 28px));
+      margin:0 auto;
+    }
+
+    .site-header{
+      position:fixed;
+      top:0;
+      left:0;
+      right:0;
+      z-index:1000;
+      background:
+        radial-gradient(circle at 8% 0%, rgba(255,210,31,.30), transparent 28%),
+        linear-gradient(135deg,var(--palm-dark),var(--palm),var(--palm-light));
+      box-shadow:0 10px 26px rgba(6,77,40,.34);
+      border-bottom:4px solid var(--sun);
+    }
+
+    .header-inner{
+      min-height:var(--header-h);
+      display:grid;
+      grid-template-columns:80px 1fr 80px;
+      align-items:center;
+      gap:10px 18px;
+      padding:12px 0;
+    }
+
+    .header-logo{
+      width:80px;
+      height:80px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:22px;
+      background:rgba(255,255,255,.12);
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.18);
+    }
+
+    .header-logo img{
+      max-width:100%;
+      max-height:100%;
+      object-fit:contain;
+      filter:drop-shadow(0 6px 10px rgba(0,0,0,.22));
+    }
+
+    .header-title{
+      text-align:center;
+      color:#fff;
+      text-shadow:0 6px 18px rgba(0,0,0,.26);
+    }
+
+    .header-title strong{
+      display:block;
+      font-size:clamp(24px,5vw,44px);
+      line-height:.95;
+      letter-spacing:-.04em;
+      text-transform:uppercase;
+      font-weight:1000;
+    }
+
+    .header-title span{
+      display:block;
+      margin-top:8px;
+      font-size:13px;
+      font-weight:1000;
+      color:var(--sun);
+      text-transform:uppercase;
+      letter-spacing:.12em;
+    }
+
+    main{
+      min-height:100vh;
+      padding-top:calc(var(--header-h) + 28px);
+      padding-bottom:38px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .card{
+      width:min(520px, 100%);
+      background:rgba(255,255,255,.96);
+      border:1px solid rgba(255,255,255,.65);
+      border-radius:30px;
+      box-shadow:var(--shadow);
+      padding:24px;
+      display:grid;
+      gap:16px;
+    }
+
+    .card-head{
+      text-align:center;
+      display:grid;
+      gap:8px;
+    }
+
+    h1{
+      margin:0;
+      font-size:clamp(28px,7vw,42px);
+      line-height:1;
+      letter-spacing:-.04em;
+      font-weight:1000;
+      color:var(--navy-dark);
+    }
+
+    .sub{
+      margin:0;
+      color:var(--muted);
+      font-size:15px;
+      line-height:1.45;
+      font-weight:700;
+    }
+
+    .field{
+      display:grid;
+      gap:8px;
+    }
+
+    .field label{
+      font-weight:1000;
+      color:#1c2430;
+    }
+
+    input{
+      width:100%;
+      min-height:56px;
+      border-radius:18px;
+      border:1px solid rgba(16,24,40,.12);
+      background:#fff;
+      padding:0 15px;
+      font-size:16px;
+      color:#17212b;
+      outline:none;
+      font-family:inherit;
+      font-weight:700;
+    }
+
+    input:focus{
+      border-color:rgba(11,122,59,.55);
+      box-shadow:0 0 0 4px rgba(11,122,59,.12);
+    }
+
+    .password-wrap{
+      position:relative;
+    }
+
+    .password-wrap input{
+      padding-right:58px;
+    }
+
+    .eye-btn{
+      position:absolute;
+      right:8px;
+      top:50%;
+      transform:translateY(-50%);
+      width:42px;
+      height:42px;
+      border:none;
+      border-radius:999px;
+      background:#fff4d4;
+      color:var(--navy-dark);
+      font-size:20px;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:0;
+    }
+
+    .btn{
+      appearance:none;
+      border:none;
+      min-height:58px;
+      border-radius:18px;
+      padding:14px 18px;
+      font-size:16px;
+      font-weight:1000;
+      cursor:pointer;
+      background:linear-gradient(180deg,var(--sun),var(--sun-dark));
+      color:var(--navy-dark);
+      box-shadow:0 12px 22px rgba(255,210,31,.22);
+    }
+
+    .btn:disabled{
+      opacity:.55;
+      cursor:not-allowed;
+    }
+
+    .status{
+      min-height:22px;
+      text-align:center;
+      color:var(--muted);
+      font-size:15px;
+      font-weight:800;
+      line-height:1.45;
+    }
+
+    .status.ok{color:#087a35;}
+    .status.err{color:#a32323;}
+
+    @media (min-width:760px){
+      :root{--header-h:158px;}
+
+      .header-inner{
+        grid-template-columns:100px 1fr 100px;
+      }
+
+      .header-logo{
+        width:96px;
+        height:80px;
+      }
+
+      .card{
+        padding:28px;
+      }
+    }
+  </style>
+<meta name="theme-color" content="#06393d"><meta name="description" content="Les Vendredis du BT Suzini, étape 3. Double dames et double hommes au TC Suzini le vendredi 6 novembre 2026."><link rel="manifest" href="manifest.webmanifest"><link rel="stylesheet" href="assets/site.css"><link rel="stylesheet" href="assets/install.css"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="BT Suzini"><link rel="apple-touch-icon" href="assets/img/icon-180.png"></head>
+
+<body data-space="public">
+
+<header class="site-header">
+  <div class="container header-inner">
+    <div class="header-logo">
+      <img src="assets/img/logo-suzini.png" alt="Tennis Club de Suzini">
+    </div>
+
+    <div class="header-title">
+      <strong>Activation<br>Compte</strong>
+      <span>Les Vendredis du BT Suzini — Étape 3</span>
+    </div>
+
+    <div class="header-logo">
+      <img src="assets/img/logo-julyana.png" alt="Jul’Yana BT">
+    </div>
+  </div>
+</header>
+
+<main class="container"><div class="install-info"><button type="button" data-install>＋ Sur mon écran d’accueil</button></div>
+  <div class="card">
+
+    <div class="card-head">
+      <h1>🎾 Activation compte</h1>
+      <p class="sub">
+        Renseigne ton email et choisis ton mot de passe pour activer ton accès organisateur.
+      </p>
+    </div>
+
+    <div class="field">
+      <label for="email">Email</label>
+      <input id="email" type="email" placeholder="ton.email@exemple.com" autocomplete="email" required>
+    </div>
+
+    <div class="field">
+      <label for="password">Mot de passe</label>
+      <div class="password-wrap">
+        <input id="password" type="password" placeholder="Minimum 6 caractères" autocomplete="new-password" required>
+        <button class="eye-btn" id="togglePassword" type="button" aria-label="Afficher ou masquer le mot de passe">👁️</button>
+      </div>
+    </div>
+
+    <button class="btn" id="btnCreate">Créer mon compte</button>
+
+    <div class="status" id="status"></div>
+  </div>
+</main>
+
+
+
+<script type="module" src="assets/js/preview.js"></script><script type="module" src="assets/js/pull-refresh.js"></script><script type="module" src="assets/js/install.js"></script><script type="module" src="assets/js/supabase-site.js"></script></body>
+</html>
