@@ -19,9 +19,9 @@ if(form){
  for(const id of ['p1Phone','p2Phone'])document.getElementById(id).maxLength=24;
  for(const id of ['p1Licence','p2Licence']){const input=document.getElementById(id);input.maxLength=8;input.pattern='[0-9]{7}[A-Za-z]';}
  const privacy=document.createElement('p');privacy.className='panel-text';privacy.textContent='Les prénoms et initiales des noms sont affichés dans la liste des équipes. Les numéros de licence et de téléphone sont réservés à l’organisation pour la gestion de ce tournoi.';button.before(privacy);
- form.addEventListener('submit',async event=>{event.preventDefault();if(!registrationOpen||button.disabled||!form.reportValidity())return;button.disabled=true;status.textContent='Enregistrement en cours…';
+ form.addEventListener('submit',async event=>{event.preventDefault();if(!registrationOpen||button.disabled||!form.reportValidity())return;button.disabled=true;form.dataset.submitting='true';status.textContent='Enregistrement en cours…';
  try{await rpc('suzini_e3_register',{p_team:Object.fromEntries(new FormData(form))});document.getElementById('successBox').style.display='block';status.textContent='Inscription enregistrée.';form.reset();}
- catch(error){status.textContent=error.message;}finally{button.disabled=!registrationOpen;}});
+ catch(error){status.textContent=error.message;}finally{delete form.dataset.submitting;button.disabled=!registrationOpen;}});
 }
 const list=document.getElementById('rankedList');
 if(list){let teams=[],division=localStorage.getItem('suzini_etape3_public_epreuve')||'DM';
