@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Règlement — Les Vendredis du BT Suzini — Étape 3</title>
+
+  <style>
+    :root{
+      --clay:#c65a1e; --clay-dark:#8e3a13; --clay-light:#ee8a3a;
+      --sky:#27bced; --aqua:#00a9c8; --blue:#075b9a; --blue-dark:#063b72;
+      --text:#17212b; --muted:#667085; --card:rgba(255,255,255,.94);
+      --shadow:0 16px 40px rgba(16,24,40,.12);
+      --container:1180px;
+    }
+
+    *{box-sizing:border-box;}
+
+    html,body{max-width:100%;overflow-x:hidden;}
+
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 20% 0%, rgba(39,188,237,.22), transparent 28%),
+        radial-gradient(circle at 85% 10%, rgba(0,169,200,.16), transparent 26%),
+        linear-gradient(180deg,#f4fcff 0%,#e9f8ff 48%,#ffffff 100%);
+    }
+
+    a{color:inherit;text-decoration:none;}
+    .container{width:min(var(--container), calc(100% - 28px));margin:0 auto;}
+
+    main{
+      padding-top:calc(var(--public-total-top, 230px) + 30px);
+      padding-bottom:42px;
+    }
+
+    .section{margin-top:16px;}
+
+    .panel{
+      background:var(--card);
+      border:1px solid rgba(255,255,255,.6);
+      border-radius:24px;
+      box-shadow:var(--shadow);
+      padding:18px;
+    }
+
+    .panel-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      margin-bottom:14px;
+    }
+
+    .panel-title{
+      margin:0;
+      font-size:26px;
+      line-height:1.05;
+      letter-spacing:-.03em;
+    }
+
+    .panel-text{
+      margin:6px 0 0;
+      color:var(--muted);
+      font-size:15px;
+      line-height:1.35;
+    }
+
+    .panel-tag{
+      flex-shrink:0;
+      padding:8px 13px;
+      border-radius:999px;
+      background:#e4f7ff;
+      color:var(--blue-dark);
+      font-size:12px;
+      font-weight:1000;
+      text-transform:uppercase;
+      letter-spacing:.06em;
+    }
+
+    .controls{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:10px;
+      margin-top:14px;
+    }
+
+    .toggle-line{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .toggle-btn{
+      appearance:none;
+      border:1px solid rgba(7,91,154,.14);
+      background:#fff;
+      border-radius:999px;
+      min-height:42px;
+      padding:10px 15px;
+      font-size:14px;
+      font-weight:1000;
+      cursor:pointer;
+      color:#1c2430;
+      text-align:center;
+      box-shadow:0 6px 14px rgba(16,24,40,.05);
+      white-space:nowrap;
+      font-family:inherit;
+    }
+
+    .toggle-btn[aria-selected="true"]{
+      background:linear-gradient(180deg,var(--blue),var(--blue-dark));
+      color:#fff;
+      border-color:var(--blue);
+      box-shadow:0 10px 22px rgba(7,91,154,.22);
+    }
+
+    .intro-box{
+      margin-top:14px;
+      padding:15px 16px;
+      border-radius:18px;
+      background:linear-gradient(135deg,rgba(39,188,237,.12),rgba(198,90,30,.08));
+      border:1px solid rgba(39,188,237,.22);
+      color:#475467;
+      font-size:14px;
+      line-height:1.5;
+    }
+
+    .intro-box strong{color:var(--blue-dark);}
+
+    .content{
+      margin-top:16px;
+      display:grid;
+      gap:14px;
+    }
+
+    .rule-card{
+      border-radius:18px;
+      padding:15px 16px;
+      background:#fff;
+      border:1px solid rgba(16,24,40,.08);
+      box-shadow:0 8px 18px rgba(16,24,40,.05);
+    }
+
+    .rule-card h2{
+      margin:0 0 8px;
+      color:var(--blue-dark);
+      font-size:20px;
+      line-height:1.15;
+      letter-spacing:-.02em;
+    }
+
+    .rule-card p{
+      margin:8px 0 0;
+      color:#344054;
+      font-size:14px;
+      line-height:1.55;
+    }
+
+    .rule-card ul{
+      margin:8px 0 0;
+      padding-left:20px;
+      color:#344054;
+      font-size:14px;
+      line-height:1.55;
+    }
+
+    .summary-grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:10px;
+      margin-top:16px;
+    }
+
+    .summary-card{
+      border-radius:16px;
+      padding:13px 14px;
+      background:#fff;
+      border:1px solid rgba(16,24,40,.08);
+      box-shadow:0 6px 14px rgba(16,24,40,.04);
+    }
+
+    .summary-card strong{
+      display:block;
+      color:var(--blue-dark);
+      margin-bottom:5px;
+      font-weight:1000;
+    }
+
+    .summary-card span{
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.4;
+    }
+
+    .hidden{display:none !important;}
+
+    @media (min-width:760px){
+      .panel{padding:22px;}
+      .controls{grid-template-columns:1fr 1fr;align-items:center;}
+      .summary-grid{grid-template-columns:repeat(3,1fr);}
+    }
+
+    @media (max-width:759px){
+      main{
+        padding-top:calc(var(--public-total-top, 222px) + 28px);
+      }
+
+      .panel-title{font-size:24px;}
+      .panel-head{flex-direction:column;}
+      .toggle-btn{flex:1;}
+    }
+  </style>
+<meta name="theme-color" content="#082d45"><meta name="description" content="Les Vendredis du BT Suzini, étape 3. Double dames et double hommes au TC Suzini le vendredi 6 novembre 2026."><link rel="manifest" href="../manifest.webmanifest?v=2"><link rel="stylesheet" href="../assets/site.css?v=14"><link rel="stylesheet" href="../assets/install.css?v=3"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Vendredis Suzini"><link rel="apple-touch-icon" href="../assets/img/vendredis-suzini-180-v2.png"></head>
+
+<body data-zone-selector="none">
+
+<div id="publicHeader"></div>
+
+<main class="container"><section class="section"><div class="panel"><h1 class="panel-title">Règlement</h1><p class="panel-text">Double dames et double hommes au TC Suzini, vendredi 6 novembre 2026. Tournois BT250. Début à 18 h. Tarif : 10 € par joueur, soit 20 € par équipe. Clôture des inscriptions le 4 novembre 2026. Le règlement sportif détaillé sera précisé ici.</p><p><a href="../index.html">← Retour à l’accueil</a></p></div></section></main>
+
+<script type="module" src="../assets/js/public-header.js?v=14"></script>
+
+
+
+<script type="module" src="../assets/js/preview.js?v=6"></script><script type="module" src="../assets/js/pull-refresh.js?v=5"></script><script type="module" src="../assets/js/install.js?v=3"></script><script type="module" src="../assets/js/supabase-site.js?v=14"></script><script type="module" src="../assets/js/club-shell.js?v=14"></script></body>
+</html>
