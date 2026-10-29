@@ -1,3 +1,4 @@
+import {rankTeams,createTeamCard} from './team-cards.js?v=13';
 import {config} from './supabase-config.js';
 async function rpc(name,body={}){
  let response;
@@ -24,8 +25,9 @@ if(form){
 }
 const list=document.getElementById('rankedList');
 if(list){let teams=[],division=localStorage.getItem('suzini_etape3_public_epreuve')||'DM';
- function render(){const rows=teams.filter(team=>team.division===division);list.replaceChildren();document.getElementById('currentLabel').textContent=division==='DD'?'Double Dames':'Double Messieurs';document.getElementById('rankedCount').textContent=rows.length;status.textContent=rows.length?'Équipes inscrites à cette étape.':'Aucune équipe inscrite pour le moment.';
- for(const team of rows){const card=document.createElement('article');card.className='preview-message';const title=document.createElement('h2');title.textContent=team.team_name;const players=document.createElement('p');players.textContent=team.player1+' · '+team.player2;card.append(title,players);list.append(card);}}
+ function render(){const rows=rankTeams(teams.filter(team=>team.division===division));list.replaceChildren();document.getElementById('currentLabel').textContent=division==='DD'?'Double Dames':'Double Messieurs';document.getElementById('rankedCount').textContent=rows.length;status.textContent=rows.length?'Équipes inscrites à cette étape.':'Aucune équipe inscrite pour le moment.';
+ rows.forEach((team,index)=>list.append(createTeamCard(team,index+1)));}
+
  document.addEventListener('publicZoneChange',event=>{division=event.detail.epreuve;render();});
  rpc('suzini_e3_teams').then(data=>{teams=data||[];render();}).catch(error=>{status.textContent=error.message;});
 }
