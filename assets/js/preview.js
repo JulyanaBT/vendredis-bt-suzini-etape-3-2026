@@ -1,5 +1,5 @@
 const main=document.querySelector('main');
-if(main&&document.body.dataset.page!=='accueil'){const note=document.createElement('aside');note.className='preview-note';note.setAttribute('role','status');note.textContent='Site en préparation · Les inscriptions ne sont pas encore ouvertes.';note.dataset.siteStatus='' ;main.prepend(note);}
+if(main&&!['accueil','inscription'].includes(document.body.dataset.page)){const note=document.createElement('aside');note.className='preview-note';note.setAttribute('role','status');note.textContent='Site en préparation · Les inscriptions ne sont pas encore ouvertes.';note.dataset.siteStatus='' ;main.prepend(note);}
 for(const form of document.forms){if(form.id==='signupForm')continue;form.addEventListener('submit',event=>{if(form.method!=='dialog')event.preventDefault();});}
 for(const id of ['btnAdmin','btnJAT','btnArbitre']){const el=document.getElementById(id);if(el)el.addEventListener('click',event=>{event.preventDefault();document.getElementById('authHint').textContent='Espace conservé depuis TSCK. Les accès de cette édition restent à configurer.';});}
 const hint=document.getElementById('authHint');if(hint)hint.textContent='Accès organisateurs en préparation.';
