@@ -1,7 +1,7 @@
 export const COURTS={DM:{name:'🐝 Manon Queen Bee',className:'court-manon'},DD:{name:'🌶️ Lisa de los pimentos',className:'court-lisa'}};
 export const MATCH_MINUTES=25, TRANSITION_MINUTES=5;
 export function formatFor(count){
- if(!Number.isInteger(count)||count<3||count>8)return null;
+ if(!Number.isInteger(count)||count<4||count>8)return null;
  const sizes=count<=5?[count]:count===6?[3,3]:[];
  const description=count<=5?'Une poule unique : chaque équipe rencontre toutes les autres. Le classement de la poule constitue le classement final. TS1 et TS2 se rencontrent lors du dernier match.':count===6?'Deux poules de 3, avec TS1 et TS2 dans des poules différentes. Demi-finales croisées entre les 1ers et 2es, puis finale et match pour la 3e place. Les deux 3es jouent la 5e place.':count===7?'Trois quarts de finale et TS1 exemptée de quart, placée en bas du tableau ; TS2 est placée en haut. Les quatre qualifiés jouent les places 1 à 4. Les trois perdants des quarts disputent une poule pour les places 5 à 7. Trois matchs par équipe, sauf l’équipe exemptée qui en joue deux.':'Quatre quarts de finale, avec TS2 en haut du tableau et TS1 en bas. Les gagnants jouent les places 1 à 4 ; les perdants les places 5 à 8. Demi-finales et matchs de classement dans les deux branches : trois matchs par équipe.';
  return {count,sizes,title:count<=5?'Poule unique':count===6?'2 poules de 3':'Quarts et matchs de classement',description,poolMatches:sizes.reduce((n,s)=>n+s*(s-1)/2,0),totalMatches:count<=5?count*(count-1)/2:count===6?11:count===7?10:12};

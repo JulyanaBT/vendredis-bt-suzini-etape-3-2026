@@ -1,5 +1,5 @@
 import {rpc} from './supabase-site.js?v=29';
-import {formatFor,COURTS,groupsFor,scheduleDraws,slotFor} from './tournament-format.js?v=32';
+import {formatFor,COURTS,groupsFor,scheduleDraws,slotFor} from './tournament-format.js?v=36';
 const tabs=[...document.querySelectorAll('[data-programme]')],panel=document.getElementById('programme-panel');
 const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text)n.textContent=text;if(cls)n.className=cls;return n;};
 let division='DM',selected='chrono',data=null,teams=[],error='',clubClient=null,clubReady=false;
@@ -17,9 +17,9 @@ function render(){
  const overview=el('div','','programme-overview');overview.append(el('strong',`${d.count} / 8 équipes`),el('span',d.validated_at?'Format validé par le Club':'Format à valider à la clôture'));panel.append(overview);
  panel.append(el('p','Format 3 hors finales, format 4 pour les finales. Repos FFT à intégrer au chrono : les anciennes simulations à 25 + 5 min ne sont pas des convocations.','rules-review-note'));
  panel.append(el('p','Tirage au sort : jeudi 5 novembre à 14 h (Guyane, UTC−3).','programme-draw-date'));
- if(f){const box=el('section','','programme-format');box.append(el('h2',f.title),el('p',f.description),el('small',`${f.totalMatches} rencontres prévues · horaires en révision FFT`));panel.append(box);}else{panel.append(el('p','Le format pourra être validé avec 3 à 8 équipes.','programme-notice'));}
+ if(f){const box=el('section','','programme-format');box.append(el('h2',f.title),el('p',f.description),el('small',`${f.totalMatches} rencontres prévues · horaires en révision FFT`));panel.append(box);}else{panel.append(el('p','Minimum 4 équipes pour maintenir ce tableau. Avec moins de 4 équipes à la clôture, il sera annulé.','programme-notice'));}
  const guide=el('details','','programme-guide');guide.append(el('summary','Formats selon le nombre d’équipes'));
- for(const n of [3,4,5,6,7,8]){const plan=formatFor(n);guide.append(el('h3',n+' équipes · '+plan.title),el('p',plan.description));}panel.append(guide);
+ for(const n of [4,5,6,7,8]){const plan=formatFor(n);guide.append(el('h3',n+' équipes · '+plan.title),el('p',plan.description));}panel.append(guide);
  panel.append(el('p','Début prévu à 18 h en Guyane. Les matchs se jouent au score, sans limite à 25 minutes. Le repos des paires est distinct des 5 minutes de rotation du terrain. Dès qu’un tableau termine, son terrain peut être réaffecté.','programme-notice'));
  panel.append(el('p','Têtes de série : les deux meilleurs classements globaux d’équipe (somme des classements individuels, total le plus faible). En cas d’égalité, départage au tirage.','programme-notice'));
  if(d.drawn_at)panel.append(el('p',(d.seeds||[]).map(id=>teamName(id)).join(' / '),'programme-notice'));

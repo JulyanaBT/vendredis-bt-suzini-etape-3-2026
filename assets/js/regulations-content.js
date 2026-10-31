@@ -45,7 +45,7 @@ export const RULES = {
       },
       {
         "title": "Effectif minimal et maintien des épreuves",
-        "body": "<p>L’article 210 impose <strong>au moins quatre paires</strong> pour qu’une épreuve puisse être homologuée. Ce minimum s’apprécie séparément pour le DD et le DM.</p><p>À trois paires, une poule amicale peut être envisagée, mais <strong>elle ne peut pas être annoncée comme un BT250 homologué ni ouvrir droit aux points correspondants</strong>. Le comité doit alors annoncer clairement le maintien hors homologation, l’adaptation ou l’annulation de l’épreuve.</p><p>Les formules suivantes sont le projet sportif retenu. Le juge-arbitre vérifie leur conformité, les formats et le nombre de matchs de chaque paire avant leur mise en œuvre.</p>"
+        "body": "<p>Chaque tableau, double dames et double hommes, est maintenu uniquement avec <strong>au moins quatre équipes</strong>, et accueille au maximum huit équipes.</p><p><strong>Si moins de quatre équipes sont inscrites à la clôture, le tableau concerné est annulé.</strong> Aucune poule amicale ni épreuve de remplacement à trois équipes n’est prévue. Cette décision est prise séparément pour les dames et les hommes et annoncée aux participants.</p><p>Le minimum de quatre paires correspond à l’exigence fédérale pour l’homologation. Le juge-arbitre valide les effectifs, la formule et les formats avant le tirage.</p>"
       },
       {
         "title": "Formules sportives par effectif",
@@ -109,6 +109,10 @@ export const RULES = {
       {
         "title": "Tournoi",
         "text": "Vendredi 6 novembre 2026 dès 18 h au TC Suzini. DD et DM seniors, 8 paires maximum par tableau."
+      },
+      {
+        "title": "Effectif minimum",
+        "text": "4 équipes minimum par tableau. À moins de 4 équipes à la clôture, le tableau concerné est annulé."
       },
       {
         "title": "Participation",
@@ -198,7 +202,7 @@ export const RULES = {
       },
       {
         "title": "Número mínimo e manutenção das provas",
-        "body": "<p>O artigo 210 exige <strong>pelo menos quatro duplas</strong> para homologar uma prova. O mínimo é verificado separadamente na DD e na DM.</p><p>Com três duplas, pode ser organizado um grupo amistoso, mas <strong>não se pode apresentá-lo como BT250 homologado nem conceder os pontos correspondentes</strong>. O comitê deve informar claramente se a prova será realizada sem homologação, adaptada ou cancelada.</p><p>As fórmulas abaixo constituem o projeto esportivo escolhido. O árbitro-geral verifica a conformidade, os formatos e a quantidade de jogos de cada dupla antes da realização.</p>"
+        "body": "<p>Cada chave, feminina e masculina, só será realizada com <strong>pelo menos quatro duplas</strong>, com limite de oito duplas.</p><p><strong>Se houver menos de quatro duplas inscritas no encerramento, a chave correspondente será cancelada.</strong> Não está previsto grupo amistoso nem prova substituta com três duplas. A decisão é tomada separadamente para mulheres e homens e comunicada aos participantes.</p><p>O mínimo de quatro duplas corresponde à exigência federal de homologação. O árbitro-geral valida o número de participantes, a fórmula e os formatos antes do sorteio.</p>"
       },
       {
         "title": "Fórmulas conforme o número de duplas",
@@ -262,6 +266,10 @@ export const RULES = {
       {
         "title": "Torneio",
         "text": "Sexta-feira, 6 de novembro de 2026, a partir das 18h, no TC Suzini. DD e DM sêniores, até 8 duplas por chave."
+      },
+      {
+        "title": "Número mínimo",
+        "text": "Mínimo de 4 duplas por chave. Com menos de 4 duplas no encerramento, a chave correspondente será cancelada."
       },
       {
         "title": "Participação",
