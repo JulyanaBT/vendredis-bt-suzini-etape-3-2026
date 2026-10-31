@@ -52,3 +52,5 @@ main.flyer-main{padding-top:0!important}.flyer-controls{position:sticky;top:0;z-
 .sponsor-grid{grid-template-columns:repeat(6,minmax(0,1fr));max-width:760px}.sponsor-logo img{max-width:140px}
 
 @media(max-width:600px){.sponsor-grid{grid-template-columns:repeat(3,minmax(0,1fr));column-gap:10px;row-gap:2px}.sponsor-logo{height:30px;min-height:30px}}
+
+.urban-food{text-align:center;padding:20px}.urban-food-logo{display:block;width:min(100%,380px);height:auto;margin:0 auto 20px;border-radius:10px}.urban-food h1{margin:10px 0}.urban-food p{line-height:1.5}.urban-instagram{display:inline-block;margin-top:12px;padding:12px 18px;border-radius:12px;background:#087f90;color:white;font-weight:700;text-decoration:none}

@@ -1,4 +1,4 @@
-import {rankTeams,createTeamCard} from './team-cards.js?v=13';
+import {rankTeams,createTeamCard} from './team-cards.js?v=18';
 import {config} from './supabase-config.js';
 async function rpc(name,body={}){
  let response;

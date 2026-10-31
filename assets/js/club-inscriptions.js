@@ -1,5 +1,5 @@
 import {hasRankingConflict,rankingCounts,createRankingDetails} from './ranking-info.js?v=16';
-import {createTeamCard,rankTeams} from './team-cards.js?v=13';
+import {createTeamCard,rankTeams} from './team-cards.js?v=18';
 if(location.hash.startsWith('#compte'))location.replace(new URL('compte.html',location.href));
 import {client,signIn} from './private-client.js';
 const $=id=>document.getElementById(id),login=$('adminLogin'),content=$('adminContent'),status=$('adminStatus');
