@@ -8,18 +8,19 @@ if(!COURTS[division])division='DM';
 const isClub=document.body.dataset.space==='club';
 function current(){return data?.divisions?.find(d=>d.division===division);}
 function teamName(id){const name=teams.find(t=>t.id===id)?.team_name||(/^[0-9a-f]{8}-/i.test(id||'')?'Équipe à confirmer':id),seed=current()?.seeds?.indexOf(id);return seed>=0?name+' · TS'+(seed+1):name;}
-function matchCard(m,index){const court=COURTS[m.court],c=el('article','','programme-match '+court.className),slot=slotFor(m.slot);c.append(el('small',`${slot.date} · ${slot.start} – ${slot.end} · Guyane`,'programme-slot'),el('small',court.name),el('small',`${index+1}. ${m.id} · ${m.stage}`),el('strong',`${teamName(m.a)}  contre  ${teamName(m.b)}`));return c;}
+function matchCard(m,index){const court=COURTS[m.court],c=el('article','','programme-match '+court.className),slot=slotFor(m.slot);c.append(el('small','Horaire à confirmer · Guyane','programme-slot'),el('small',court.name),el('small',`${index+1}. ${m.id} · ${m.stage}`),el('strong',`${teamName(m.a)}  contre  ${teamName(m.b)}`));return c;}
 function render(){
  panel.replaceChildren();panel.classList.remove('programme-placeholder');const d=current(),f=d?formatFor(d.count):null,court=COURTS[division],schedule=data?scheduleDraws(data.divisions).filter(m=>m.division===division):[],last=schedule.at(-1),finish=last?slotFor(last.slot):null;
  panel.append(el('p',division==='DD'?'Double dames':'Double hommes','programme-eyebrow'),el('div',court.name,'programme-court '+court.className));
  if(error){panel.append(el('p',error,'programme-notice'));return;}
  if(!d){panel.append(el('p','Chargement du programme…'));return;}
  const overview=el('div','','programme-overview');overview.append(el('strong',`${d.count} / 8 équipes`),el('span',d.validated_at?'Format validé par le Club':'Format à valider à la clôture'));panel.append(overview);
+ panel.append(el('p','Format 3 hors finales, format 4 pour les finales. Repos FFT à intégrer au chrono : les anciennes simulations à 25 + 5 min ne sont pas des convocations.','rules-review-note'));
  panel.append(el('p','Tirage au sort : jeudi 5 novembre à 14 h (Guyane, UTC−3).','programme-draw-date'));
- if(f){const box=el('section','','programme-format');box.append(el('h2',f.title),el('p',f.description),el('small',`${f.totalMatches} rencontres · fin prévisionnelle ${finish.end}${finish.endDay?' le samedi 7 novembre':' le vendredi 6 novembre'} (Guyane)`));panel.append(box);}else{panel.append(el('p','Le format pourra être validé avec 3 à 8 équipes.','programme-notice'));}
+ if(f){const box=el('section','','programme-format');box.append(el('h2',f.title),el('p',f.description),el('small',`${f.totalMatches} rencontres prévues · horaires en révision FFT`));panel.append(box);}else{panel.append(el('p','Le format pourra être validé avec 3 à 8 équipes.','programme-notice'));}
  const guide=el('details','','programme-guide');guide.append(el('summary','Formats selon le nombre d’équipes'));
  for(const n of [3,4,5,6,7,8]){const plan=formatFor(n);guide.append(el('h3',n+' équipes · '+plan.title),el('p',plan.description));}panel.append(guide);
- panel.append(el('p','25 min de match + 5 min de transition · départs toutes les 30 min dès 18 h, heure de Guyane. Dès qu’un tableau termine, son terrain rejoint le tableau restant.','programme-notice'));
+ panel.append(el('p','Début prévu à 18 h en Guyane. Les matchs se jouent au score, sans limite à 25 minutes. Le repos des paires est distinct des 5 minutes de rotation du terrain. Dès qu’un tableau termine, son terrain peut être réaffecté.','programme-notice'));
  panel.append(el('p','Têtes de série : les deux meilleurs classements globaux d’équipe (somme des classements individuels, total le plus faible). En cas d’égalité, départage au tirage.','programme-notice'));
  if(d.drawn_at)panel.append(el('p',(d.seeds||[]).map(id=>teamName(id)).join(' / '),'programme-notice'));
  if(d.count===7)panel.append(el('p',d.drawn_at?'Exemptée de quart, en bas du tableau : '+teamName(d.draw_order[6]):'TS1 est exemptée de quart en bas du tableau ; TS2 est placée en haut.','programme-notice'));
@@ -42,7 +43,7 @@ function render(){
   panel.append(el('p','Aucun résultat pour le moment. Les résultats et classements seront affichés pendant le tournoi.','programme-notice'));
  }else{
   panel.append(el('h2','Chrono prévisionnel'));
-  panel.append(el('p','Horaires en heure de Guyane (UTC−3). Le second terrain est réaffecté après la fin de l’autre tableau ; chaque rencontre indique son terrain. L’ordre reste prévisionnel jusqu’au tirage.','programme-notice'));
+  panel.append(el('p','Ordre et terrains indicatifs, à recalculer avec le juge-arbitre selon les repos réglementaires et la durée réelle des rencontres. Aucune heure de fin n’est garantie.','programme-notice'));
   schedule.forEach((m,i)=>panel.append(matchCard(m,i)));
  }
 }
