@@ -1,6 +1,6 @@
 import {rpc} from './supabase-site.js?v=21';
 import {displayPlayerName,displayFirstName} from './team-cards.js?v=18';
-import {config} from './supabase-config.js?v=22';
+import {config} from './supabase-config.js?v=23';
 const paymentUrl=config.paymentUrl;
 if(paymentUrl){const a=document.getElementById('paymentLink');a.href=paymentUrl;a.removeAttribute('aria-disabled');a.removeAttribute('tabindex');a.textContent='Payer en ligne · 10 € par joueur';}
 const $=id=>document.getElementById(id),key='suzini-e3-payment-receipt';
