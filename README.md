@@ -16,3 +16,13 @@ Ouvrir http://127.0.0.1:8893.
 Navigation publique, sélection de l’épreuve, contenu de présentation et manifeste d’application disponibles. Les 26 pages de l’architecture TSCK sont conservées. Firebase est retiré. Le module Supabase utilise le projet existant et un nouvel événement 20261106-0000-4000-8000-000000000003. Les équipes BT250 sont dans une table distincte, protégée par RLS ; les RPC publics ne révèlent ni licence ni téléphone. Les inscriptions démarrent fermées. Le formulaire ne nécessite pas de compte joueur.
 
 Appliquer supabase/migrations/001_etape3.sql au projet existant une seule fois. Ne pas rejouer les migrations Octobre Rose. Les accès organisateurs, le tirage, la programmation et les résultats restent à porter vers Supabase. Ajouter le contact organisateur et confirmer les détails de restauration. Hébergement GitHub Pages depuis la branche main, dossier racine.
+
+### Programme des doubles (étape 3)
+
+Chaque tableau accepte au maximum 8 équipes. Un verrou sur l’événement protège les inscriptions concurrentes, y compris les changements d’épreuve dans le Club. Le Club valide séparément le format hommes et dames dans Programme, une fois les inscriptions closes (ou après la date limite). Tout changement d’effectif ou réouverture avant tirage annule la validation.
+
+Tirage disponible à partir du 5 novembre 2026 à 14 h en Guyane (17 h UTC). Il enregistre un ordre aléatoire sans placement de têtes de série : poule unique à 3–5, 3+3 à 6, 3+4 à 7, 4+4 à 8. Un seul tirage par tableau ; les équipes du tableau sont ensuite verrouillées. Le programme public affiche les formats et les repères avant tirage, puis les noms d’équipes tirées. Les rencontres finales restent exprimées par leurs qualifications jusqu’aux résultats des poules.
+
+Terrains repris d’Octobre Rose : hommes sur 🐝 Manon Queen Bee (jaune), dames sur 🌶️ Lisa de los pimentos (corail). L’ordre des rencontres est indicatif ; pas d’horaires calculés sans durée de match confirmée. Les règles de départage, le format des matchs et la saisie des résultats restent à définir.
+
+Vérifications : `node tests/tournament-format.test.mjs` ; `tests/programme.sql` (session SQL administrative, transaction annulée en fin de test).
