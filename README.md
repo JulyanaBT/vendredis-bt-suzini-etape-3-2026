@@ -46,3 +46,7 @@ Repos confirmé : 30 minutes minimum pour une même paire entre matchs au format
 Décision du JA : clôture générale locale le 4 novembre à minuit, heure de Guyane, soit le 5 novembre 2026 à 00:00:00−03:00 (03:00 UTC). Aucune nouvelle inscription ensuite, même pour compléter le tableau. Le délai fédéral J−10 reste signalé comme réserve, sans présenter cette décision locale comme une dérogation fédérale.
 
 Officiels déclarés : Jules PARISIS, juge-arbitre non joueur ; Maïté SIRE, juge-arbitre suppléante. Les qualifications fédérales ne sont pas attestées par la seule publication de leurs noms.
+
+### v52 — règlement et recherche partenaire
+Le résumé et le règlement complet partagent treize rubriques, repliées initialement et exclusives à l’ouverture, dans les deux langues et dans les espaces public/club. Le contenu intégral est conservé et regroupé.
+Recherche partenaire inspirée de JulyanaBT/suzini-bt-summer : profils DD/DM, WhatsApp sur action explicite, propositions via lien individuel dans le fragment URL, acceptation/refus et inscription atomique avec reçu de paiement. Les noms/licences ne figurent pas dans la liste publique. Publication avec consentement explicite, retrait protégé par un jeton conservé localement, clôture et capacité contrôlées côté serveur. Tables privées sans accès direct ; RPC public intentionnel avec actions bornées, validation et jetons. Tests transactionnels rollback dans tests/partner-search.sql ; aucun profil de test conservé.
