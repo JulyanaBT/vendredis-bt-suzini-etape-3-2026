@@ -1,0 +1,23 @@
+begin;
+do $$declare f uuid; token uuid; actor uuid; result jsonb; item jsonb;begin
+ update public.events set registration_open=true where id='20261106-0000-4000-8000-000000000003';
+ result:=public.suzini_e3_register_payment('{"epreuve":"DM","p1FirstName":"Fixture","p1LastName":"Paiement","p1Licence":"9999998Z","p2FirstName":"FixtureTwo","p2LastName":"Paiement","p2Licence":"9999999Z"}'::jsonb);
+ f:=(result->>'id')::uuid;token:=(result->>'token')::uuid;
+ perform public.suzini_e3_payment_choice(token,'cash');
+ if not exists(select 1 from suzini_e3_private.payments where team_id=f and choice='cash' and not p1_paid and not p2_paid) then raise exception 'Choice marked paid';end if;
+ begin perform public.suzini_e3_payment_choice(gen_random_uuid(),'cash');raise exception 'TEST invalid token accepted';exception when raise_exception then if sqlerrm<>'Inscription introuvable. Contactez le club.' then raise;end if;end;
+ perform set_config('request.jwt.claims','{}',true);
+ begin perform public.suzini_e3_club('payment',f,'{"player":1,"paid":true}');raise exception 'TEST anon accepted';exception when insufficient_privilege then null;end;
+ select user_id into actor from public.organizers limit 1;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',actor,'role','authenticated')::text,true);
+ perform public.suzini_e3_club('payment',f,'{"player":1,"paid":true}');
+ select x into item from jsonb_array_elements(public.suzini_e3_teams()) x where x->>'id'=f::text;
+ if item->>'paid_players'<>'1' then raise exception 'Partial payment failed';end if;
+ if exists(select 1 from public.bt250_teams where id=f and payment_received) then raise exception 'Partial marked complete';end if;
+ perform public.suzini_e3_club('payment',f,'{"player":2,"paid":true}');
+ if not exists(select 1 from public.bt250_teams where id=f and payment_received) then raise exception 'Complete payment failed';end if;
+ perform public.suzini_e3_club('payment',f,'{"player":1,"paid":false}');
+ if not exists(select 1 from suzini_e3_private.payments where team_id=f and not p1_paid and p2_paid) then raise exception 'Correction failed';end if;
+ if item ? 'receipt_token' or item ? 'choice' then raise exception 'Private data leak';end if;
+end$$;
+rollback;
