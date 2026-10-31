@@ -1,5 +1,5 @@
 import {rpc} from './supabase-site.js?v=29';
-import {formatFor,COURTS,poolFixtures,finalFixtures} from './tournament-format.js?v=29';
+import {formatFor,COURTS,poolFixtures,finalFixtures,slotFor} from './tournament-format.js?v=30';
 const tabs=[...document.querySelectorAll('[data-programme]')],panel=document.getElementById('programme-panel');
 const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text)n.textContent=text;if(cls)n.className=cls;return n;};
 let division='DM',selected='chrono',data=null,teams=[],error='',clubClient=null,clubReady=false;
@@ -9,7 +9,7 @@ const isClub=document.body.dataset.space==='club';
 function current(){return data?.divisions?.find(d=>d.division===division);}
 function teamName(id){return teams.find(t=>t.id===id)?.team_name||'Équipe à confirmer';}
 function groups(d,f){return d.drawn_at?[d.pool_a,...(f.sizes.length>1?[d.pool_b]:[])]:f.sizes.map((size,i)=>Array.from({length:size},(_,n)=>`${String.fromCharCode(65+i)}${n+1}`));}
-function matchCard(m,index,drawn=false){const c=el('article','','programme-match '+COURTS[division].className);c.append(el('small',`${index+1}. ${m.id?m.id+' · ':''}${m.stage}`),el('strong',`${drawn?teamName(m.a):m.a}  contre  ${drawn?teamName(m.b):m.b}`));return c;}
+function matchCard(m,index,drawn=false){const c=el('article','','programme-match '+COURTS[division].className);const slot=slotFor(index);c.append(el('small',`${slot.date} · ${slot.start} – ${slot.end} · Guyane`,'programme-slot'),el('small',`${index+1}. ${m.id?m.id+' · ':''}${m.stage}`),el('strong',`${drawn?teamName(m.a):m.a}  contre  ${drawn?teamName(m.b):m.b}`));return c;}
 function render(){
  panel.replaceChildren();panel.classList.remove('programme-placeholder');const d=current(),f=d?formatFor(d.count):null,court=COURTS[division];
  panel.append(el('p',division==='DD'?'Double dames':'Double hommes','programme-eyebrow'),el('div',court.name,'programme-court '+court.className));
@@ -17,9 +17,10 @@ function render(){
  if(!d){panel.append(el('p','Chargement du programme…'));return;}
  const overview=el('div','','programme-overview');overview.append(el('strong',`${d.count} / 8 équipes`),el('span',d.validated_at?'Format validé par le Club':'Format à valider à la clôture'));panel.append(overview);
  panel.append(el('p','Tirage au sort : jeudi 5 novembre à 14 h (Guyane, UTC−3).','programme-draw-date'));
- if(f){const box=el('section','','programme-format');box.append(el('h2',f.title),el('p',f.description),el('small',`${f.totalMatches} rencontres · 1 terrain dédié à ce tableau`));panel.append(box);}else{panel.append(el('p','Le format pourra être validé avec 3 à 8 équipes.','programme-notice'));}
+ if(f){const box=el('section','','programme-format');box.append(el('h2',f.title),el('p',f.description),el('small',`${f.totalMatches} rencontres · fin prévisionnelle ${slotFor(f.totalMatches-1).end}${slotFor(f.totalMatches-1).endDay?' le samedi 7 novembre':' le vendredi 6 novembre'} (Guyane)`));panel.append(box);}else{panel.append(el('p','Le format pourra être validé avec 3 à 8 équipes.','programme-notice'));}
  const guide=el('details','','programme-guide');guide.append(el('summary','Formats selon le nombre d’équipes'));
  for(const n of [3,4,5,6,7,8]){const plan=formatFor(n);guide.append(el('h3',n+' équipes · '+plan.title),el('p',plan.description));}panel.append(guide);
+ panel.append(el('p','25 min de match + 5 min de transition · départs toutes les 30 min dès 18 h, heure de Guyane.','programme-notice'));
  if(isClub&&clubReady)renderClub(d,f);
  if(!f)return;
  const g=groups(d,f);
@@ -28,12 +29,12 @@ function render(){
   g.forEach((pool,i)=>{const box=el('section','','programme-pool');box.append(el('h3',f.sizes.length===1?'Poule unique':'Poule '+String.fromCharCode(65+i)));const list=el('ol');pool.forEach(id=>list.append(el('li',d.drawn_at?teamName(id):id+' · équipe à tirer')));box.append(list);panel.append(box);});
  }else if(selected==='finales'){
   const matches=finalFixtures(d.count);if(!matches.length)panel.append(el('p','Pas de phase finale : le classement de la poule unique donne le classement final.','programme-notice'));
-  else{panel.append(el('p','Les équipes seront connues après le classement des poules.','programme-notice'));matches.forEach((m,i)=>panel.append(matchCard(m,i)));}
+  else{panel.append(el('p','Les équipes seront connues après le classement des poules.','programme-notice'));matches.forEach((m,i)=>panel.append(matchCard(m,f.poolMatches+i)));}
  }else if(selected==='resultats'){
   panel.append(el('p','Aucun résultat pour le moment. Les classements des poules et les résultats des phases finales seront affichés pendant le tournoi.','programme-notice'));
  }else{
   panel.append(el('h2','Ordre prévisionnel des rencontres'));
-  panel.append(el('p','Début vendredi 6 novembre à 18 h. Horaires détaillés à confirmer ; les rencontres s’enchaînent sur le terrain de ce tableau.','programme-notice'));
+  panel.append(el('p','Horaires prévisionnels en heure de Guyane (UTC−3), sur le terrain de ce tableau. Chaque créneau comprend 25 minutes de match et 5 minutes de transition.','programme-notice'));
   const pool=poolFixtures(g);pool.forEach((m,i)=>panel.append(matchCard(m,i,!!d.drawn_at)));
   finalFixtures(d.count).forEach((m,i)=>panel.append(matchCard(m,pool.length+i)));
  }

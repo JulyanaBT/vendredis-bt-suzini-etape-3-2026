@@ -23,6 +23,6 @@ Chaque tableau accepte au maximum 8 équipes. Un verrou sur l’événement prot
 
 Tirage disponible à partir du 5 novembre 2026 à 14 h en Guyane (17 h UTC). Il enregistre un ordre aléatoire sans placement de têtes de série : poule unique à 3–5, 3+3 à 6, 3+4 à 7, 4+4 à 8. Un seul tirage par tableau ; les équipes du tableau sont ensuite verrouillées. Le programme public affiche les formats et les repères avant tirage, puis les noms d’équipes tirées. Les rencontres finales restent exprimées par leurs qualifications jusqu’aux résultats des poules.
 
-Terrains repris d’Octobre Rose : hommes sur 🐝 Manon Queen Bee (jaune), dames sur 🌶️ Lisa de los pimentos (corail). L’ordre des rencontres est indicatif ; pas d’horaires calculés sans durée de match confirmée. Les règles de départage, le format des matchs et la saisie des résultats restent à définir.
+Terrains repris d’Octobre Rose : hommes sur 🐝 Manon Queen Bee (jaune), dames sur 🌶️ Lisa de los pimentos (corail). Créneaux prévisionnels de 30 minutes à partir de 18 h en Guyane : 25 minutes de match et 5 minutes de transition. Le dernier match se termine 25 minutes après son départ, sans transition ajoutée en fin de tournoi. À 7 équipes : fin à 1 h 55 le 7 novembre ; à 8 équipes : fin à 3 h 55 le 7 novembre, sur un terrain par tableau. Les règles de départage, le format des matchs et la saisie des résultats restent à définir.
 
 Vérifications : `node tests/tournament-format.test.mjs` ; `tests/programme.sql` (session SQL administrative, transaction annulée en fin de test).

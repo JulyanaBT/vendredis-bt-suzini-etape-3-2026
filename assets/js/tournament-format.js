@@ -19,3 +19,11 @@ export function finalFixtures(count){
  if(count===8)result.push({id:'DC1',a:'3e poule A',b:'4e poule B',stage:'Demi-finale 1 · places 5–8'},{id:'DC2',a:'3e poule B',b:'4e poule A',stage:'Demi-finale 2 · places 5–8'},{a:'Perdant DC1',b:'Perdant DC2',stage:'7e place'},{a:'Vainqueur DC1',b:'Vainqueur DC2',stage:'5e place'});
  result.push({a:'Perdant DF1',b:'Perdant DF2',stage:'3e place'},{a:'Vainqueur DF1',b:'Vainqueur DF2',stage:'Finale · 1re place'});return result;
 }
+
+export const MATCH_MINUTES=25, TRANSITION_MINUTES=5;
+export function slotFor(index){
+ if(!Number.isInteger(index)||index<0)throw new RangeError('Créneau invalide');
+ const start=18*60+index*(MATCH_MINUTES+TRANSITION_MINUTES),end=start+MATCH_MINUTES;
+ const label=minutes=>`${String(Math.floor(minutes/60)%24).padStart(2,'0')} h ${String(minutes%60).padStart(2,'0')}`;
+ return {start:label(start),end:label(end),day:Math.floor(start/1440),endDay:Math.floor(end/1440),date:Math.floor(start/1440)>0?'sam. 7 nov.':'ven. 6 nov.'};
+}
