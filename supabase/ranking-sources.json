@@ -1,0 +1,47 @@
+[
+  {
+    "division": "DD",
+    "filename": "fz2uRCZJBBIQMneH_ClassementBeachTennisDames-Octobre2026-triparrang-.pdf",
+    "sha256": "1d20ee793903b3cd2eccf9a222f5c0f60a9a7145ca4cbedf8fe18f6bee6743a9",
+    "pages": 10,
+    "rows": 1388,
+    "max_rank": 1337,
+    "last_printed_rank": 800,
+    "page_rows": [
+      131,
+      162,
+      153,
+      153,
+      153,
+      153,
+      153,
+      153,
+      151,
+      26
+    ]
+  },
+  {
+    "division": "DM",
+    "filename": "ORdD32WZJ6bi-Pwr_ClassementBeachTennisMessieurs-Octobre2026-triparrang-.pdf",
+    "sha256": "f66e21dba6197ad8c42086f03a7a445fec9b5dd27a662655c6b82c93d12502a1",
+    "pages": 13,
+    "rows": 1992,
+    "max_rank": 1892,
+    "last_printed_rank": 1000,
+    "page_rows": [
+      136,
+      165,
+      162,
+      154,
+      154,
+      154,
+      154,
+      154,
+      154,
+      154,
+      154,
+      154,
+      143
+    ]
+  }
+]
