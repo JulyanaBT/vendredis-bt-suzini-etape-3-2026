@@ -108,7 +108,7 @@ export const RULES = {
       },
       {
         "title": "Tournoi",
-        "text": "Vendredi 6 novembre 2026 dès 18 h au TC Suzini. DD et DM seniors, 8 paires maximum par tableau."
+        "text": "Convocation de tous à 17 h 45 le 6 novembre 2026 au TC Suzini ; matchs dès 18 h. Arrivée plus tardive uniquement sur accord du JA convenu avant 12 h le 06/11, heure de Guyane. DD et DM seniors, 8 paires maximum par tableau."
       },
       {
         "title": "Effectif minimum",
@@ -265,7 +265,7 @@ export const RULES = {
       },
       {
         "title": "Torneio",
-        "text": "Sexta-feira, 6 de novembro de 2026, a partir das 18h, no TC Suzini. DD e DM sêniores, até 8 duplas por chave."
+        "text": "Apresentação de todos às 17h45 de 6 de novembro de 2026 no TC Suzini; jogos a partir das 18h. Chegada posterior somente mediante acordo com o árbitro-geral antes das 12h de 06/11, horário da Guiana Francesa. DD e DM sêniores, máximo de 8 duplas por chave."
       },
       {
         "title": "Número mínimo",
