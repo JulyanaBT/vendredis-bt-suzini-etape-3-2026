@@ -40,3 +40,5 @@ Décision validée : minimum quatre équipes par tableau. À moins de quatre à 
 Décision du JA Jules PARISIS : à sept équipes, maintien de l’exemption de TS1 avec deux matchs, trois pour les six autres paires. La réserve relative au minimum de trois matchs du guide FFT reste documentée dans le règlement complet ; cette validation locale ne vaut pas dérogation fédérale.
 
 Décision du JA : tous les matchs de poule, y compris TS1–TS2 en poule unique et la poule de classement 5–7, restent au format 3. Le format 4 ne concerne que la finale d’une phase finale distincte.
+
+Repos confirmé : 30 minutes minimum pour une même paire entre matchs au format 3, distinctes des 5 minutes de rotation du terrain. Le règlement mentionne une réduction seulement dans les cas expressément permis par les textes FFT, avec accord des deux équipes et validation du JA ; pas de dérogation générale fondée sur le seul accord des joueurs.
