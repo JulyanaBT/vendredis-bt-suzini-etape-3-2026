@@ -36,3 +36,5 @@ La comparaison aux règlements FFT 2027, articles 209–214 et 224–232 et règ
 Le document reste un projet explicitement signalé en attendant ces validations. Les horaires à cadence fixe de la première simulation ne sont plus présentés publiquement comme des convocations : le programme conserve l’ordre et les terrains à titre indicatif, avec horaires à confirmer. Le moteur de simulation n’est pas encore un planning homologué intégrant les durées réelles et tous les repos réglementaires.
 
 Décision validée : minimum quatre équipes par tableau. À moins de quatre à la clôture, annulation de l’épreuve concernée, sans formule amicale à trois. Validation et tirage Club bloqués sous ce minimum.
+
+Décision du JA Jules PARISIS : à sept équipes, maintien de l’exemption de TS1 avec deux matchs, trois pour les six autres paires. La réserve relative au minimum de trois matchs du guide FFT reste documentée dans le règlement complet ; cette validation locale ne vaut pas dérogation fédérale.
