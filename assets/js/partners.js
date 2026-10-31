@@ -5,6 +5,7 @@ const api=(action,data={})=>rpc('suzini_e3_partners',{p_action:action,p_data:dat
 const pretty=s=>String(s||'').toLocaleLowerCase('fr').replace(/(^|[\s’'-])\p{L}/gu,c=>c.toLocaleUpperCase('fr'));
 const key='suzini-e3-partner-owner';let profiles=[],target=null,open=false,owner=null;try{owner=JSON.parse(localStorage.getItem(key)||'null');}catch{}
 const invite=new URLSearchParams(location.hash.slice(1)).get('invite');
+if(new URLSearchParams(location.search).get('tab')==='partenaire')selectSignupTab('partenaire');
 function mode(value){$('partner-view').hidden=value!=='view';$('partner-form').hidden=value!=='post';for(const b of document.querySelectorAll('[data-partner-mode]'))b.setAttribute('aria-pressed',String(b.dataset.partnerMode===value));}
 for(const b of document.querySelectorAll('[data-partner-mode]'))b.addEventListener('click',()=>mode(b.dataset.partnerMode));
 function owned(){ $('partner-owned').hidden=!owner; }
