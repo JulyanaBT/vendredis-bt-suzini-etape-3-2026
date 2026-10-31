@@ -1,5 +1,5 @@
 import {rpc} from './supabase-site.js?v=29';
-import {formatFor,COURTS,groupsFor,scheduleDraws,slotFor} from './tournament-format.js?v=31';
+import {formatFor,COURTS,groupsFor,scheduleDraws,slotFor} from './tournament-format.js?v=32';
 const tabs=[...document.querySelectorAll('[data-programme]')],panel=document.getElementById('programme-panel');
 const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text)n.textContent=text;if(cls)n.className=cls;return n;};
 let division='DM',selected='chrono',data=null,teams=[],error='',clubClient=null,clubReady=false;
@@ -7,7 +7,7 @@ try{division=localStorage.getItem('suzini_etape3_public_epreuve')||'DM';}catch{}
 if(!COURTS[division])division='DM';
 const isClub=document.body.dataset.space==='club';
 function current(){return data?.divisions?.find(d=>d.division===division);}
-function teamName(id){return teams.find(t=>t.id===id)?.team_name||(/^[0-9a-f]{8}-/i.test(id||'')?'Équipe à confirmer':id);}
+function teamName(id){const name=teams.find(t=>t.id===id)?.team_name||(/^[0-9a-f]{8}-/i.test(id||'')?'Équipe à confirmer':id),seed=current()?.seeds?.indexOf(id);return seed>=0?name+' · TS'+(seed+1):name;}
 function matchCard(m,index){const court=COURTS[m.court],c=el('article','','programme-match '+court.className),slot=slotFor(m.slot);c.append(el('small',`${slot.date} · ${slot.start} – ${slot.end} · Guyane`,'programme-slot'),el('small',court.name),el('small',`${index+1}. ${m.id} · ${m.stage}`),el('strong',`${teamName(m.a)}  contre  ${teamName(m.b)}`));return c;}
 function render(){
  panel.replaceChildren();panel.classList.remove('programme-placeholder');const d=current(),f=d?formatFor(d.count):null,court=COURTS[division],schedule=data?scheduleDraws(data.divisions).filter(m=>m.division===division):[],last=schedule.at(-1),finish=last?slotFor(last.slot):null;
@@ -20,13 +20,15 @@ function render(){
  const guide=el('details','','programme-guide');guide.append(el('summary','Formats selon le nombre d’équipes'));
  for(const n of [3,4,5,6,7,8]){const plan=formatFor(n);guide.append(el('h3',n+' équipes · '+plan.title),el('p',plan.description));}panel.append(guide);
  panel.append(el('p','25 min de match + 5 min de transition · départs toutes les 30 min dès 18 h, heure de Guyane. Dès qu’un tableau termine, son terrain rejoint le tableau restant.','programme-notice'));
- if(d.count===7)panel.append(el('p',d.drawn_at?'Équipe exemptée de quart : '+teamName(d.draw_order[6]):'L’équipe exemptée de quart sera désignée au tirage.','programme-notice'));
+ panel.append(el('p','Têtes de série : les deux meilleurs classements globaux d’équipe (somme des classements individuels, total le plus faible). En cas d’égalité, départage au tirage.','programme-notice'));
+ if(d.drawn_at)panel.append(el('p',(d.seeds||[]).map(id=>teamName(id)).join(' / '),'programme-notice'));
+ if(d.count===7)panel.append(el('p',d.drawn_at?'Exemptée de quart, en bas du tableau : '+teamName(d.draw_order[6]):'TS1 est exemptée de quart en bas du tableau ; TS2 est placée en haut.','programme-notice'));
  if(isClub&&clubReady)renderClub(d,f);
  if(!f)return;
  const g=groupsFor(d);
  if(selected==='poules'){
   if(d.count<=6){
-   panel.append(el('p',d.drawn_at?'Tirage effectué.':'Répartition en attente du tirage. Les repères A1, A2… ne désignent pas encore des équipes.','programme-notice'));
+   panel.append(el('p',d.drawn_at?'Tirage effectué.':'Répartition en attente du tirage. Les repères TS1, TS2, A3… ne désignent pas encore des équipes.','programme-notice'));
    g.forEach((pool,i)=>{const box=el('section','','programme-pool');box.append(el('h3',g.length===1?'Poule unique':'Poule '+String.fromCharCode(65+i)));const list=el('ol');pool.forEach(id=>list.append(el('li',d.drawn_at?teamName(id):id+' · équipe à tirer')));box.append(list);panel.append(box);});
   }else if(d.count===7){
    panel.append(el('h2','Poule de classement · places 5–7'),el('p','Pas de poules préliminaires : le tournoi commence par les quarts. Les trois perdants des quarts se rencontrent ensuite pour les places 5 à 7.','programme-notice'));
