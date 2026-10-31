@@ -106,12 +106,13 @@ export const RULES = {
     ],
     "cards": [
       {
-        "title": "Tournoi",
-        "text": "Vendredi 6 novembre 2026 dès 18 h au TC Suzini. DD et DM seniors, 8 paires maximum par tableau."
+        "title": "Format de match",
+        "featured": true,
+        "text": "Hors finales : deux sets à 4 jeux, tie-break à 4–4. Finales : deux sets à 6 jeux, tie-break à 6–6. Dans tous les matchs : point décisif à 40–40 ; à une manche partout, super tie-break à 10 points avec deux points d’écart."
       },
       {
-        "title": "Homologation",
-        "text": "Au moins 4 paires par épreuve. À 3 : seulement une formule non homologuée, sans points BT250."
+        "title": "Tournoi",
+        "text": "Vendredi 6 novembre 2026 dès 18 h au TC Suzini. DD et DM seniors, 8 paires maximum par tableau."
       },
       {
         "title": "Participation",
@@ -119,11 +120,7 @@ export const RULES = {
       },
       {
         "title": "Inscription",
-        "text": "10 € par joueur, 20 € par paire. Le 4 novembre est une date locale à encadrer par la procédure de complément de tableau : règle générale BT250 à J−10."
-      },
-      {
-        "title": "Paiement",
-        "text": "Paiement en ligne bientôt disponible ; espèces sur place possibles. Pastilles rouge / jaune / verte : 0 / 1 / 2 joueurs payés."
+        "text": "10 € par joueur · 20 € par paire. Clôture des inscriptions le 04/11/2026."
       },
       {
         "title": "Tirage",
@@ -142,14 +139,6 @@ export const RULES = {
         "text": "Quarts et classement complet. À 7, TS1 est exemptée, mais son minimum de matchs reste à valider. À 8, trois matchs par paire."
       },
       {
-        "title": "Format 3",
-        "text": "Hors finales : deux sets à 4 jeux, tie-break à 4–4, point décisif ; super tie-break à 10 si une manche partout."
-      },
-      {
-        "title": "Finales : format 4",
-        "text": "Deux sets à 6 jeux, tie-break à 6–6, point décisif ; super tie-break à 10 si une manche partout."
-      },
-      {
         "title": "Horaires et repos",
         "text": "25 minutes est une estimation, jamais une limite de match. Repos de 30 min en format 3 ; 1 h pour le format 4. Les 5 min de transition ne remplacent pas ces repos."
       },
@@ -164,10 +153,6 @@ export const RULES = {
       {
         "title": "Au club",
         "text": "Consulter les convocations, respecter les officiels et communiquer les scores exacts. Infos et photos sur le groupe WhatsApp."
-      },
-      {
-        "title": "Statut",
-        "text": "Projet documenté : homologation, admissions tardives, formule à 7 et chrono doivent encore être validés par les responsables sportifs."
       }
     ]
   },
@@ -278,12 +263,13 @@ export const RULES = {
     ],
     "cards": [
       {
-        "title": "Torneio",
-        "text": "Sexta-feira, 6 de novembro de 2026, a partir das 18h, no TC Suzini. DD e DM sêniores, até 8 duplas por chave."
+        "title": "Formato de jogo",
+        "featured": true,
+        "text": "Exceto finais: dois sets de 4 games, tie-break em 4–4. Finais: dois sets de 6 games, tie-break em 6–6. Em todos os jogos: ponto decisivo em 40–40; com um set para cada dupla, super tie-break de 10 pontos com diferença de dois."
       },
       {
-        "title": "Homologação",
-        "text": "Mínimo de 4 duplas por prova. Com 3: apenas formato sem homologação, sem pontos BT250."
+        "title": "Torneio",
+        "text": "Sexta-feira, 6 de novembro de 2026, a partir das 18h, no TC Suzini. DD e DM sêniores, até 8 duplas por chave."
       },
       {
         "title": "Participação",
@@ -291,11 +277,7 @@ export const RULES = {
       },
       {
         "title": "Inscrição",
-        "text": "10 € por jogador, 20 € por dupla. A data local de 4 de novembro precisa seguir o procedimento de complemento de chave: regra geral BT250 até dez dias antes."
-      },
-      {
-        "title": "Pagamento",
-        "text": "On-line em breve; dinheiro no local possível. Indicadores vermelho / amarelo / verde: 0 / 1 / 2 jogadores pagos."
+        "text": "10 € por jogador · 20 € por dupla. Encerramento das inscrições em 04/11/2026."
       },
       {
         "title": "Sorteio",
@@ -314,14 +296,6 @@ export const RULES = {
         "text": "Quartas e classificação completa. Com 7, CS1 é isento das quartas, mas o mínimo de jogos precisa ser validado. Com 8, três jogos por dupla."
       },
       {
-        "title": "Formato 3",
-        "text": "Exceto finais: dois sets de 4 games, tie-break em 4–4, ponto decisivo; super tie-break de 10 com um set para cada dupla."
-      },
-      {
-        "title": "Finais: formato 4",
-        "text": "Dois sets de 6 games, tie-break em 6–6, ponto decisivo; super tie-break de 10 com um set para cada dupla."
-      },
-      {
         "title": "Horários e descanso",
         "text": "25 minutos é uma estimativa, nunca limite de jogo. Descanso de 30 min no formato 3 e de 1h no formato 4. Os 5 min de transição não substituem esses intervalos."
       },
@@ -336,10 +310,6 @@ export const RULES = {
       {
         "title": "No clube",
         "text": "Consultar convocações, respeitar os oficiais e comunicar placares exatos. Informações e fotos no grupo WhatsApp."
-      },
-      {
-        "title": "Situação",
-        "text": "Projeto documentado: homologação, admissões tardias, fórmula de 7 e programação ainda dependem de validação esportiva."
       }
     ]
   }
