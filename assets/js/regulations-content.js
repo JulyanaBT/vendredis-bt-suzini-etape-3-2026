@@ -73,7 +73,7 @@ export const RULES = {
       },
       {
         "title": "Terrain, filet, raquettes et balles",
-        "body": "<p>Les rencontres seniors se disputent sur sable, sur un terrain de 16 × 8 mètres. Le filet est à 1,70 m pour les dames. En messieurs BT250, 1,80 m est recommandé et la hauteur ne peut pas être inférieure à 1,70 m ; le réglage retenu doit être annoncé et validé avant les rencontres. Les règles particulières de catégorie d’âge restent applicables aux jeunes.</p><p>La raquette ne doit pas dépasser 50 cm de longueur, 26 cm de largeur et 38 mm d’épaisseur. Les balles souples utilisées doivent être homologuées pour la compétition. L’organisation fournit au moins trois balles par partie.</p><p>Les lignes délimitent le terrain ; une balle qui touche une ligne est dans les limites. Les poteaux constituent des dépendances permanentes du court. Les joueurs ne déplacent pas les lignes ou les équipements pour obtenir un avantage.</p>"
+        "body": "<p>Les rencontres seniors se disputent sur sable, sur un terrain de 16 × 8 mètres. <strong>La hauteur du filet est fixée à 1,80 m pour le double hommes et à 1,70 m pour le double dames.</strong> Les règles particulières de catégorie d’âge restent applicables aux jeunes.</p><p>La raquette ne doit pas dépasser 50 cm de longueur, 26 cm de largeur et 38 mm d’épaisseur. Les balles souples utilisées doivent être homologuées pour la compétition. L’organisation fournit au moins trois balles par partie.</p><p>Les lignes délimitent le terrain ; une balle qui touche une ligne est dans les limites. Les poteaux constituent des dépendances permanentes du court. Les joueurs ne déplacent pas les lignes ou les équipements pour obtenir un avantage.</p>"
       },
       {
         "title": "Début du match, score et service",
@@ -230,7 +230,7 @@ export const RULES = {
       },
       {
         "title": "Quadra, rede, raquetes e bolas",
-        "body": "<p>As partidas sêniores são disputadas na areia, em quadra de 16 × 8 metros. A rede feminina fica a 1,70 m. No masculino BT250, recomenda-se 1,80 m, sem altura inferior a 1,70 m; a configuração utilizada deve ser anunciada e validada antes dos jogos. As disposições específicas de idade continuam aplicáveis aos jovens.</p><p>A raquete não pode exceder 50 cm de comprimento, 26 cm de largura e 38 mm de espessura. As bolas macias devem ser homologadas para a competição. A organização fornece pelo menos três bolas por partida.</p><p>As linhas delimitam a quadra: bola sobre a linha é dentro. Os postes são dependências permanentes da quadra. Não se deve deslocar linhas ou equipamentos para obter vantagem.</p>"
+        "body": "<p>As partidas sêniores são disputadas na areia, em quadra de 16 × 8 metros. <strong>A altura da rede é fixada em 1,80 m para duplas masculinas e 1,70 m para duplas femininas.</strong> As disposições específicas de idade continuam aplicáveis aos jovens.</p><p>A raquete não pode exceder 50 cm de comprimento, 26 cm de largura e 38 mm de espessura. As bolas macias devem ser homologadas para a competição. A organização fornece pelo menos três bolas por partida.</p><p>As linhas delimitam a quadra: bola sobre a linha é dentro. Os postes são dependências permanentes da quadra. Não se deve deslocar linhas ou equipamentos para obter vantagem.</p>"
       },
       {
         "title": "Início da partida, pontuação e saque",

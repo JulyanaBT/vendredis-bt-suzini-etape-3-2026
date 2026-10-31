@@ -1,4 +1,4 @@
-import {RULES} from './regulations-content.js?v=42';
+import {RULES} from './regulations-content.js?v=43';
 const $=id=>document.getElementById(id),el=(tag,text,cls)=>{const n=document.createElement(tag);if(text)n.textContent=text;if(cls)n.className=cls;return n;};
 let lang='fr',mode='summary';
 try{lang=localStorage.getItem('suzini-rules-language')==='pt'?'pt':'fr';mode=localStorage.getItem('suzini-rules-mode')==='full'?'full':'summary';}catch{}
