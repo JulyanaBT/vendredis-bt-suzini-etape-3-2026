@@ -42,3 +42,5 @@ Décision du JA Jules PARISIS : à sept équipes, maintien de l’exemption de T
 Décision du JA : tous les matchs de poule, y compris TS1–TS2 en poule unique et la poule de classement 5–7, restent au format 3. Le format 4 ne concerne que la finale d’une phase finale distincte.
 
 Repos confirmé : 30 minutes minimum pour une même paire entre matchs au format 3, distinctes des 5 minutes de rotation du terrain. Le règlement mentionne une réduction seulement dans les cas expressément permis par les textes FFT, avec accord des deux équipes et validation du JA ; pas de dérogation générale fondée sur le seul accord des joueurs.
+
+Décision du JA : clôture générale locale le 4 novembre à minuit, heure de Guyane, soit le 5 novembre 2026 à 00:00:00−03:00 (03:00 UTC). Aucune nouvelle inscription ensuite, même pour compléter le tableau. Le délai fédéral J−10 reste signalé comme réserve, sans présenter cette décision locale comme une dérogation fédérale.

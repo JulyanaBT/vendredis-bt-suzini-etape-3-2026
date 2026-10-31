@@ -37,7 +37,7 @@ export const RULES = {
       },
       {
         "title": "Clôture annoncée et règle fédérale de calendrier",
-        "body": "<p>La date annoncée localement est le <strong>4 novembre 2026</strong>. Toutefois, l’article 228 prévoit pour les BT250 à BT500 une clôture générale au plus tard à J−10, soit le <strong>27 octobre 2026</strong> pour un début le 6 novembre, puis une publication des listes selon le calendrier fédéral.</p><p>Le maintien de candidatures jusqu’au 4 novembre ne peut donc pas être présenté comme une clôture générale conforme de plein droit. Il doit être encadré, si les conditions sont réunies, par la possibilité dérogatoire de compléter un tableau, sous contrôle du juge-arbitre et de la ligue. Aucune invitation ni dérogation n’est acquise par une inscription sur le site.</p><p><strong>À confirmer avant publication définitive :</strong> modalités d’admission tardive, situation des listes et respect de la procédure fédérale. Une fois les listes arrêtées, le Club ferme les inscriptions et valide la formule de chaque tableau.</p>"
+        "body": "<p><strong>Les inscriptions ferment le 4 novembre 2026 à minuit, heure de Guyane (UTC−3) :</strong> le dernier instant accepté est le 4 novembre à 23 h 59 min 59 s ; à partir du 5 novembre à 00 h 00, aucune nouvelle inscription n’est acceptée. Cette décision d’organisation est fixée par le juge-arbitre Jules PARISIS et s’applique aux deux tableaux.</p><p>La fermeture est automatique sur le mini-site. Une équipe complète doit avoir transmis son inscription avant cette échéance ; la disponibilité d’une place après fermeture ne prolonge pas le délai. Les corrections d’une inscription existante restent à traiter avec le juge-arbitre et ne constituent pas une nouvelle admission.</p><p>L’article 228 prévoit néanmoins pour les BT250 à BT500 une clôture générale au plus tard à J−10, soit le 27 octobre pour ce tournoi. La date locale du 4 novembre n’est pas présentée comme une date fédérale conforme de plein droit ni comme un simple complément de tableau. Sa validation par le juge-arbitre ne vaut pas dérogation fédérale ; la situation au regard de l’homologation reste à régulariser avec l’instance compétente.</p>"
       },
       {
         "title": "Tarif et paiement",
@@ -120,7 +120,7 @@ export const RULES = {
       },
       {
         "title": "Inscription",
-        "text": "10 € par joueur · 20 € par paire. Clôture des inscriptions le 04/11/2026."
+        "text": "10 € par joueur · 20 € par paire. Clôture le 04/11/2026 à minuit, heure de Guyane (fin de journée)."
       },
       {
         "title": "Tirage",
@@ -194,7 +194,7 @@ export const RULES = {
       },
       {
         "title": "Prazo anunciado e calendário federal",
-        "body": "<p>A data divulgada localmente é <strong>4 de novembro de 2026</strong>. Porém, o artigo 228 determina para BT250 a BT500 o encerramento geral até dez dias antes do início: <strong>27 de outubro de 2026</strong> neste torneio, com publicação das listas conforme o calendário federal.</p><p>Receber candidaturas até 4 de novembro não pode ser apresentado como prazo geral automaticamente conforme. Se os requisitos estiverem presentes, a organização deverá utilizar a possibilidade excepcional de completar uma chave, sob controle do árbitro-geral e da liga. O cadastro no site não concede convite nem exceção.</p><p><strong>A confirmar antes da versão definitiva:</strong> condições de admissão tardia, situação das listas e cumprimento do procedimento federal. Após definir as listas, o Clube fecha as inscrições e valida a fórmula de cada chave.</p>"
+        "body": "<p><strong>As inscrições encerram em 4 de novembro de 2026 à meia-noite, no horário da Guiana Francesa (UTC−3):</strong> o último instante aceito é 4 de novembro às 23h59min59s; a partir de 5 de novembro às 00h00, nenhuma nova inscrição será aceita. A decisão foi fixada pelo árbitro-geral Jules PARISIS e vale para as duas chaves.</p><p>O encerramento é automático no site. A inscrição completa da dupla deve ser enviada antes do prazo; uma vaga ainda disponível depois do encerramento não prorroga o prazo. Correções de inscrição existente devem ser tratadas com o árbitro-geral e não constituem nova admissão.</p><p>O artigo 228 prevê, porém, o encerramento geral de BT250 a BT500 até dez dias antes, em 27 de outubro neste caso. A data local de 4 de novembro não é apresentada como prazo federal automaticamente conforme nem como simples complemento de chave. A validação pelo árbitro-geral não equivale a dispensa federal; a situação da homologação precisa ser regularizada com a instância competente.</p>"
       },
       {
         "title": "Taxa e pagamento",
@@ -277,7 +277,7 @@ export const RULES = {
       },
       {
         "title": "Inscrição",
-        "text": "10 € por jogador · 20 € por dupla. Encerramento das inscrições em 04/11/2026."
+        "text": "10 € por jogador · 20 € por dupla. Encerramento em 04/11/2026 à meia-noite, horário da Guiana Francesa (fim do dia)."
       },
       {
         "title": "Sorteio",
