@@ -1,5 +1,5 @@
 import {rpc} from './supabase-site.js?v=29';
-import {formatFor,COURTS,poolFixtures,finalFixtures,slotFor} from './tournament-format.js?v=30';
+import {formatFor,COURTS,groupsFor,scheduleDraws,slotFor} from './tournament-format.js?v=31';
 const tabs=[...document.querySelectorAll('[data-programme]')],panel=document.getElementById('programme-panel');
 const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text)n.textContent=text;if(cls)n.className=cls;return n;};
 let division='DM',selected='chrono',data=null,teams=[],error='',clubClient=null,clubReady=false;
@@ -7,36 +7,41 @@ try{division=localStorage.getItem('suzini_etape3_public_epreuve')||'DM';}catch{}
 if(!COURTS[division])division='DM';
 const isClub=document.body.dataset.space==='club';
 function current(){return data?.divisions?.find(d=>d.division===division);}
-function teamName(id){return teams.find(t=>t.id===id)?.team_name||'Équipe à confirmer';}
-function groups(d,f){return d.drawn_at?[d.pool_a,...(f.sizes.length>1?[d.pool_b]:[])]:f.sizes.map((size,i)=>Array.from({length:size},(_,n)=>`${String.fromCharCode(65+i)}${n+1}`));}
-function matchCard(m,index,drawn=false){const c=el('article','','programme-match '+COURTS[division].className);const slot=slotFor(index);c.append(el('small',`${slot.date} · ${slot.start} – ${slot.end} · Guyane`,'programme-slot'),el('small',`${index+1}. ${m.id?m.id+' · ':''}${m.stage}`),el('strong',`${drawn?teamName(m.a):m.a}  contre  ${drawn?teamName(m.b):m.b}`));return c;}
+function teamName(id){return teams.find(t=>t.id===id)?.team_name||(/^[0-9a-f]{8}-/i.test(id||'')?'Équipe à confirmer':id);}
+function matchCard(m,index){const court=COURTS[m.court],c=el('article','','programme-match '+court.className),slot=slotFor(m.slot);c.append(el('small',`${slot.date} · ${slot.start} – ${slot.end} · Guyane`,'programme-slot'),el('small',court.name),el('small',`${index+1}. ${m.id} · ${m.stage}`),el('strong',`${teamName(m.a)}  contre  ${teamName(m.b)}`));return c;}
 function render(){
- panel.replaceChildren();panel.classList.remove('programme-placeholder');const d=current(),f=d?formatFor(d.count):null,court=COURTS[division];
+ panel.replaceChildren();panel.classList.remove('programme-placeholder');const d=current(),f=d?formatFor(d.count):null,court=COURTS[division],schedule=data?scheduleDraws(data.divisions).filter(m=>m.division===division):[],last=schedule.at(-1),finish=last?slotFor(last.slot):null;
  panel.append(el('p',division==='DD'?'Double dames':'Double hommes','programme-eyebrow'),el('div',court.name,'programme-court '+court.className));
  if(error){panel.append(el('p',error,'programme-notice'));return;}
  if(!d){panel.append(el('p','Chargement du programme…'));return;}
  const overview=el('div','','programme-overview');overview.append(el('strong',`${d.count} / 8 équipes`),el('span',d.validated_at?'Format validé par le Club':'Format à valider à la clôture'));panel.append(overview);
  panel.append(el('p','Tirage au sort : jeudi 5 novembre à 14 h (Guyane, UTC−3).','programme-draw-date'));
- if(f){const box=el('section','','programme-format');box.append(el('h2',f.title),el('p',f.description),el('small',`${f.totalMatches} rencontres · fin prévisionnelle ${slotFor(f.totalMatches-1).end}${slotFor(f.totalMatches-1).endDay?' le samedi 7 novembre':' le vendredi 6 novembre'} (Guyane)`));panel.append(box);}else{panel.append(el('p','Le format pourra être validé avec 3 à 8 équipes.','programme-notice'));}
+ if(f){const box=el('section','','programme-format');box.append(el('h2',f.title),el('p',f.description),el('small',`${f.totalMatches} rencontres · fin prévisionnelle ${finish.end}${finish.endDay?' le samedi 7 novembre':' le vendredi 6 novembre'} (Guyane)`));panel.append(box);}else{panel.append(el('p','Le format pourra être validé avec 3 à 8 équipes.','programme-notice'));}
  const guide=el('details','','programme-guide');guide.append(el('summary','Formats selon le nombre d’équipes'));
  for(const n of [3,4,5,6,7,8]){const plan=formatFor(n);guide.append(el('h3',n+' équipes · '+plan.title),el('p',plan.description));}panel.append(guide);
- panel.append(el('p','25 min de match + 5 min de transition · départs toutes les 30 min dès 18 h, heure de Guyane.','programme-notice'));
+ panel.append(el('p','25 min de match + 5 min de transition · départs toutes les 30 min dès 18 h, heure de Guyane. Dès qu’un tableau termine, son terrain rejoint le tableau restant.','programme-notice'));
+ if(d.count===7)panel.append(el('p',d.drawn_at?'Équipe exemptée de quart : '+teamName(d.draw_order[6]):'L’équipe exemptée de quart sera désignée au tirage.','programme-notice'));
  if(isClub&&clubReady)renderClub(d,f);
  if(!f)return;
- const g=groups(d,f);
+ const g=groupsFor(d);
  if(selected==='poules'){
-  panel.append(el('p',d.drawn_at?'Tirage effectué.':'Répartition en attente du tirage. Les repères A1, A2… ne désignent pas encore des équipes.','programme-notice'));
-  g.forEach((pool,i)=>{const box=el('section','','programme-pool');box.append(el('h3',f.sizes.length===1?'Poule unique':'Poule '+String.fromCharCode(65+i)));const list=el('ol');pool.forEach(id=>list.append(el('li',d.drawn_at?teamName(id):id+' · équipe à tirer')));box.append(list);panel.append(box);});
+  if(d.count<=6){
+   panel.append(el('p',d.drawn_at?'Tirage effectué.':'Répartition en attente du tirage. Les repères A1, A2… ne désignent pas encore des équipes.','programme-notice'));
+   g.forEach((pool,i)=>{const box=el('section','','programme-pool');box.append(el('h3',g.length===1?'Poule unique':'Poule '+String.fromCharCode(65+i)));const list=el('ol');pool.forEach(id=>list.append(el('li',d.drawn_at?teamName(id):id+' · équipe à tirer')));box.append(list);panel.append(box);});
+  }else if(d.count===7){
+   panel.append(el('h2','Poule de classement · places 5–7'),el('p','Pas de poules préliminaires : le tournoi commence par les quarts. Les trois perdants des quarts se rencontrent ensuite pour les places 5 à 7.','programme-notice'));
+   schedule.filter(m=>m.phase==='classement').forEach(m=>panel.append(matchCard(m,schedule.indexOf(m))));
+  }else panel.append(el('p','Pas de poules à 8 équipes : quarts de finale, puis deux tableaux de classement, places 1–4 et 5–8. Consultez l’onglet Finales.','programme-notice'));
  }else if(selected==='finales'){
-  const matches=finalFixtures(d.count);if(!matches.length)panel.append(el('p','Pas de phase finale : le classement de la poule unique donne le classement final.','programme-notice'));
-  else{panel.append(el('p','Les équipes seront connues après le classement des poules.','programme-notice'));matches.forEach((m,i)=>panel.append(matchCard(m,f.poolMatches+i)));}
+  const matches=schedule.filter(m=>m.phase!=='poules');
+  if(!matches.length)panel.append(el('p','Pas de phase finale : le classement de la poule unique donne le classement final.','programme-notice'));
+  else{panel.append(el('p',d.count>=7?'Quarts et matchs de classement. Les vainqueurs et perdants seront précisés au fil des résultats.':'Les équipes seront connues après le classement des poules.','programme-notice'));matches.forEach(m=>panel.append(matchCard(m,schedule.indexOf(m))));}
  }else if(selected==='resultats'){
-  panel.append(el('p','Aucun résultat pour le moment. Les classements des poules et les résultats des phases finales seront affichés pendant le tournoi.','programme-notice'));
+  panel.append(el('p','Aucun résultat pour le moment. Les résultats et classements seront affichés pendant le tournoi.','programme-notice'));
  }else{
-  panel.append(el('h2','Ordre prévisionnel des rencontres'));
-  panel.append(el('p','Horaires prévisionnels en heure de Guyane (UTC−3), sur le terrain de ce tableau. Chaque créneau comprend 25 minutes de match et 5 minutes de transition.','programme-notice'));
-  const pool=poolFixtures(g);pool.forEach((m,i)=>panel.append(matchCard(m,i,!!d.drawn_at)));
-  finalFixtures(d.count).forEach((m,i)=>panel.append(matchCard(m,pool.length+i)));
+  panel.append(el('h2','Chrono prévisionnel'));
+  panel.append(el('p','Horaires en heure de Guyane (UTC−3). Le second terrain est réaffecté après la fin de l’autre tableau ; chaque rencontre indique son terrain. L’ordre reste prévisionnel jusqu’au tirage.','programme-notice'));
+  schedule.forEach((m,i)=>panel.append(matchCard(m,i)));
  }
 }
 function renderClub(d,f){
