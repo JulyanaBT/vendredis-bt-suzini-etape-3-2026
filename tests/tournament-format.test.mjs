@@ -25,3 +25,5 @@ console.log('Formats 4–8, all 7/8-team outcomes, 25 shared-court schedules, de
 for(const n of [4,5]){for(const other of [4,5,6,7,8]){const schedule=scheduleDraws([{division:'DM',count:n},{division:'DD',count:other}]).filter(m=>m.division==='DM');const final=schedule.find(m=>m.id==='TS-FINAL');assert.deepEqual(new Set([final.a,final.b]),new Set(['TS1','TS2']));assert(schedule.filter(m=>m.id!=='TS-FINAL').every(m=>m.slot<final.slot));}}
 for(const n of [7,8]){const jobs=fixturesFor({count:n});assert.equal(jobs.find(m=>m.id==='QF1').a,'TS2');assert.equal(n===7?jobs.find(m=>m.id==='DF2').b:jobs.find(m=>m.id==='QF4').b,'TS1');}
 console.log('Seed placement and last TS1/TS2 match passed');
+
+for(let n=4;n<=8;n++)for(const match of fixturesFor({count:n}))assert.equal(match.format,match.id==='F'?4:3);

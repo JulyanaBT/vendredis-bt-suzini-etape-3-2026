@@ -14,7 +14,7 @@ export function poolFixtures(groups){if(!groups.length)return [];const rounds=gr
 export function groupsFor(d){const f=formatFor(d.count);if(!f)return [];if(d.drawn_at&&d.count<=6)return [d.pool_a,...(d.count===6?[d.pool_b]:[])];if(d.count<=5)return [Array.from({length:d.count},(_,i)=>i<2?'TS'+(i+1):'A'+(i+1))];return d.count===6?[['TS2','A2','A3'],['TS1','B2','B3']]:[];}
 export function fixturesFor(d){
  const f=formatFor(d.count);if(!f)return [];
- const jobs=[],add=(id,a,b,stage,deps=[],phase='finales')=>jobs.push({id,a,b,stage,deps,phase});
+ const jobs=[],add=(id,a,b,stage,deps=[],phase='finales')=>jobs.push({id,a,b,stage,deps,phase,format:id==='F'?4:3});
  if(d.count<=6){
   const groups=groupsFor(d),pool=poolFixtures(groups);
   if(d.count<=5){

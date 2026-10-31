@@ -1,5 +1,5 @@
 import {rpc} from './supabase-site.js?v=29';
-import {formatFor,COURTS,groupsFor,scheduleDraws,slotFor} from './tournament-format.js?v=36';
+import {formatFor,COURTS,groupsFor,scheduleDraws,slotFor} from './tournament-format.js?v=38';
 const tabs=[...document.querySelectorAll('[data-programme]')],panel=document.getElementById('programme-panel');
 const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text)n.textContent=text;if(cls)n.className=cls;return n;};
 let division='DM',selected='chrono',data=null,teams=[],error='',clubClient=null,clubReady=false;
@@ -8,7 +8,7 @@ if(!COURTS[division])division='DM';
 const isClub=document.body.dataset.space==='club';
 function current(){return data?.divisions?.find(d=>d.division===division);}
 function teamName(id){const name=teams.find(t=>t.id===id)?.team_name||(/^[0-9a-f]{8}-/i.test(id||'')?'Équipe à confirmer':id),seed=current()?.seeds?.indexOf(id);return seed>=0?name+' · TS'+(seed+1):name;}
-function matchCard(m,index){const court=COURTS[m.court],c=el('article','','programme-match '+court.className),slot=slotFor(m.slot);c.append(el('small','Horaire à confirmer · Guyane','programme-slot'),el('small',court.name),el('small',`${index+1}. ${m.id} · ${m.stage}`),el('strong',`${teamName(m.a)}  contre  ${teamName(m.b)}`));return c;}
+function matchCard(m,index){const court=COURTS[m.court],c=el('article','','programme-match '+court.className),slot=slotFor(m.slot);c.append(el('small','Horaire à confirmer · Guyane','programme-slot'),el('small',court.name),el('small',m.format===4?'Format 4 · deux sets à 6 jeux':'Format 3 · deux sets à 4 jeux'),el('small',`${index+1}. ${m.id} · ${m.stage}`),el('strong',`${teamName(m.a)}  contre  ${teamName(m.b)}`));return c;}
 function render(){
  panel.replaceChildren();panel.classList.remove('programme-placeholder');const d=current(),f=d?formatFor(d.count):null,court=COURTS[division],schedule=data?scheduleDraws(data.divisions).filter(m=>m.division===division):[],last=schedule.at(-1),finish=last?slotFor(last.slot):null;
  panel.append(el('p',division==='DD'?'Double dames':'Double hommes','programme-eyebrow'),el('div',court.name,'programme-court '+court.className));
