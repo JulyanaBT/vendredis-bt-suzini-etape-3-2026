@@ -1,7 +1,8 @@
 begin;
+create function pg_temp.ready_doc(d jsonb) returns jsonb language plpgsql security definer set search_path='' as $$declare t uuid;begin t:=public.suzini_e3_form_token();update suzini_e3_private.form_tokens set issued_at=clock_timestamp()-interval '3 seconds' where id=t;return d||jsonb_build_object('_guard',t);end;$$;
 do $$declare f uuid; token uuid; actor uuid; result jsonb; item jsonb;begin
  update public.events set registration_open=true where id='20261106-0000-4000-8000-000000000003';
- result:=public.suzini_e3_register_payment('{"epreuve":"DM","p1FirstName":"Fixture","p1LastName":"Paiement","p1Licence":"9999998Z","p2FirstName":"FixtureTwo","p2LastName":"Paiement","p2Licence":"9999999Z"}'::jsonb);
+ result:=public.suzini_e3_register_payment(pg_temp.ready_doc('{"epreuve":"DM","p1FirstName":"Fixture","p1LastName":"Paiement","p1Licence":"9999998Z","p2FirstName":"FixtureTwo","p2LastName":"Paiement","p2Licence":"9999999Z"}'::jsonb));
  f:=(result->>'id')::uuid;token:=(result->>'token')::uuid;
  perform public.suzini_e3_payment_choice(token,'cash');
  if not exists(select 1 from suzini_e3_private.payments where team_id=f and choice='cash' and not p1_paid and not p2_paid) then raise exception 'Choice marked paid';end if;

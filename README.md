@@ -50,3 +50,13 @@ Officiels déclarés : Jules PARISIS, juge-arbitre non joueur ; Maïté SIRE, ju
 ### v52 — règlement et recherche partenaire
 Le résumé et le règlement complet partagent treize rubriques, repliées initialement et exclusives à l’ouverture, dans les deux langues et dans les espaces public/club. Le contenu intégral est conservé et regroupé.
 Recherche partenaire inspirée de JulyanaBT/suzini-bt-summer : profils DD/DM, WhatsApp sur action explicite, propositions via lien individuel dans le fragment URL, acceptation/refus et inscription atomique avec reçu de paiement. Les noms/licences ne figurent pas dans la liste publique. Publication avec consentement explicite, retrait protégé par un jeton conservé localement, clôture et capacité contrôlées côté serveur. Tables privées sans accès direct ; RPC public intentionnel avec actions bornées, validation et jetons. Tests transactionnels rollback dans tests/partner-search.sql ; aucun profil de test conservé.
+
+### v54 — neuf améliorations souhaitables
+- API publique : noms réduits aux initiales, y compris les champs dérivés ; paiement public au format Prénom N. Les noms complets restent disponibles dans le Club.
+- Club/Inscriptions : panneau de recherches de partenaire (filtres, contact, retrait sans suppression) et historique des inscriptions, classements, paiements et profils, avec auteur, date en Guyane et valeurs avant/après. Historique à partir de cette mise à jour ; aucun historique antérieur inventé.
+- Formulaires publics : jeton à usage unique lié à l’origine réseau, âge minimum de 2 secondes, expiration 2 heures, champ piège, 10 envois réussis/10 minutes et 60 jetons/10 minutes. Aucun CAPTCHA ou compte joueur supplémentaire. Protection anti-abus de base, pas une vérification d’identité FFT. Les tokens expirés sont invalides ; aucune tâche de purge destructive ajoutée.
+- Trois images WebP : 4 859 773 octets vers 112 600 octets environ ; originaux conservés.
+- Installation : proposition compacte une fois par session, Plus tard et refus permanent local ; bouton manuel conservé.
+- Accueil 17 h 45 harmonisé, textes de préparation génériques retirés, anciennes pages tirage/direct redirigées vers le programme, manifeste Club corrigé.
+- Les saisies de tous les formulaires et les dialogues ouverts bloquent le rechargement automatique ; avertissement avant fermeture avec saisie en cours ; actualisation manuelle non destructive. Aucun brouillon de mot de passe stocké.
+- Tests : 9 tests Node ; transactions SQL rollback partenaire/paiements/classements et souhaitables (confidentialité API, anti-abus, accès Club et journal avant/après).

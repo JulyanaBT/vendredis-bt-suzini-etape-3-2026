@@ -17,11 +17,11 @@ if(mount){mount.innerHTML=`<header class="site-header"><div class="header-top"><
  document.querySelectorAll('[data-public-epreuve]').forEach(b=>b.addEventListener('click',()=>{selected=b.dataset.publicEpreuve;emit();}));emit();
 }
 let footer=document.querySelector('.site-footer');if(!footer){footer=document.createElement('footer');footer.className='site-footer';document.body.append(footer);}
-const sponsors=[['Jul’Yana BT','assets/img/logo-julyana.png'],['TC Suzini','assets/img/sponsor-tc-suzini.jpeg'],['Bricorama','assets/img/sponsor-bricorama.jpeg'],['Passing Shot Kafé','assets/img/sponsor-passing-shot-kafe.jpeg'],['Ligue Guyane · Tennis et Beach Tennis','assets/img/sponsor-ligue-guyane.png'],['Urban Jap','assets/img/sponsor-urban-jap-hd.png']];
+const sponsors=[['Jul’Yana BT','assets/img/logo-julyana.png'],['TC Suzini','assets/img/sponsor-tc-suzini.jpeg'],['Bricorama','assets/img/sponsor-bricorama.jpeg'],['Passing Shot Kafé','assets/img/sponsor-passing-shot-kafe.jpeg'],['Ligue Guyane · Tennis et Beach Tennis','assets/img/sponsor-ligue-guyane.webp'],['Urban Jap','assets/img/sponsor-urban-jap-hd.webp']];
 footer.innerHTML=`<aside class="sponsor-strip" aria-label="Sponsors et partenaires"><div class="sponsor-grid">${sponsors.map(([name,path],i)=>`<button type="button" class="sponsor-logo" data-sponsor="${i}" aria-label="Agrandir le logo : ${name}">${path?`<img src="${url(path)}" alt="${name}">`:`<span class="sponsor-bricorama" role="img" aria-label="Bricorama"></span>`}</button>`).join('')}</div></aside>`;
 footer.addEventListener('click',e=>{const button=e.target.closest('[data-sponsor]');if(!button)return;const [name,path]=sponsors[Number(button.dataset.sponsor)];let d=document.querySelector('.sponsor-dialog');if(!d){d=document.createElement('dialog');d.className='sponsor-dialog';document.body.append(d);}d.innerHTML=`<h2>${name}</h2>${path?`<img src="${url(path)}" alt="${name}">`:'<div class="sponsor-bricorama enlarged" role="img" aria-label="Bricorama"></div>'}<form method="dialog"><button>Fermer</button></form>`;d.showModal();});
 new ResizeObserver(()=>document.documentElement.style.setProperty('--sponsors-height',footer.getBoundingClientRect().height+'px')).observe(footer);
 
 window.addEventListener('hashchange',()=>{if(adminPage)document.querySelectorAll('.site-nav a').forEach(a=>{if(a.hash===(location.hash||'#admin'))a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});});
 
-import './space-maintenance.js?v=8';
+import './space-maintenance.js?v=54';

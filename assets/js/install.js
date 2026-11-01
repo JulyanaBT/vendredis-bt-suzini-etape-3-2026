@@ -1,5 +1,8 @@
 const iconUrl = new URL('../img/vendredis-suzini-192-v2.png', import.meta.url).href;
-// One suggestion per page visit; refusal persists only in this browser.
+// One suggestion per browser session; permanent refusal stays local.
+const sessionKey="suzini-e3-install-offered";
+const sessionOffered=()=>{try{return sessionStorage.getItem(sessionKey)==='1';}catch{return false;}};
+function later(){document.querySelector("#install-suggestion")?.remove();}
 const refusalKey = 'suzini-etape3-install-declined';
 let deferredPrompt = null;
 let offered = false;
@@ -12,13 +15,15 @@ function refuse() {
 }
 function suggest() {
   if (!isPublic()) { document.querySelector('#install-suggestion')?.remove(); return; }
-  if (offered || standalone() || declined()) return;
+  if (offered || standalone() || declined() || sessionOffered()) return;
   offered = true;
+  try{sessionStorage.setItem(sessionKey,'1');}catch{}
   const banner = document.createElement('aside');
   banner.id = 'install-suggestion';
   banner.setAttribute('aria-label', 'Ajouter à l’écran d’accueil');
-  banner.innerHTML = `<img src="${iconUrl}" alt=""><div><strong>Vendredis Suzini sur votre écran d’accueil</strong><p>Le site en un geste, comme une appli.</p><div class="install-actions"><button type="button" data-install>Ajouter</button><button type="button" class="install-decline">Ne plus proposer</button></div></div>`;
+  banner.innerHTML = `<img src="${iconUrl}" alt=""><div><strong>Vendredis Suzini sur votre écran d’accueil</strong><div class="install-actions"><button type="button" data-install>Ajouter</button><button type="button" class="install-later">Plus tard</button><button type="button" class="install-decline">Ne plus proposer</button></div></div>`;
   banner.querySelector('.install-decline').addEventListener('click', refuse);
+  banner.querySelector('.install-later').addEventListener('click',later);
   document.body.append(banner);
 }
 function guide() {

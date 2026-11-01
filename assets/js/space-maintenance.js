@@ -1,4 +1,4 @@
-import {config} from './supabase-config.js';
+import {config} from './supabase-config.js?v=54';
 async function checkMaintenance(){
 
 if(document.body.dataset.space!=='admin'){

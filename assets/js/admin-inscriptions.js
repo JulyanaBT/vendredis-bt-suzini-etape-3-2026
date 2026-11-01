@@ -1,5 +1,5 @@
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.57.4';
-import {config} from './supabase-config.js';
+import {config} from './supabase-config.js?v=54';
 const client=createClient(config.supabaseUrl,config.publishableKey,{auth:{storageKey:'suzini-e3-admin',persistSession:true,autoRefreshToken:true}});
 const $=id=>document.getElementById(id),login=$('adminLogin'),content=$('adminContent'),status=$('adminStatus');
 let data={teams:[],labels:[],open:false},editId=null;

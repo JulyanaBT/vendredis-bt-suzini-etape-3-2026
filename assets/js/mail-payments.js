@@ -1,4 +1,4 @@
-import {client} from './private-client.js';
+import {client} from './private-client.js?v=54';
 const content=document.getElementById('adminContent');
 const mount=document.createElement('details');mount.className='mail-payments';
 const summary=document.createElement('summary');summary.textContent='Synchronisation des paiements SumUp';mount.append(summary);

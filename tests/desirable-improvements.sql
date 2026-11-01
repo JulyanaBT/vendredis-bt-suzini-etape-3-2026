@@ -1,0 +1,30 @@
+begin;
+select set_config('request.headers','{"x-real-ip":"audit-desirable"}',true);
+create function pg_temp.ready_doc(d jsonb) returns jsonb language plpgsql as $$declare t uuid;begin t:=public.suzini_e3_form_token();update suzini_e3_private.form_tokens set issued_at=clock_timestamp()-interval '3 seconds' where id=t;return d||jsonb_build_object('_guard',t);end;$$;
+do $$
+declare d jsonb; p jsonb;t uuid;u uuid;result uuid;logs jsonb;
+begin
+ begin perform public.suzini_e3_club_tools('partners');raise exception 'TEST anonymous club access';exception when insufficient_privilege then null;end;
+ d:='{"epreuve":"DD","p1FirstName":"Audit","p1LastName":"FamilleConfidentielle","p1Licence":"7654001Z","p2FirstName":"Second","p2LastName":"AutreFamille","p2Licence":"7654002Z"}';
+ begin perform public.suzini_e3_register(d);raise exception 'TEST missing token accepted';exception when raise_exception then if sqlerrm like 'TEST%' then raise;end if;end;
+ t:=public.suzini_e3_form_token();
+ begin perform suzini_e3_private.check_form(jsonb_build_object('_guard',t));raise exception 'TEST fast bot accepted';exception when raise_exception then if sqlerrm like 'TEST%' then raise;end if;end;
+ d:=pg_temp.ready_doc(d);
+ begin perform suzini_e3_private.check_form(d||'{"_website":"spam"}');raise exception 'TEST honeypot accepted';exception when raise_exception then if sqlerrm like 'TEST%' then raise;end if;end;
+ result:=public.suzini_e3_register(d);
+ if public.suzini_e3_teams()::text like '%FamilleConfidentielle%' or public.suzini_e3_teams()::text like '%AutreFamille%' then raise exception 'TEST public surname exposure';end if;
+ begin perform suzini_e3_private.check_form(d);raise exception 'TEST replay accepted';exception when raise_exception then if sqlerrm like 'TEST%' then raise;end if;end;
+ p:=public.suzini_e3_partners('post',pg_temp.ready_doc('{"first_name":"Profil","last_name":"Audit","licence":"7654003Z","division":"DM","phone":"+594694000001","description":"Profil test pour audit transactionnel","consent":true}'));
+ select user_id into u from public.organizers limit 1;if u is null then raise exception 'TEST organizer missing';end if;
+ perform set_config('request.jwt.claim.sub',u::text,true);
+ if not exists(select 1 from jsonb_array_elements(public.suzini_e3_club_tools('partners')) v where v->>'id'=p->>'id') then raise exception 'TEST club profile absent';end if;
+ perform public.suzini_e3_club_tools('close_partner',(p->>'id')::uuid);
+ if exists(select 1 from jsonb_array_elements(public.suzini_e3_partners('list')) v where v->>'id'=p->>'id') then raise exception 'TEST closed profile visible';end if;
+ update public.bt250_teams set p1_first_name='Modifié' where id=result;
+ logs:=public.suzini_e3_club_tools('history',result);
+ if not exists(select 1 from jsonb_array_elements(logs) v where v->'before_data'->>'p1_first_name'='Audit' and v->'after_data'->>'p1_first_name'='Modifié') then raise exception 'TEST before after missing';end if;
+ if logs::text like '%receipt_token%' or logs::text like '%owner_token%' then raise exception 'TEST secret in audit';end if;
+ insert into suzini_e3_private.form_tokens(origin_hash,issued_at,used_at) select suzini_e3_private.form_origin(),now()-interval '4 seconds',now() from generate_series(1,10);
+ begin perform suzini_e3_private.check_form(pg_temp.ready_doc('{}'));raise exception 'TEST flood accepted';exception when raise_exception then if sqlerrm like 'TEST%' then raise;end if;end;
+end;$$;
+rollback;

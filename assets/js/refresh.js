@@ -6,10 +6,8 @@ export function showRefresh(text,ready=false,loading=false){clearTimeout(hideTim
 export function hideRefresh(){if(reloading)return;const el=indicator();el.hidden=true;el.classList.remove('ready','loading');}
 export function refreshPage({automatic=false}={}){
  if(reloading)return false;
- const form=document.getElementById('signupForm');
- if(form?.dataset.submitting==='true')return false;
- // Returning from another app must not erase a form being filled out.
- if(automatic&&form?.dataset.dirty==='true')return false;
+ if(document.querySelector('form[data-submitting="true"]'))return false;
+ if(document.querySelector('form[data-dirty="true"],dialog[open]')){if(!automatic){showRefresh('Saisie conservée · terminez ou annulez avant d’actualiser');hideTimer=setTimeout(hideRefresh,3500);}return false;}
  if(navigator.onLine===false){showRefresh('Connexion indisponible');hideTimer=setTimeout(hideRefresh,3000);return false;}
  reloading=true;showRefresh('Actualisation…',true,true);
  // A fresh URL also bypasses a browser/CDN copy before the worker takes control.
@@ -19,11 +17,15 @@ export function installFreshNavigation(win=window,doc=document){
  const guard=createResumeGuard();if(doc.hidden)guard.hide();
  doc.addEventListener('visibilitychange',()=>{if(doc.hidden)guard.hide();else if(guard.resume())refreshPage({automatic:true});});
  win.addEventListener('pageshow',event=>{if(event.persisted)refreshPage({automatic:true});});
- const form=doc.getElementById('signupForm');form?.addEventListener('input',()=>{form.dataset.dirty='true';});form?.addEventListener('reset',()=>{delete form.dataset.dirty;});
+ doc.addEventListener('input',event=>{const form=event.target.closest?.('form');if(form)form.dataset.dirty='true';});
+ doc.addEventListener('change',event=>{const form=event.target.closest?.('form');if(form)form.dataset.dirty='true';});
+ doc.addEventListener('reset',event=>{if(event.target.matches?.('form'))delete event.target.dataset.dirty;},true);
+ doc.addEventListener('suzini:form-saved',event=>{const form=event.detail?.form;if(form){delete form.dataset.dirty;delete form.dataset.submitting;}});
+ win.addEventListener('beforeunload',event=>{if(doc.querySelector('form[data-dirty="true"]')){event.preventDefault();event.returnValue='';}});
  const sw=win.navigator.serviceWorker;
  if(sw&&win.isSecureContext){
   sw.addEventListener('controllerchange',()=>refreshPage({automatic:true}));
-  const worker=new URL('../../refresh-worker.js',import.meta.url),scope=new URL('../../',import.meta.url);
+  const worker=new URL('../../refresh-worker.js?v=54',import.meta.url),scope=new URL('../../',import.meta.url);
   sw.register(worker.href,{scope:scope.href,updateViaCache:'none'}).then(registration=>registration.update()).catch(()=>{/* Fresh navigation URLs remain available without worker support. */});
  }
  // Cache-bust a normal page change, including the first uncontrolled visit.

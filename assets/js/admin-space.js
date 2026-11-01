@@ -1,5 +1,5 @@
-import {client,access,signIn} from './private-client.js';
-import {accessManager} from './access-manager.js';
+import {client,access,signIn} from './private-client.js?v=54';
+import {accessManager} from './access-manager.js?v=54';
 const main=document.querySelector('main');let generation=0;
 const backend={access};
 const logout=async()=>{await client.auth.signOut();render();};

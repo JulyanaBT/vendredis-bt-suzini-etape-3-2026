@@ -1,5 +1,6 @@
 -- Run on an isolated transaction. Every fixture and temporary opening is rolled back.
 begin;
+create function pg_temp.ready_doc(d jsonb) returns jsonb language plpgsql security definer set search_path='' as $$declare t uuid;begin t:=public.suzini_e3_form_token();update suzini_e3_private.form_tokens set issued_at=clock_timestamp()-interval '3 seconds' where id=t;return d||jsonb_build_object('_guard',t);end;$$;
 do $$declare ref suzini_e3_private.rankings; other suzini_e3_private.rankings; r jsonb; fixture uuid; fallback integer;begin
  select * into ref from suzini_e3_private.rankings where division='DM' and rank>1 order by rank,licence limit 1;
  r:=suzini_e3_private.resolve_ranking('DM',lpad(ref.licence,7,'0')||'A',upper(ref.first_name),lower(ref.last_name));
@@ -30,6 +31,7 @@ do $$declare ref suzini_e3_private.rankings; other suzini_e3_private.rankings; r
 end$$;
 update public.events set registration_open=true where id='20261106-0000-4000-8000-000000000003';
 update public.suzini_e3_controls set pages='{}';
+select set_config('test.registration',pg_temp.ready_doc(current_setting('test.registration')::jsonb)::text,true);
 set local role anon;
 select public.suzini_e3_register(current_setting('test.registration')::jsonb) is not null as anonymous_registration_with_automatic_ranks;
 reset role;
