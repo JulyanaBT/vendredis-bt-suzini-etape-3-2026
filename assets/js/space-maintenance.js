@@ -1,4 +1,4 @@
-import {client} from './private-client.js?v=91';
+import {client} from './private-client.js?v=92';
 const file=location.pathname.split('/').pop()||'index.html';
 const space=document.body.dataset.space;
 const exempt=space==='admin'||(space==='club'&&file==='compte.html');

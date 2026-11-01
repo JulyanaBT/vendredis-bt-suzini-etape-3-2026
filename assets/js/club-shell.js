@@ -1,4 +1,4 @@
-import {client,signIn} from './private-client.js?v=91';
+import {client,signIn} from './private-client.js?v=92';
 const main=document.querySelector('main');
 const original=document.createDocumentFragment();let captured=false;
 async function authorize(){const {data:{session}}=await client.auth.getSession();if(!session)return false;const {error}=await client.rpc('suzini_e3_club');if(error)throw new Error(error.code==='42501'?'Accès Club non attribué pour cette étape.':error.message);return true;}

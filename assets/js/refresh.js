@@ -6,12 +6,14 @@ export function showRefresh(text,ready=false,loading=false){clearTimeout(hideTim
 export function hideRefresh(){if(reloading)return;const el=indicator();el.hidden=true;el.classList.remove('ready','loading');}
 export function refreshPage({automatic=false}={}){
  if(reloading)return false;
+ if(automatic&&location.hash.startsWith('#invitation'))return false;
  if(document.querySelector('form[data-submitting="true"]'))return false;
  if(document.querySelector('form[data-dirty="true"],dialog[open]')){if(!automatic){showRefresh('Saisie conservée · terminez ou annulez avant d’actualiser');hideTimer=setTimeout(hideRefresh,3500);}return false;}
  if(navigator.onLine===false){showRefresh('Connexion indisponible');hideTimer=setTimeout(hideRefresh,3000);return false;}
  reloading=true;showRefresh('Actualisation…',true,true);
  // A fresh URL also bypasses a browser/CDN copy before the worker takes control.
- requestAnimationFrame(()=>requestAnimationFrame(()=>location.replace(freshPageUrl(location.href))));return true;
+ hideTimer=setTimeout(()=>{reloading=false;showRefresh('Actualisation interrompue · réessayez');hideTimer=setTimeout(hideRefresh,3000);},10000);
+ try{location.replace(freshPageUrl(location.href));}catch{reloading=false;hideRefresh();}return true;
 }
 export function installFreshNavigation(win=window,doc=document){
  const guard=createResumeGuard();if(doc.hidden)guard.hide();
@@ -25,7 +27,7 @@ export function installFreshNavigation(win=window,doc=document){
  const sw=win.navigator.serviceWorker;
  if(sw&&win.isSecureContext){
   sw.addEventListener('controllerchange',()=>refreshPage({automatic:true}));
-  const worker=new URL('../../refresh-worker.js?v=91',import.meta.url),scope=new URL('../../',import.meta.url);
+  const worker=new URL('../../refresh-worker.js?v=92',import.meta.url),scope=new URL('../../',import.meta.url);
   sw.register(worker.href,{scope:scope.href,updateViaCache:'none'}).then(registration=>registration.update()).catch(()=>{/* Fresh navigation URLs remain available without worker support. */});
  }
  // Cache-bust a normal page change, including the first uncontrolled visit.
