@@ -165,3 +165,8 @@ a.home-payment-pending{color:#082d45;background:#fff3cc;font-weight:700;text-dec
 #partner-owned h2{font-size:13px;margin:6px 0}#partner-owned p{font-size:10px;margin:3px 0}#partner-owned button{min-height:36px}
 #partner-description-dialog{max-width:90vw;max-height:75dvh;border:1px solid #bfd5d6;border-radius:14px;padding:18px;color:#082d45;background:#fffdf8}
 #partner-description-dialog p{white-space:pre-wrap;font-size:14px;line-height:1.5}#partner-description-dialog button{min-height:44px;padding:8px 18px}
+
+#partner-form .field{margin:0;gap:3px}#partner-form select{height:40px}
+body:has(#partner-tab[aria-selected=true]) .signup-tabs button{min-height:44px;padding:6px}
+#partenaire-panel:has(#partner-form:not([hidden]))>.partner-intro{display:none}
+#partner-form .partner-consent{font-size:9px}
