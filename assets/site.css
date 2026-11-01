@@ -291,3 +291,11 @@ body[data-space=club] #adminContent>.signup-tabs button{min-height:34px!importan
 .solo-edit-dialog .solo-check{display:flex;align-items:flex-start;gap:7px;font-size:11px;line-height:1.4}
 .solo-edit-dialog .solo-check input{width:18px;height:18px;min-height:18px!important;flex-shrink:0}
 .solo-edit-dialog button{min-height:44px;padding:9px 12px;border:1px solid #acc9c9;border-radius:9px;background:#edf6f3;color:#082d45;margin:4px}
+
+/* Paiements publics : colonnes stables pour les pastilles individuelles. */
+.payment-team-compact{display:grid;grid-template-columns:minmax(0,1fr) 9px minmax(0,1fr) 25px;gap:6px}
+.payment-team-compact .payment-player-inline{display:grid;grid-template-columns:minmax(0,1fr) 20px;align-items:center;gap:4px;width:100%}
+.payment-team-compact .payment-player-name{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.payment-team-compact .payment-player-inline .euro-dot{justify-self:end}
+.payment-team-compact .payment-separator{text-align:center}
+.payment-team-compact>.euro-dot{justify-self:end;margin-left:0}
