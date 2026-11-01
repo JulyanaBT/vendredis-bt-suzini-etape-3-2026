@@ -219,7 +219,9 @@ Deno.serve(async req => {
  const expires=new Date(Date.now()+7*86400000).toISOString();
  const {data:updated,error}=await service.from('club_accounts').update({invitation_hash:await digest(token),invite_expires_at:expires,invitation_opened_at:null,invitation_sent_at:null}).eq('id',account.id).is('user_id',null).eq('enabled',true).select('id').maybeSingle();
  if(error||!updated)return reply({error:'Invitation indisponible.'},400);
- return reply({user_id:account.id,expires_at:expires,link:'https://julyanabt.fr/vendredis-bt-suzini-etape-3-2026/club/compte.html#invitation?token='+token});
+ const {data:initialPassword,error:shareError}=await service.rpc('suzini_e3_invite_initial_password');
+ if(shareError||!initialPassword)return reply({error:'Le mot de passe initial ne peut pas être préparé. Réessayez le partage depuis les gestionnaires.'},400);
+ return reply({user_id:account.id,expires_at:expires,initial_password:initialPassword,link:'https://julyanabt.fr/vendredis-bt-suzini-etape-3-2026/club/compte.html#invitation?token='+token});
  }
 
  if(body.action==='list'){
