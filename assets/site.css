@@ -142,3 +142,26 @@ body[data-page=accueil] .home-main{height:auto!important;grid-template-rows:minm
 .payment-team-compact>.euro-dot{margin-left:auto;width:25px;height:25px;font-size:16px}
 .payment-separator{font-size:12px;color:#526776;flex:none}.success-box .payment-choices{color:#082d45}
 a.home-payment-pending{color:#082d45;background:#fff3cc;font-weight:700;text-decoration:none}
+
+/* Recherche partenaire : une fiche à la fois, navigation sans longue liste. */
+#partenaire-panel .partner-intro{font-size:11px;line-height:1.3;margin:7px 0}
+#partenaire-panel .partner-modes{margin:0 0 7px;gap:6px}
+#partenaire-panel .partner-modes button{min-height:40px;padding:7px;font-size:11px}
+#partner-view>.field{display:flex;align-items:center;gap:8px;font-size:11px}
+#partner-filter{flex:1;min-height:40px;padding:6px}
+#partner-list-status{font-size:11px;margin:7px 0}
+#partner-list .partner-card{margin:0;padding:12px}
+#partner-list h2{font-size:16px;margin:0 0 7px}
+#partner-list .partner-description{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;font-size:12px;line-height:1.4;margin:7px 0}
+#partner-list button,#partner-list a{min-height:40px;font-size:11px;padding:7px 10px;margin:4px 3px 0 0}
+.partner-pagination{display:flex;align-items:center;justify-content:center;gap:18px;margin-top:9px}
+.partner-pagination[hidden]{display:none}.partner-pagination button{min-width:44px;min-height:40px;border:1px solid #b6d5d7;border-radius:9px;background:#fffdf8;color:#082d45}.partner-pagination span{font-size:12px}
+#partner-form{gap:7px;padding:10px}#partner-form .player-grid{gap:6px 8px}#partner-form .field{font-size:11px}
+#partner-form input:not([type=checkbox]),#partner-form select{min-height:40px;font-size:16px;padding:6px 8px}
+#partner-form textarea{min-height:54px;height:54px;padding:6px 8px;font-size:16px}
+#partner-form .partner-consent{font-size:9px;line-height:1.3;gap:6px;margin:0}
+#partner-form .partner-consent input{width:18px;min-height:18px;flex-shrink:0}
+#partner-post-status{font-size:10px;line-height:1.2;margin:0}
+#partner-owned h2{font-size:13px;margin:6px 0}#partner-owned p{font-size:10px;margin:3px 0}#partner-owned button{min-height:36px}
+#partner-description-dialog{max-width:90vw;max-height:75dvh;border:1px solid #bfd5d6;border-radius:14px;padding:18px;color:#082d45;background:#fffdf8}
+#partner-description-dialog p{white-space:pre-wrap;font-size:14px;line-height:1.5}#partner-description-dialog button{min-height:44px;padding:8px 18px}
