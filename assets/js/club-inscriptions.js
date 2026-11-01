@@ -65,7 +65,7 @@ function renderRankingSync(){
  for(const team of issues){
  const card=el('article','','ranking-sync-team');card.append(el('h3',team.p1_first_name+' / '+team.p2_first_name),createRankingDetails(team,showManualRank));
  const fix=el('button','Corriger le nom ou la licence');fix.type='button';fix.onclick=()=>showEdit(team);card.append(fix);
- for(const n of [1,2]){const p='p'+n;if(team[p+'_rank_status']==='pending'||!Number.isInteger(team[p+'_rank'])&&team[p+'_rank_status']!=='conflict'){const b=el('button','Saisir le classement de '+team[p+'_first_name]);b.type='button';b.onclick=()=>showManualRank(team,n);card.append(b);}}
+ for(const n of [1,2]){const p='p'+n;if(team[p+'_rank_status']==='pending'||!Number.isInteger(team[p+'_rank'])&&team[p+'_rank_status']!=='conflict'){const b=el('button','Saisir le classement de '+team[p+'_first_name']);b.type='button';b.onclick=()=>showManualRank(team,n);card.append(b);}}
  rankingSyncBody.append(card);
  }
  rankingSync.open=wasOpen;
