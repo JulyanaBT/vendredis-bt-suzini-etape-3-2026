@@ -24,7 +24,8 @@ function render(){
  if(error){panel.append(el('p',error,'programme-notice'));return;}
  if(!d){panel.append(el('p','Chargement du programme…'));return;}
  if(data.simulation)panel.append(el('p','SIMULATION PRIVÉE · Équipes fictives uniquement. Aucun effet sur les inscriptions, paiements ou tirages réels.','simulation-notice'));
- const overview=el('div','','programme-overview');overview.append(el('strong',`${d.count} / 8 équipes`),el('span',d.validated_at?'Format validé par le Club':'Format à valider à la clôture'));panel.append(overview);
+ if(data.simulation){const roster=el('details','','programme-pool');roster.append(el('summary','Équipes fictives de ce tableau'));const list=el('ol');teams.filter(t=>t.division===division).forEach(t=>list.append(el('li',t.team_name)));roster.append(list);panel.append(roster);}
+ const overview=el('div','','programme-overview');overview.append(el('strong',`${d.count} / 8 équipes`),el('span',d.validated_at?'Format validé par le Club':data.simulation?'Format de test à valider':'Format à valider à la clôture'));panel.append(overview);
  panel.append(el('p','Format 3 hors finales, format 4 pour les finales. Repos FFT à intégrer au chrono : les anciennes simulations à 25 + 5 min ne sont pas des convocations.','rules-review-note'));
  panel.append(el('p',data.simulation?'Tirage de test disponible immédiatement, sans fermer les inscriptions.':'Tirage au sort : jeudi 5 novembre à 14 h (Guyane, UTC−3).','programme-draw-date'));
  if(f){const box=el('section','','programme-format');box.append(el('h2',f.title),el('p',f.description),el('small',`${f.totalMatches} rencontres prévues · horaires en révision FFT`));panel.append(box);}else{panel.append(el('p','Minimum 4 équipes pour maintenir ce tableau. Avec moins de 4 équipes à la clôture, il sera annulé.','programme-notice'));}
