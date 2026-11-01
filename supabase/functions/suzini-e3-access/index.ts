@@ -30,7 +30,7 @@ Deno.serve(async req => {
  const email=String(body.email||'').trim().toLowerCase();
  const password=String(body.new_password||initial);
  if(!/^\S+@\S+\.\S+$/.test(email)||email.length>150||password.length<6||password.length>128)return reply({error:'Vérifiez l’e-mail et le mot de passe (6 caractères minimum).'},400);
- const {error:creation}=await service.auth.admin.createUser({email,password,email_confirm:true,app_metadata:{club_invitation_id:inv.id,club_invitation_hash:hash}});
+ const {data:created,error:creation}=await service.auth.admin.createUser({email,password,email_confirm:true,app_metadata:{club_invitation_id:inv.id,club_invitation_hash:hash}});
  if(creation){
  if(!['email_exists','user_already_exists'].includes(creation.code||'')&&!/already.*registered|already.*exist/i.test(creation.message||''))return reply({error:'La création du compte a échoué. Votre invitation reste utilisable ; contactez l’administrateur.'},400);
  const existingPassword=String(body.existing_password||initial);
@@ -40,6 +40,9 @@ Deno.serve(async req => {
  if(attachError)return reply({error:'Le rattachement a échoué. Vérifiez que le compte n’est pas suspendu ou contactez l’administrateur. Votre mot de passe est conservé.'},400);
  return reply({session:existing.session,email,reused:true});
  }
+ if(!created?.user)return reply({error:'Compte créé sans réponse de finalisation. Contactez l’administrateur.'},400);
+ const {error:finalization}=await service.rpc('suzini_e3_finalize_invite',{p_user:created.user.id});
+ if(finalization)return reply({error:'Le compte a été créé mais l’accès Club n’a pas pu être finalisé. Réessayez avec le même lien et votre mot de passe.'},400);
  const {data,error}=await authClient().auth.signInWithPassword({email,password});
  if(error||!data.session)return reply({error:'Compte activé. Connectez-vous avec votre e-mail et votre mot de passe.'},400);
  await service.from('club_accounts').update({first_sign_in_at:new Date().toISOString(),last_activity_at:new Date().toISOString()}).eq('id',inv.id);
