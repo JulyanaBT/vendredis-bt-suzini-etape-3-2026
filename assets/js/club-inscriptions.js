@@ -1,9 +1,9 @@
-import {rpc as publicRpc} from './supabase-site.js?v=78';
-import {readRankingPdf} from './ranking-pdf.js?v=85';
-import {hasRankingConflict,rankingCounts,createRankingDetails} from './ranking-info.js?v=85';
-import {createTeamCard,rankTeams,displayPlayerName} from './team-cards.js?v=54';
+import {rpc as publicRpc} from './supabase-site.js?v=91';
+import {readRankingPdf} from './ranking-pdf.js?v=91';
+import {hasRankingConflict,rankingCounts,createRankingDetails} from './ranking-info.js?v=91';
+import {createTeamCard,rankTeams,displayPlayerName} from './team-cards.js?v=91';
 if(location.hash.startsWith('#compte'))location.replace(new URL('compte.html',location.href));
-import {client,signIn} from './private-client.js?v=54';
+import {client,signIn} from './private-client.js?v=91';
 const $=id=>document.getElementById(id),login=$('adminLogin'),content=$('adminContent'),status=$('adminStatus');
 let data={teams:[],labels:[],open:false},editId=null,editingTeam=null;
 const rankFilter=new URLSearchParams(location.search).get('classement');if(['conflict','matched','unlisted','manual'].includes(rankFilter))$('rankState').value=rankFilter;

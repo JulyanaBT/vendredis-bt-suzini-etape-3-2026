@@ -1,4 +1,4 @@
-import {client} from './private-client.js?v=54';
+import {client} from './private-client.js?v=91';
 const content=document.getElementById('adminContent');
 const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text)n.textContent=text;if(cls)n.className=cls;return n;};
 const partners=el('details','','club-extra'),history=el('details','','club-extra');

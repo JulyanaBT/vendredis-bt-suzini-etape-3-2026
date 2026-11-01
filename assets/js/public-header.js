@@ -30,6 +30,6 @@ new ResizeObserver(()=>document.documentElement.style.setProperty('--sponsors-he
 
 window.addEventListener('hashchange',()=>{if(adminPage)document.querySelectorAll('.site-nav a').forEach(a=>{if(a.hash===(location.hash||'#admin'))a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});});
 
-import './space-maintenance.js?v=90';
+import './space-maintenance.js?v=91';
 
 const switchLink=document.querySelector('.club-switch');if(switchLink)switchLink.addEventListener('click',()=>{const target=new URL(switchLink.href);const matchTab=document.querySelector('[data-programme][aria-selected=true]')?.dataset.programme;if(matchTab)target.searchParams.set('matchtab',matchTab);const registrationTab=document.querySelector('[data-club-registration-tab][aria-pressed=true]')?.dataset.clubRegistrationTab||document.querySelector('[data-signup-tab][aria-selected=true]')?.dataset.signupTab;if(registrationTab)target.searchParams.set('tab',registrationTab);switchLink.href=target.href;});

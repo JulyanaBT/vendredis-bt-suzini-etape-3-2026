@@ -1,12 +1,38 @@
-import {client,access,signIn} from './private-client.js?v=54';
-import {accessManager} from './admin-managers.js?v=90';
+import {client,access,signIn,clearSession} from './private-client.js?v=91';
+import {accessManager} from './admin-managers.js?v=91';
 const main=document.querySelector('main');let generation=0;
 const backend={access};
-const logout=async()=>{await client.auth.signOut();render();};
-async function render(){const current=++generation;const isCurrent=()=>generation===current;const {data:{session}}=await client.auth.getSession();
- if(!session){main.innerHTML='<form class="compact-signup" id="admin-login"><h1>Administration</h1><label>Identifiant ou e-mail<input name="identifier" autocomplete="username" required></label><label>Mot de passe<input name="password" type="password" autocomplete="current-password" required></label><button class="signup-submit">Se connecter</button><p role="status"></p></form>';main.querySelector('form').onsubmit=async e=>{e.preventDefault();const b=e.submitter;b.disabled=true;try{const f=new FormData(e.target);await signIn(f.get('identifier'),f.get('password'));await render();}catch(err){main.querySelector('[role="status"]').textContent=err.message;b.disabled=false;}};return;}
+const logout=async()=>{await clearSession();showLogin();};
+function showLogin(message=''){
+ ++generation;
+ main.innerHTML='<form class="compact-signup" id="admin-login"><h1>Administration</h1><label>Identifiant ou e-mail<input name="identifier" autocomplete="username" required></label><label>Mot de passe<input name="password" type="password" autocomplete="current-password" required></label><button class="signup-submit">Se connecter</button><p role="status"></p></form>';
+ main.querySelector('[role="status"]').textContent=message;
+ main.querySelector('form').onsubmit=async event=>{event.preventDefault();const b=event.submitter;b.disabled=true;try{const f=new FormData(event.target);await signIn(f.get('identifier'),f.get('password'));await render();}catch(error){const status=main.querySelector('[role="status"]');if(status)status.textContent=error.message;if(b.isConnected)b.disabled=false;}};
+}
+async function render(){
+ const current=++generation,isCurrent=()=>generation===current;
+ try{
+ const {data:{session},error}=await client.auth.getSession();
+ if(!isCurrent())return;
+ if(error||!session){if(error)await clearSession();showLogin();return;}
+ const check=await client.auth.getUser();
+ if(!isCurrent())return;
+ if(check.error){
+ if([401,403].includes(check.error.status)||['session_not_found','refresh_token_not_found','bad_jwt'].includes(check.error.code)){await clearSession();showLogin('Votre session a expiré. Vous pouvez vous reconnecter.');return;}
+ throw new Error('Connexion au serveur impossible. Réessayez dans un instant.');
+ }
  main.innerHTML='<p role="status">Chargement…</p>';
- try{if(location.hash==='#admin-maintenance'){await maintenance(isCurrent);return;}await accessManager(backend,main,isCurrent,logout);}catch(err){if(!isCurrent())return;main.replaceChildren();const p=document.createElement('p');p.textContent=err.message;const b=document.createElement('button');b.textContent='Se déconnecter';b.onclick=logout;main.append(p,b);}}
+ if(location.hash==='#admin-maintenance'){await maintenance(isCurrent);return;}
+ await accessManager(backend,main,isCurrent,logout);
+ }catch(error){
+ if(!isCurrent())return;
+ if(error.code==='AUTH_SESSION_EXPIRED'){showLogin(error.message);return;}
+ main.replaceChildren();const p=document.createElement('p');p.textContent=error.message;
+ const retry=document.createElement('button');retry.textContent='Réessayer';retry.onclick=render;
+ const b=document.createElement('button');b.textContent='Revenir à la connexion';b.onclick=logout;main.append(p,retry,b);
+ }
+}
+
 async function maintenance(isCurrent){
  const {data,error}=await client.rpc('suzini_e3_settings',{p_data:null});if(error)throw new Error('Accès réservé à l’administrateur.');if(!isCurrent())return;
  const pages=[['index.html','Accueil','Présentation du tournoi'],['inscriptions.html','Inscription','Inscription, paiement et Solo'],['equipes.html','Équipes','Liste des équipes'],['programmation.html','Matchs','Programme et tirage'],['restauration.html','Restauration','Informations de restauration'],['infos.html','Infos','Accès, règlement, flyer et contacts']];

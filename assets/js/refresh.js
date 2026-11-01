@@ -25,7 +25,7 @@ export function installFreshNavigation(win=window,doc=document){
  const sw=win.navigator.serviceWorker;
  if(sw&&win.isSecureContext){
   sw.addEventListener('controllerchange',()=>refreshPage({automatic:true}));
-  const worker=new URL('../../refresh-worker.js?v=54',import.meta.url),scope=new URL('../../',import.meta.url);
+  const worker=new URL('../../refresh-worker.js?v=91',import.meta.url),scope=new URL('../../',import.meta.url);
   sw.register(worker.href,{scope:scope.href,updateViaCache:'none'}).then(registration=>registration.update()).catch(()=>{/* Fresh navigation URLs remain available without worker support. */});
  }
  // Cache-bust a normal page change, including the first uncontrolled visit.
