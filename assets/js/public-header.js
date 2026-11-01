@@ -31,4 +31,4 @@ window.addEventListener('hashchange',()=>{if(adminPage)document.querySelectorAll
 
 import './space-maintenance.js?v=54';
 
-const switchLink=document.querySelector('.club-switch');if(switchLink)switchLink.addEventListener('click',()=>{const target=new URL(switchLink.href);const matchTab=document.querySelector('[data-programme][aria-selected=true]')?.dataset.programme;if(matchTab)target.searchParams.set('matchtab',matchTab);switchLink.href=target.href;});
+const switchLink=document.querySelector('.club-switch');if(switchLink)switchLink.addEventListener('click',()=>{const target=new URL(switchLink.href);const matchTab=document.querySelector('[data-programme][aria-selected=true]')?.dataset.programme;if(matchTab)target.searchParams.set('matchtab',matchTab);const registrationTab=document.querySelector('[data-club-registration-tab][aria-pressed=true]')?.dataset.clubRegistrationTab||document.querySelector('[data-signup-tab][aria-selected=true]')?.dataset.signupTab;if(registrationTab)target.searchParams.set('tab',registrationTab);switchLink.href=target.href;});

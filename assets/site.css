@@ -268,3 +268,16 @@ body[data-space=public][data-page=inscription] main{padding:4px 10px 10px!import
 #clubQuickForm .field{margin:0}#clubQuickForm .player-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
 #clubQuickForm .player-grid>.field:last-child{grid-column:1/-1}
 #quick-add-team{display:block;width:100%;margin:12px 0}
+
+.mail-payments.sync-ok>summary{background:#d7f0df;color:#145b32;border-radius:8px;padding:8px}
+.mail-payments.sync-action-required>summary{background:#ffe1df;color:#9b2421;border-radius:8px;padding:8px}
+.club-payment-card{background:#fffdf8;border:1px solid #c8dcdb;border-radius:12px;margin:8px 0;padding:10px}
+.club-payment-line{display:flex;align-items:center;gap:7px;min-height:42px}
+.club-payment-heading{border-bottom:1px solid #e1e4d8;padding-bottom:7px;margin-bottom:4px}
+.club-payment-heading strong{font-size:14px;flex:1}
+.club-payment-heading .team-euro{width:34px;height:34px;font-size:23px}
+.club-payment-name{font-size:11px;flex:1;min-width:0;overflow-wrap:anywhere}
+.club-payment-methods{display:flex;gap:4px;flex:none}
+.club-payment-methods button{min-height:34px;padding:5px 7px;border:1px solid #b6cdce;border-radius:999px;color:#536c76;background:#f4f5ef;font-size:10px}
+.club-payment-methods button[aria-pressed=true]{background:#087f90;color:white;border-color:#087f90;font-weight:800}
+.club-payment-line .individual-euro{width:24px;height:24px;font-size:15px;padding:0}
