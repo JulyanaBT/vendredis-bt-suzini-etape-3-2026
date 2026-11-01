@@ -312,3 +312,10 @@ body[data-space=club] #adminContent>.signup-tabs button{min-height:34px!importan
 .ranking-sync-team{padding:9px 0;border-bottom:1px solid #d4ded6}
 .ranking-sync-team h3{font-size:14px;margin:4px 0}
 .ranking-sync-team button{min-height:44px;margin:5px 4px 0 0;padding:8px;border:1px solid #acc9c9;border-radius:8px;background:#edf6f3;color:#082d45;font-size:12px}
+
+.team-license{display:block;color:#526776;font-size:11px;line-height:1.35;margin:0 0 6px}
+.ranking-import .compact-signup{border:0;padding:10px}
+.ranking-import .field{margin:5px 0}.ranking-import input{max-width:100%}
+.ranking-import input[type=file]{font-size:12px;min-height:44px}
+.ranking-import p,.ranking-import-preview p{font-size:12px;line-height:1.45}
+.licence-sync .ranking-sync-body{font-size:12px}
