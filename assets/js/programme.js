@@ -59,4 +59,5 @@ for(const tab of tabs){tab.onclick=()=>select(tab);tab.onkeydown=event=>{let nex
 document.addEventListener('publicZoneChange',event=>{division=event.detail.epreuve;render();});
 async function load(){try{[data,teams]=await Promise.all([rpc('suzini_e3_programme'),rpc('suzini_e3_teams')]);error='';render();}catch{error='Programme indisponible. Vérifiez votre connexion puis actualisez.';render();}}
 if(isClub){const {client}=await import('./private-client.js?v=54');clubClient=client;async function ready(){const {error}=await client.rpc('suzini_e3_club');clubReady=!error;render();}document.addEventListener('club:ready',ready);ready();}
+const requestedMatchTab=new URLSearchParams(location.search).get('matchtab');const requestedMatchButton=tabs.find(t=>t.dataset.programme===requestedMatchTab);if(requestedMatchButton)select(requestedMatchButton);
 load();setInterval(()=>{if(document.visibilityState==='visible')load();},30000);
