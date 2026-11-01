@@ -11,7 +11,7 @@ export function roundRobin(teams,prefix='A'){
  const rounds=[];for(let r=0;r<rotation.length-1;r++){const matches=[];for(let i=0;i<rotation.length/2;i++){const a=rotation[i],b=rotation[rotation.length-1-i];if(a!==null&&b!==null)matches.push({a,b,stage:`Poule ${prefix} · rotation ${r+1}`});}rounds.push(matches);rotation.splice(1,0,rotation.pop());}return rounds;
 }
 export function poolFixtures(groups){if(!groups.length)return [];const rounds=groups.map((g,i)=>roundRobin(g,String.fromCharCode(65+i)));const result=[];for(let r=0;r<Math.max(...rounds.map(x=>x.length));r++)for(const pool of rounds)result.push(...(pool[r]||[]));return result;}
-export function groupsFor(d){const f=formatFor(d.count);if(!f)return [];if(d.drawn_at&&d.count<=6)return [d.pool_a,...(d.count===6?[d.pool_b]:[])];if(d.count<=5)return [Array.from({length:d.count},(_,i)=>i<2?'TS'+(i+1):'A'+(i+1))];return d.count===6?[['TS2','A2','A3'],['TS1','B2','B3']]:[];}
+export function groupsFor(d){const f=formatFor(d.count);if(!f)return [];if((d.drawn_at||d.no_draw)&&d.count<=6)return [d.pool_a,...(d.count===6?[d.pool_b]:[])];if(d.count<=5)return [Array.from({length:d.count},(_,i)=>i<2?'TS'+(i+1):'A'+(i+1))];return d.count===6?[['TS2','A2','A3'],['TS1','B2','B3']]:[];}
 export function fixturesFor(d){
  const f=formatFor(d.count);if(!f)return [];
  const jobs=[],add=(id,a,b,stage,deps=[],phase='finales')=>jobs.push({id,a,b,stage,deps,phase,format:id==='F'?4:3});
