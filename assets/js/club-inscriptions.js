@@ -18,7 +18,7 @@ if(isRegistrationPage){
  while(content.firstChild)panel.append(content.firstChild);
  const paymentPanel=el('section','');paymentPanel.id='club-payment-panel';paymentPanel.hidden=true;
  const partnerPanel=el('section','');partnerPanel.id='club-partner-panel';partnerPanel.hidden=true;
- for(const [value,label] of [['inscription','Inscriptions'],['paiement','Paiements'],['partenaire','Recherche partenaire']]){const b=el('button',label);b.type='button';b.dataset.clubRegistrationTab=value;b.setAttribute('aria-pressed',String(value===registrationTab));b.onclick=()=>selectRegistrationTab(value);tabs.append(b);}
+ for(const [value,label] of [['inscription','Inscription'],['paiement','Paiement'],['partenaire','Solo']]){const b=el('button',label);b.type='button';b.dataset.clubRegistrationTab=value;b.setAttribute('aria-pressed',String(value===registrationTab));b.onclick=()=>selectRegistrationTab(value);tabs.append(b);}
  content.append(tabs,panel,paymentPanel,partnerPanel);
  $('reload').hidden=true;$('logout').hidden=true;
  paymentPanel.append($('adminCounts'));
