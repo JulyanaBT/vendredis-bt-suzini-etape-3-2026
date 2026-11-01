@@ -1,4 +1,4 @@
-import {client,access,signIn,clearSession,withDeadline} from './private-client.js?v=93';
+import {client,access,signIn,clearSession,withDeadline} from './private-client.js?v=94';
 const main=document.querySelector('main');
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const params=new URLSearchParams(location.hash.split('?')[1]||'');

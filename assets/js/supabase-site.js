@@ -1,5 +1,5 @@
-import {rankTeams,createTeamCard} from './team-cards.js?v=93';
-import {config} from './supabase-config.js?v=93';
+import {rankTeams,createTeamCard} from './team-cards.js?v=94';
+import {config} from './supabase-config.js?v=94';
 async function rawRpc(name,body={}){
  let response;
  try{response=await fetch(config.supabaseUrl+'/rest/v1/rpc/'+name,{method:'POST',headers:{apikey:config.publishableKey,'Content-Type':'application/json'},body:JSON.stringify(body),cache:'no-store',signal:AbortSignal.timeout(12000)});}catch{throw new Error('Connexion interrompue. Vérifiez auprès du club avant de réessayer une inscription.');}

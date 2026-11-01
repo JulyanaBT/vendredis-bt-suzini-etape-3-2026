@@ -1,6 +1,6 @@
-import {rpc} from './supabase-site.js?v=93';
-import {displayShortPlayerName,displayFirstName} from './team-cards.js?v=93';
-import {config} from './supabase-config.js?v=93';
+import {rpc} from './supabase-site.js?v=94';
+import {displayShortPlayerName,displayFirstName} from './team-cards.js?v=94';
+import {config} from './supabase-config.js?v=94';
 const paymentUrl="https://tennis-club-de-suzini.sumupstore.com/product/beach-tennis-inscription-tournoi-pour-un-competiteur-de-la-paire";
 if(!paymentUrl){const a=document.getElementById('paymentLink');a?.removeAttribute('href');if(a){a.setAttribute('aria-disabled','true');a.setAttribute('tabindex','-1');a.textContent='Paiement en ligne · bientôt disponible';}}
 if(paymentUrl){const a=document.getElementById('paymentLink');a.href=paymentUrl;a.removeAttribute('aria-disabled');a.removeAttribute('tabindex');a.textContent='Payer en ligne · 10 € par joueur';}

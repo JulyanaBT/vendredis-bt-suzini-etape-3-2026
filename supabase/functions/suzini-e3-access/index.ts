@@ -131,6 +131,21 @@ Deno.serve(async req => {
  const {data:owner}=await service.from('organizers').select('user_id').eq('user_id',userData.user.id).maybeSingle();
  if(!owner)return reply({error:'Accès réservé à l’administrateur.'},403);
  const scopedEvent='20261106-0000-4000-8000-000000000003';
+
+ if(body.action==='delete_account'){
+ const id=String(body.auth_user_id||'');
+ if(body.confirm!==true||!/^[a-f0-9-]{36}$/.test(id))return reply({error:'Confirmez la suppression complète du compte.'},400);
+ const {data:protectedUser}=await service.from('organizers').select('user_id').eq('user_id',id).maybeSingle();
+ if(protectedUser||id===userData.user.id)return reply({error:'Compte administrateur protégé.'},403);
+ const {data:target,error:lookup}=await service.auth.admin.getUserById(id);
+ if(lookup||!target.user)return reply({error:'Compte introuvable. Actualisez la liste.'},404);
+ const {data:linked,error:linkedError}=await service.from('club_accounts').select('id').eq('linked_user_id',id);
+ if(linkedError)return reply({error:'Impossible de vérifier les accès associés.'},400);
+ const {error}=await service.auth.admin.deleteUser(id,false);
+ if(error)return reply({error:'Suppression refusée par le serveur. Le compte et son e-mail n’ont pas été libérés.'},400);
+ if(linked?.length){const {error:cleanup}=await service.from('club_accounts').delete().in('id',linked.map(a=>a.id));if(cleanup)return reply({ok:true,email_released:true,warning:'Compte supprimé. Certains anciens suivis d’invitation restent à retirer.'});}
+ return reply({ok:true,email_released:true});
+ }
  if(body.user_id){const {data:target}=await service.from('club_accounts').select('event_ids').eq('id',body.user_id).maybeSingle();if(!target||target.event_ids.length!==1||target.event_ids[0]!==scopedEvent)return reply({error:'Ce compte ne dépend pas de cette étape.'},403);}
  if(['create','update'].includes(body.action))body.event_ids=[scopedEvent];
  if(body.action==='delete'){
@@ -207,7 +222,21 @@ Deno.serve(async req => {
  if(body.action==='list'){
   const {data,error}=await service.from('club_accounts').select('id,user_id,username,display_name,email,enabled,event_ids,activated_at,invite_expires_at,invitation_sent_at,first_sign_in_at,last_activity_at,invitation_opened_at,invite_tracking_token,linked_user_id').contains('event_ids',[scopedEvent]).order('created_at');
   if(error)throw new Error('Gestion des accès indisponible.');
-  const accounts=await Promise.all(data.map(async a=>{if(a.linked_user_id){const {data:u}=await service.auth.admin.getUserById(a.linked_user_id);return {...a,user_id:a.id,email:u.user?.email||'',linked_user_id:undefined};}return {...a,user_id:a.id,linked_user_id:undefined};}));return reply({accounts});
+  
+ const {data:admins,error:adminsError}=await service.from('organizers').select('user_id');
+ if(adminsError)return reply({error:'Impossible de vérifier les comptes protégés.'},400);
+ const protectedIds=new Set((admins||[]).map(a=>a.user_id));
+ const users=[];let page=1;
+ while(true){const {data:batch,error}=await service.auth.admin.listUsers({page,perPage:200});if(error)return reply({error:'Impossible de charger les e-mails enregistrés.'},400);users.push(...batch.users);if(batch.users.length<200)break;page++;if(page>100)return reply({error:'Répertoire trop volumineux.'},400);}
+ const usersById=new Map(users.map(u=>[u.id,u]));
+ const accounts=data.map(a=>{const authId=a.user_id||a.linked_user_id;return {...a,user_id:a.id,auth_user_id:authId,protected:protectedIds.has(authId),email:authId?usersById.get(authId)?.email||a.email||'':a.email||'',linked_user_id:undefined};});
+ const stageUsers=new Set(accounts.map(a=>a.auth_user_id).filter(Boolean));
+ const {data:memberships,error:membershipsError}=await service.from('event_memberships').select('user_id');
+ if(membershipsError)return reply({error:'Impossible de vérifier les accès.'},400);
+ const counts=new Map();for(const m of memberships||[])counts.set(m.user_id,(counts.get(m.user_id)||0)+1);
+ const directory=users.filter(u=>u.email&&!stageUsers.has(u.id)).map(u=>({auth_user_id:u.id,email:u.email,created_at:u.created_at,last_sign_in_at:u.last_sign_in_at||null,event_count:counts.get(u.id)||0,protected:protectedIds.has(u.id)})).sort((a,b)=>a.email.localeCompare(b.email));
+ return reply({accounts,directory});
+
  }
  if(body.action==='mark_sent'){
   const {error}=await service.from('club_accounts').update({invitation_sent_at:new Date().toISOString()}).eq('id',body.user_id);

@@ -1,4 +1,4 @@
-import {client} from './private-client.js?v=93';
+import {client} from './private-client.js?v=94';
 const club=document.body.dataset.space==='club';
 const page=document.body.dataset.infoPage;
 let state,busy=false,root;
@@ -72,6 +72,6 @@ document.addEventListener('click',async event=>{
  busy=true;b.disabled=true;try{await save('contacts',{...state.contacts,people:state.contacts.people.filter(x=>x.id!==p.id)});render();notice('Contact supprimé.');}catch(error){notice(error.message,true);}finally{busy=false;if(b.isConnected)b.disabled=false;}
 });
 document.addEventListener('toggle',event=>{const box=event.target;if(box.matches?.('.contact-accordion')&&box.open)document.querySelectorAll('.contact-accordion[open]').forEach(other=>{if(other!==box)other.open=false;});},true);
-if(club){await import('./club-shell.js?v=93');document.addEventListener('club:ready',boot);}
+if(club){await import('./club-shell.js?v=94');document.addEventListener('club:ready',boot);}
 await boot();
 if(!club)window.addEventListener('pageshow',event=>{if(event.persisted)boot();});

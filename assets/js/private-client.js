@@ -1,5 +1,5 @@
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.57.4';
-import {config} from './supabase-config.js?v=93';
+import {config} from './supabase-config.js?v=94';
 export const client=createClient(config.supabaseUrl,config.publishableKey,{auth:{storageKey:'suzini-e3-admin',persistSession:true,autoRefreshToken:true}});
 export function withDeadline(promise,ms=12000){
  let timer;return Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('Le chargement prend trop de temps. Vérifiez votre connexion puis réessayez.')),ms);})]).finally(()=>clearTimeout(timer));
