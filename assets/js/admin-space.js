@@ -1,5 +1,5 @@
-import {client,access,signIn,clearSession} from './private-client.js?v=92';
-import {accessManager} from './admin-managers.js?v=92';
+import {client,access,signIn,clearSession} from './private-client.js?v=93';
+import {accessManager} from './admin-managers.js?v=93';
 const main=document.querySelector('main');let generation=0;
 const backend={access};
 const logout=async()=>{await clearSession();showLogin();};

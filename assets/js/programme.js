@@ -1,5 +1,5 @@
-import {rpc} from './supabase-site.js?v=92';
-import {formatFor,COURTS,groupsFor,scheduleDraws,slotFor} from './tournament-format.js?v=92';
+import {rpc} from './supabase-site.js?v=93';
+import {formatFor,COURTS,groupsFor,scheduleDraws,slotFor} from './tournament-format.js?v=93';
 const tabs=[...document.querySelectorAll('[data-programme]')],panel=document.getElementById('programme-panel');
 const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text)n.textContent=text;if(cls)n.className=cls;return n;};
 let division='DM',selected='chrono',data=null,teams=[],error='',clubClient=null,clubReady=false;
@@ -58,6 +58,6 @@ function select(tab){selected=tab.dataset.programme;for(const b of tabs){const a
 for(const tab of tabs){tab.onclick=()=>select(tab);tab.onkeydown=event=>{let next=tabs.indexOf(tab);if(event.key==='ArrowRight')next=(next+1)%tabs.length;else if(event.key==='ArrowLeft')next=(next+tabs.length-1)%tabs.length;else if(event.key==='Home')next=0;else if(event.key==='End')next=tabs.length-1;else return;event.preventDefault();select(tabs[next]);tabs[next].focus();};}
 document.addEventListener('publicZoneChange',event=>{division=event.detail.epreuve;render();});
 async function load(){try{[data,teams]=await Promise.all([rpc('suzini_e3_programme'),rpc('suzini_e3_teams')]);error='';render();}catch{error='Programme indisponible. Vérifiez votre connexion puis actualisez.';render();}}
-if(isClub){const {client}=await import('./private-client.js?v=92');clubClient=client;async function ready(){const {error}=await client.rpc('suzini_e3_club');clubReady=!error;render();}document.addEventListener('club:ready',ready);ready();}
+if(isClub){const {client}=await import('./private-client.js?v=93');clubClient=client;async function ready(){const {error}=await client.rpc('suzini_e3_club');clubReady=!error;render();}document.addEventListener('club:ready',ready);ready();}
 const requestedMatchTab=new URLSearchParams(location.search).get('matchtab');const requestedMatchButton=tabs.find(t=>t.dataset.programme===requestedMatchTab);if(requestedMatchButton)select(requestedMatchButton);
 load();setInterval(()=>{if(document.visibilityState==='visible')load();},30000);

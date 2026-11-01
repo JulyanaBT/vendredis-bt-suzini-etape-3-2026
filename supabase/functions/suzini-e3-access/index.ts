@@ -31,7 +31,15 @@ Deno.serve(async req => {
  const password=String(body.new_password||initial);
  if(!/^\S+@\S+\.\S+$/.test(email)||email.length>150||password.length<6||password.length>128)return reply({error:'Vérifiez l’e-mail et le mot de passe (6 caractères minimum).'},400);
  const {error:creation}=await service.auth.admin.createUser({email,password,email_confirm:true,app_metadata:{club_invitation_id:inv.id,club_invitation_hash:hash}});
- if(creation)return reply({error:'Ce compte ne peut pas être créé : cet e-mail est peut-être déjà utilisé. Essayez un autre e-mail ou contactez l’administrateur. Aucun compte existant n’a été modifié.'},400);
+ if(creation){
+ if(!['email_exists','user_already_exists'].includes(creation.code||'')&&!/already.*registered|already.*exist/i.test(creation.message||''))return reply({error:'La création du compte a échoué. Votre invitation reste utilisable ; contactez l’administrateur.'},400);
+ const existingPassword=String(body.existing_password||initial);
+ const {data:existing,error:existingError}=await authClient().auth.signInWithPassword({email,password:existingPassword});
+ if(existingError||!existing.user||!existing.session)return reply({error:'Cet e-mail possède déjà un compte. Saisissez le mot de passe actuel de ce compte pour le rattacher au tournoi.',code:'EXISTING_ACCOUNT_PASSWORD_REQUIRED'},409);
+ const {error:attachError}=await service.rpc('suzini_e3_attach_existing_invite',{p_hash:hash,p_user:existing.user.id});
+ if(attachError)return reply({error:'Le rattachement a échoué. Vérifiez que le compte n’est pas suspendu ou contactez l’administrateur. Votre mot de passe est conservé.'},400);
+ return reply({session:existing.session,email,reused:true});
+ }
  const {data,error}=await authClient().auth.signInWithPassword({email,password});
  if(error||!data.session)return reply({error:'Compte activé. Connectez-vous avec votre e-mail et votre mot de passe.'},400);
  await service.from('club_accounts').update({first_sign_in_at:new Date().toISOString(),last_activity_at:new Date().toISOString()}).eq('id',inv.id);
@@ -84,7 +92,8 @@ Deno.serve(async req => {
 
  if(body.action==='update_email'){
  const {data:account}=await service.from('club_accounts').select('id,event_ids').eq('user_id',userData.user.id).eq('enabled',true).not('activated_at','is',null).maybeSingle();
- if(!account||!account.event_ids.includes('20261106-0000-4000-8000-000000000003'))return reply({error:'Accès Club requis.'},403);
+ if(!account)return reply({error:'Accès Club requis.'},403);
+ const {data:membership}=await service.from('event_memberships').select('user_id').eq('user_id',userData.user.id).eq('event_id','20261106-0000-4000-8000-000000000003').maybeSingle();if(!membership)return reply({error:'Accès Club requis.'},403);
  const email=String(body.email||'').trim().toLowerCase();
  if(!/^\S+@\S+\.\S+$/.test(email)||email.length>150)return reply({error:'E-mail invalide.'},400);
  const {error:check}=await authClient().auth.signInWithPassword({email:userData.user.email!,password:String(body.current_password||'')});
@@ -125,7 +134,8 @@ Deno.serve(async req => {
  if(body.user_id){const {data:target}=await service.from('club_accounts').select('event_ids').eq('id',body.user_id).maybeSingle();if(!target||target.event_ids.length!==1||target.event_ids[0]!==scopedEvent)return reply({error:'Ce compte ne dépend pas de cette étape.'},403);}
  if(['create','update'].includes(body.action))body.event_ids=[scopedEvent];
  if(body.action==='delete'){
-  const {data:account}=await service.from('club_accounts').select('user_id').eq('id',body.user_id).single();
+  const {data:account}=await service.from('club_accounts').select('user_id,linked_user_id').eq('id',body.user_id).single();
+  if(account?.linked_user_id){const {error}=await service.rpc('suzini_e3_linked_access',{p_id:body.user_id,p_enabled:false});if(error)return reply({error:'Ce compte est protégé ou ne peut pas être retiré.'},403);}
   if(account?.user_id){const {data:protectedUser}=await service.from('organizers').select('user_id').eq('user_id',account.user_id).maybeSingle();if(protectedUser||account.user_id===userData.user.id)return reply({error:'Compte administrateur protégé.'},403);const {error}=await service.auth.admin.deleteUser(account.user_id);if(error)throw error;}
   const {error}=await service.from('club_accounts').delete().eq('id',body.user_id);if(error)throw error;return reply({ok:true});
  }
@@ -184,8 +194,8 @@ Deno.serve(async req => {
  const {data,error}=await service.from('club_accounts').insert({username,display_name:name,event_ids:[eventId]}).select('id,username').single();
  if(error)return reply({error:'Invitation impossible. Réessayez.'},400);account=data;
  }else{
- const {data}=await service.from('club_accounts').select('id,username,user_id,enabled,event_ids').eq('id',body.user_id).maybeSingle();
- if(!data||data.user_id||!data.enabled||data.event_ids.length!==1||data.event_ids[0]!==eventId)return reply({error:'Cette invitation ne peut pas être renouvelée.'},400);account=data;
+ const {data}=await service.from('club_accounts').select('id,username,user_id,activated_at,enabled,event_ids').eq('id',body.user_id).maybeSingle();
+ if(!data||data.user_id||data.activated_at||!data.enabled||data.event_ids.length!==1||data.event_ids[0]!==eventId)return reply({error:'Cette invitation ne peut pas être renouvelée.'},400);account=data;
  }
  const token=Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,'0')).join('');
  const expires=new Date(Date.now()+7*86400000).toISOString();
@@ -195,15 +205,17 @@ Deno.serve(async req => {
  }
 
  if(body.action==='list'){
-  const {data,error}=await service.from('club_accounts').select('id,user_id,username,display_name,email,enabled,event_ids,activated_at,invite_expires_at,invitation_sent_at,first_sign_in_at,last_activity_at,invitation_opened_at,invite_tracking_token').contains('event_ids',[scopedEvent]).order('created_at');
+  const {data,error}=await service.from('club_accounts').select('id,user_id,username,display_name,email,enabled,event_ids,activated_at,invite_expires_at,invitation_sent_at,first_sign_in_at,last_activity_at,invitation_opened_at,invite_tracking_token,linked_user_id').contains('event_ids',[scopedEvent]).order('created_at');
   if(error)throw new Error('Gestion des accès indisponible.');
-  return reply({accounts:data.map(a=>({...a,user_id:a.id}))});
+  const accounts=await Promise.all(data.map(async a=>{if(a.linked_user_id){const {data:u}=await service.auth.admin.getUserById(a.linked_user_id);return {...a,user_id:a.id,email:u.user?.email||'',linked_user_id:undefined};}return {...a,user_id:a.id,linked_user_id:undefined};}));return reply({accounts});
  }
  if(body.action==='mark_sent'){
   const {error}=await service.from('club_accounts').update({invitation_sent_at:new Date().toISOString()}).eq('id',body.user_id);
   if(error)throw new Error('Mise à jour impossible.');return reply({ok:true});
  }
  if(body.action==='update'){
+  const {data:linked}=await service.from('club_accounts').select('linked_user_id').eq('id',body.user_id).maybeSingle();
+  if(linked?.linked_user_id){if(typeof body.enabled!=='boolean')return reply({error:'Droits invalides.'},400);const {error}=await service.rpc('suzini_e3_linked_access',{p_id:body.user_id,p_enabled:body.enabled});if(error)return reply({error:'Impossible de modifier cet accès.'},403);return reply({ok:true});}
   if(!Array.isArray(body.event_ids)||typeof body.enabled!=='boolean')return reply({error:'Droits invalides.'},400);
   const {error}=await service.rpc('apply_club_assignments',{target_user:body.user_id,assigned_events:body.event_ids,access_enabled:body.enabled});
   if(error)throw new Error('Impossible de modifier ces droits.');

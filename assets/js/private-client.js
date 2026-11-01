@@ -1,5 +1,5 @@
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.57.4';
-import {config} from './supabase-config.js?v=92';
+import {config} from './supabase-config.js?v=93';
 export const client=createClient(config.supabaseUrl,config.publishableKey,{auth:{storageKey:'suzini-e3-admin',persistSession:true,autoRefreshToken:true}});
 export function withDeadline(promise,ms=12000){
  let timer;return Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('Le chargement prend trop de temps. Vérifiez votre connexion puis réessayez.')),ms);})]).finally(()=>clearTimeout(timer));
@@ -27,7 +27,7 @@ export async function access(body,authorized=true){
  session=refresh.data.session;result=await send(session);
  if(result.r.status===401){await clearSession();throw expired();}
  }
- if(!result.r.ok)throw Object.assign(new Error(result.data.error||'Opération indisponible.'),{status:result.r.status});
+ if(!result.r.ok)throw Object.assign(new Error(result.data.error||'Opération indisponible.'),{status:result.r.status,code:result.data.code});
  return result.data;
 }
 export async function signIn(identifier,password){identifier=String(identifier).trim();if(identifier.includes('@')){const {error}=await client.auth.signInWithPassword({email:identifier,password});if(error)throw new Error('Identifiants incorrects.');}else{const data=await access({action:'login',username:identifier,password},false);const {error}=await client.auth.setSession(data.session);if(error)throw error;}}

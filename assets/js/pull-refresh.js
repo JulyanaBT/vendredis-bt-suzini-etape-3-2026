@@ -1,4 +1,4 @@
-import {showRefresh,hideRefresh,refreshPage} from './refresh.js?v=92';
+import {showRefresh,hideRefresh,refreshPage} from './refresh.js?v=93';
 export function createPullGesture(threshold=84){
  let start=null,amount=0,claimed=false;
  return {

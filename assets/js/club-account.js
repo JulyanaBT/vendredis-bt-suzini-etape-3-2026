@@ -1,4 +1,4 @@
-import {client,access,signIn,clearSession,withDeadline} from './private-client.js?v=92';
+import {client,access,signIn,clearSession,withDeadline} from './private-client.js?v=93';
 const main=document.querySelector('main');
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const params=new URLSearchParams(location.hash.split('?')[1]||'');
@@ -14,7 +14,11 @@ async function invitation(){
  main.querySelector('#retry-invitation').onclick=invitation;return;
  }
  main.innerHTML='<section class="account-card"><span class="admin-eyebrow">BIENVENUE DANS L’ESPACE CLUB</span><h1>Mon compte</h1><p>Votre e-mail sera votre identifiant de connexion.</p><form id="accept-invite"><label>Mon e-mail<input name="email" type="email" autocomplete="email" maxlength="150" required></label><label>Mot de passe initial communiqué par l’organisation<input name="initial_password" type="password" autocomplete="current-password" required></label><details class="account-password-option"><summary>Choisir un autre mot de passe (facultatif)</summary><label>Nouveau mot de passe<input name="new_password" type="password" autocomplete="new-password" minlength="6" maxlength="128"></label><label>Confirmer le nouveau mot de passe<input name="confirm" type="password" autocomplete="new-password"></label><small>Laissez ces champs vides pour conserver le mot de passe initial.</small></details><button class="signup-submit">Activer mon compte et entrer</button><p role="status"></p></form></section>';
- const form=main.querySelector('form');form.onsubmit=async event=>{event.preventDefault();const b=event.submitter,s=form.querySelector('[role="status"]'),data=Object.fromEntries(new FormData(form));if(data.new_password!==data.confirm){s.textContent='Les nouveaux mots de passe ne correspondent pas.';return;}b.disabled=true;s.textContent='Activation…';try{const result=await access({action:'activate_simple',token,...data},false);const {error}=await withDeadline(client.auth.setSession(result.session));if(error)throw error;history.replaceState(null,'',location.pathname);await render();}catch(e){s.textContent=e.message;b.disabled=false;}};
+ const form=main.querySelector('form');form.onsubmit=async event=>{event.preventDefault();const b=event.submitter,s=form.querySelector('[role="status"]'),data=Object.fromEntries(new FormData(form));if(data.new_password!==data.confirm){s.textContent='Les nouveaux mots de passe ne correspondent pas.';return;}b.disabled=true;s.textContent='Activation…';try{const result=await access({action:'activate_simple',token,...data},false);const {error}=await withDeadline(client.auth.setSession(result.session));if(error)throw error;history.replaceState(null,'',location.pathname);await render();if(result.reused){const note=document.createElement('p');note.textContent='Votre compte existant est rattaché au tournoi. Son mot de passe actuel est conservé ; vous pouvez le modifier ci-dessous.';main.querySelector('h1')?.after(note);}}catch(e){s.textContent=e.message;
+ if(e.code==='EXISTING_ACCOUNT_PASSWORD_REQUIRED'&&!form.querySelector('[name="existing_password"]')){
+ const field=document.createElement('label');field.textContent='Mot de passe actuel de ce compte existant';const input=document.createElement('input');input.name='existing_password';input.type='password';input.autocomplete='current-password';input.required=true;field.append(input);s.before(field);form.querySelector('[name="new_password"]').value='';form.querySelector('[name="confirm"]').value='';form.querySelector('.account-password-option').hidden=true;input.focus();
+ }
+ b.disabled=false;}};
 }
 async function render(){
  try{
