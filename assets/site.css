@@ -170,3 +170,20 @@ a.home-payment-pending{color:#082d45;background:#fff3cc;font-weight:700;text-dec
 body:has(#partner-tab[aria-selected=true]) .signup-tabs button{min-height:44px;padding:6px}
 #partenaire-panel:has(#partner-form:not([hidden]))>.partner-intro{display:none}
 #partner-form .partner-consent{font-size:9px}
+
+/* Public : huit équipes en quatre rangées sur mobile. */
+@media(max-width:600px){
+body[data-space=public][data-page=equipes] main{padding:7px 10px!important}
+body[data-space=public][data-page=equipes] .public-card{padding:10px!important}
+body[data-space=public][data-page=equipes] #status{font-size:10px;line-height:1.2;margin:5px 0}
+body[data-space=public][data-page=equipes] .teams-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+body[data-space=public][data-page=equipes] .team-card{position:relative;display:block;padding:8px;min-height:94px;border-radius:11px;box-shadow:none}
+body[data-space=public][data-page=equipes] .team-line1{display:block;margin:0 36px 6px 0;min-height:29px;font-size:11px;line-height:1.15}
+body[data-space=public][data-page=equipes] .team-num{font-size:8px;display:inline;margin-right:3px}
+body[data-space=public][data-page=equipes] .team-name{font-size:11px;line-height:1.15}
+body[data-space=public][data-page=equipes] .team-player{margin:3px 0!important;font-size:10px!important;line-height:1.2!important}
+body[data-space=public][data-page=equipes] .team-rank{position:absolute;right:6px;top:6px;min-width:33px;min-height:34px;padding:3px;border-radius:7px}
+body[data-space=public][data-page=equipes] .team-rank small{font-size:5px;letter-spacing:0}
+body[data-space=public][data-page=equipes] .team-rank strong{font-size:12px;line-height:1.2}
+body[data-space=public][data-page=equipes] .team-rank-note{font-size:8px!important;line-height:1.25;margin-top:7px!important}
+}
