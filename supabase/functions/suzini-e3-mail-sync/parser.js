@@ -4,13 +4,13 @@ export function htmlText(html){return String(html||'').replace(/<script\b[^>]*>[
 export function authenticatedSumup(headers){
  // Trust only receiver-generated authentication results placed above the first Received
  // hop. Older/forwarded Authentication-Results inside the message are not evidence.
- const received=headers.findIndex(h=>h.key.toLowerCase()==='received');
- const top=headers.slice(0,received<0?0:received+1);
- return top.some(h=>h.key.toLowerCase()==='authentication-results'&&/^[^;]*infomaniak\.(?:ch|com)\s*;/i.test(h.value)&&h.value.split(';').some(clause=>/\bdkim=pass\b/i.test(clause)&&/header\.(?:d|i)=(?:@)?(?:[a-z0-9-]+\.)*sumup\.com(?:\s|$)/i.test(clause)));
+ const received=headers.findIndex(h=>h.key.toLowerCase()==='received'&&!/from\s+[^\s]*infomaniak\.(?:ch|com)\b/i.test(h.value));
+ const top=headers.slice(0,received<0?headers.length:received+1);
+ return top.some(h=>h.key.toLowerCase()==='authentication-results'&&/^[^;]*infomaniak\.(?:ch|com)\s*;/i.test(h.value)&&h.value.replace(/\\[trn]/g,' ').replace(/\([^)]*\)/g,'').split(';').some(clause=>/\bdkim=pass\b/i.test(clause)&&/header\.(?:d|i)=(?:@)?(?:[a-z0-9-]+\.)*sumup\.com(?:\s|$)/i.test(clause)));
 }
 export function parseOrder(mail,receivedAt,product){
  if(mail.from?.address?.toLowerCase()!=='no-reply@notification.sumup.com'||!/^Nouvelle commande\s*#\d+/i.test(mail.subject||''))return null;
- const text=(mail.text||htmlText(mail.html)).replace(/\r/g,'');
+ const html=htmlText(mail.html);const text=((/Détail commande|Récapitulatif de la commande/i.test(html)?html:mail.text)||html).replace(/\r/g,'');
  const lines=text.split('\n').map(l=>l.trim().replace(/[\u00a0\u202f]/g,' ')).filter(Boolean);
  const number=(mail.subject.match(/#(\d+)/)||[])[1];
  const orderUuid=(String(mail.html||'')+' '+text).match(/online-selling\/orders\/([0-9a-f]{8}-[0-9a-f-]{27,})/i)?.[1];

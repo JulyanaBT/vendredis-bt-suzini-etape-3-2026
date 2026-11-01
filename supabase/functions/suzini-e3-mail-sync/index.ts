@@ -28,7 +28,7 @@ Deno.serve(async req=>{
    validity=String(imap.mailbox.uidValidity);
    if(validity!==cfg.uid_validity)uid=0;
    stage='lecture';
-   const found=await imap.search({since:new Date(cfg.started_at),from:'no-reply@notification.sumup.com'},{uid:true});
+   const found=await imap.search({since:new Date(cfg.started_at),subject:'Nouvelle commande'},{uid:true});
    const ids=(found||[]).filter((id:number)=>id>uid).sort((a:number,b:number)=>a-b).slice(0,15);
    for(const id of ids){
     const meta=await imap.fetchOne(String(id),{size:true,internalDate:true},{uid:true});
