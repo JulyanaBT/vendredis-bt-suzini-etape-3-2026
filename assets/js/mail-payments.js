@@ -13,14 +13,18 @@ const productLabel=el('label','Libellé exact de l’article SumUp'),product=el(
 const passwordLabel=el('label','Mot de passe Infomaniak de l’appareil « Synchronisation paiements »'),password=el('input');password.name='password';password.type='password';password.autocomplete='new-password';password.required=true;password.minLength=8;passwordLabel.append(password);
 const consentLabel=el('label','','mail-consent'),consent=el('input');consent.type='checkbox';consent.required=true;consentLabel.append(consent,document.createTextNode('J’autorise Supabase à utiliser ce mot de passe dédié pour lire les confirmations SumUp reçues sur contact@julyanabt.fr.'));
 const save=el('button','Enregistrer et activer');save.type='submit';setup.append(productLabel,passwordLabel,consentLabel,save);
-const list=el('div','','mail-order-list');mount.append(state,notice,actions,setup,list);
+const list=el('div','','mail-order-list');mount.append(list,state,notice,actions);
+const configBox=el('details','','mail-payments mail-configuration'),configTitle=el('summary','Configurer la lecture des confirmations');configBox.append(configTitle,setup);configBox.hidden=true;
+const paymentPanel=document.getElementById('club-payment-panel')||content;paymentPanel.append(configBox);
+new MutationObserver(()=>{if(paymentPanel.lastElementChild!==configBox)paymentPanel.append(configBox);}).observe(paymentPanel,{childList:true});
+setup.querySelector('h3')?.remove();
 let info=null,teams=[],busy=false;
 async function rpc(action,data={}){const {data:result,error}=await client.rpc('suzini_e3_mail_manage',{p_action:action,p_data:data});if(error)throw error;return result;}
 async function load(){if(content.hidden)return;try{info=await rpc('status');const {data,error}=await client.rpc('suzini_e3_club',{p_action:'list'});if(error)throw error;teams=data.teams||[];render();}catch{mount.classList.add('sync-action-required');mount.classList.remove('sync-ok');state.textContent='Suivi des mails indisponible. Actualisez ou reconnectez-vous.';}}
 function render(){
  const pending=info.orders.filter(o=>o.state==='pending');summary.textContent=`Synchronisation SumUp · ${pending.length} à vérifier`;mount.classList.toggle('sync-action-required',!!info.last_error||pending.length>0||!info.configured);mount.classList.toggle('sync-ok',!info.last_error&&pending.length===0&&info.configured);
  state.textContent=!info.configured?'Connexion mail à configurer':!info.enabled?'Lecture suspendue':info.last_success?'Dernière lecture : '+new Date(info.last_success).toLocaleString('fr-FR'):'Lecture activée · première synchronisation en attente';
- notice.textContent=info.last_error||'';setup.hidden=!info.is_admin;sync.hidden=!info.is_admin;pause.hidden=!info.is_admin||!info.enabled;sync.disabled=!info.configured||!info.enabled;product.value=info.product||'';
+ notice.textContent=info.last_error||'';configBox.hidden=!info.is_admin;setup.hidden=!info.is_admin;sync.hidden=!info.is_admin;pause.hidden=!info.is_admin||!info.enabled;sync.disabled=!info.configured||!info.enabled;product.value=info.product||'';
  list.replaceChildren();list.append(el('h3','Confirmations à vérifier'));
  if(!pending.length)list.append(el('p','Aucune confirmation en attente.'));
  for(const order of pending){const card=el('article','','mail-order');card.append(el('h4','Commande #'+(order.order_number||'—')+' · '+(order.amount_cents==null?'Montant à vérifier':(order.amount_cents/100).toLocaleString('fr-FR')+' €')),el('p',order.buyer_name||'Client non identifié'),el('p',order.reason||'Vérification nécessaire'));
