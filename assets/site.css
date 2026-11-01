@@ -299,3 +299,16 @@ body[data-space=club] #adminContent>.signup-tabs button{min-height:34px!importan
 .payment-team-compact .payment-player-inline .euro-dot{justify-self:end}
 .payment-team-compact .payment-separator{text-align:center}
 .payment-team-compact>.euro-dot{justify-self:end;margin-left:0}
+
+.ranking-sync{border:1px solid #b8d0d0;border-radius:11px;margin:10px 0;overflow:hidden;background:#fffdf8}
+.ranking-sync>summary{list-style:none;cursor:pointer;padding:11px 12px;font-size:13px;font-weight:800;min-height:44px}
+.ranking-sync>summary::-webkit-details-marker{display:none}
+.ranking-sync>summary:after{content:'+';float:right;font-size:17px}
+.ranking-sync[open]>summary:after{content:'−'}
+.ranking-sync.all-ok>summary{background:#d7f0df;color:#145b32}
+.ranking-sync.needs-action>summary{background:#ffe1df;color:#9b2421}
+.ranking-sync-body{padding:10px}
+.ranking-sync-body p{font-size:12px;line-height:1.4}
+.ranking-sync-team{padding:9px 0;border-bottom:1px solid #d4ded6}
+.ranking-sync-team h3{font-size:14px;margin:4px 0}
+.ranking-sync-team button{min-height:44px;margin:5px 4px 0 0;padding:8px;border:1px solid #acc9c9;border-radius:8px;background:#edf6f3;color:#082d45;font-size:12px}
