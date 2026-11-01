@@ -13,6 +13,31 @@ Deno.serve(async req => {
  if(req.method!=='POST'||(origin&&!origins.has(origin)))return reply({error:'Requête non autorisée.'},403);
  try {
  const body=await req.json();
+
+ if(body.action==='invite_info'||body.action==='activate_simple'){
+ const token=String(body.token||'');
+ if(!/^[a-f0-9]{64}$/.test(token))return reply({error:'Lien d’invitation incomplet.'},400);
+ const hash=await digest(token);
+ const {data:inv}=await service.from('club_accounts').select('id,username,enabled,event_ids,invite_expires_at,user_id,invitation_opened_at').eq('invitation_hash',hash).is('user_id',null).maybeSingle();
+ if(!inv?.enabled||inv.event_ids.length!==1||inv.event_ids[0]!=='20261106-0000-4000-8000-000000000003'||!inv.invite_expires_at||Date.parse(inv.invite_expires_at)<=Date.now())return reply({error:'Ce lien est expiré, annulé ou déjà utilisé. Si le compte est activé, connectez-vous avec votre e-mail.'},400);
+ if(body.action==='invite_info'){
+ if(!inv.invitation_opened_at)await service.from('club_accounts').update({invitation_opened_at:new Date().toISOString()}).eq('id',inv.id).eq('invitation_hash',hash);
+ return reply({ok:true,expires_at:inv.invite_expires_at});
+ }
+ const initial=String(body.initial_password||'');
+ const {data:matches,error:passwordError}=await service.rpc('suzini_e3_invite_password_matches',{p_password:initial});
+ if(passwordError||!matches)return reply({error:'Le mot de passe initial transmis par l’organisation est incorrect.'},400);
+ const email=String(body.email||'').trim().toLowerCase();
+ const password=String(body.new_password||initial);
+ if(!/^\S+@\S+\.\S+$/.test(email)||email.length>150||password.length<6||password.length>128)return reply({error:'Vérifiez l’e-mail et le mot de passe (6 caractères minimum).'},400);
+ const {error:creation}=await service.auth.admin.createUser({email,password,email_confirm:true,app_metadata:{club_invitation_id:inv.id,club_invitation_hash:hash}});
+ if(creation)return reply({error:'Ce compte ne peut pas être créé : cet e-mail est peut-être déjà utilisé. Essayez un autre e-mail ou contactez l’administrateur. Aucun compte existant n’a été modifié.'},400);
+ const {data,error}=await authClient().auth.signInWithPassword({email,password});
+ if(error||!data.session)return reply({error:'Compte activé. Connectez-vous avec votre e-mail et votre mot de passe.'},400);
+ await service.from('club_accounts').update({first_sign_in_at:new Date().toISOString(),last_activity_at:new Date().toISOString()}).eq('id',inv.id);
+ return reply({session:data.session,email});
+ }
+
  if(body.action==='login'){
   const username=String(body.username||'').trim().toLowerCase();
   const {data:account}=await service.from('club_accounts').select('user_id,email,enabled,activated_at').eq('username',username).maybeSingle();
@@ -56,6 +81,21 @@ Deno.serve(async req => {
  if(!bearer)return reply({error:'Connexion administrateur requise.'},401);
  const {data:userData,error:userError}=await service.auth.getUser(bearer);
  if(userError||!userData.user)return reply({error:'Connexion expirée.'},401);
+
+ if(body.action==='update_email'){
+ const {data:account}=await service.from('club_accounts').select('id,event_ids').eq('user_id',userData.user.id).eq('enabled',true).not('activated_at','is',null).maybeSingle();
+ if(!account||!account.event_ids.includes('20261106-0000-4000-8000-000000000003'))return reply({error:'Accès Club requis.'},403);
+ const email=String(body.email||'').trim().toLowerCase();
+ if(!/^\S+@\S+\.\S+$/.test(email)||email.length>150)return reply({error:'E-mail invalide.'},400);
+ const {error:check}=await authClient().auth.signInWithPassword({email:userData.user.email!,password:String(body.current_password||'')});
+ if(check)return reply({error:'Le mot de passe actuel est incorrect.'},400);
+ const {error}=await service.auth.admin.updateUserById(userData.user.id,{email,email_confirm:true});
+ if(error)return reply({error:'Cet e-mail est déjà utilisé ou ne peut pas être enregistré.'},400);
+ const {error:profileError}=await service.from('club_accounts').update({email}).eq('id',account.id);
+ if(profileError){await service.auth.admin.updateUserById(userData.user.id,{email:userData.user.email!,email_confirm:true});return reply({error:'Modification impossible. Votre ancien identifiant est conservé.'},400);}
+ return reply({ok:true,email});
+ }
+
  if(body.action==='profile'||body.action==='update_profile'){
   const {data:account}=await service.from('club_accounts').select('id,username,email').eq('user_id',userData.user.id).eq('enabled',true).not('activated_at','is',null).maybeSingle();
   if(!account)return reply({error:'Ce compte ne dispose pas d’un profil gestionnaire Club.'},403);
@@ -133,6 +173,27 @@ Deno.serve(async req => {
   if(!ready?.user_id||!ready.activated_at||!ready.enabled)return reply({error:'Le compte doit encore être finalisé. Réessayez depuis la liste des gestionnaires.'},400);
   return reply({user_id:account.id,username:account.username,link:site+'#compte?invitation='+ready.invite_tracking_token});
  }
+
+ if(body.action==='invite_simple'||body.action==='renew_simple'){
+ const eventId='20261106-0000-4000-8000-000000000003';
+ let account;
+ if(body.action==='invite_simple'){
+ const name=String(body.display_name||'').trim();
+ if(!name||name.length>80)return reply({error:'Indiquez un nom de suivi (80 caractères maximum).'},400);
+ const username='m'+crypto.randomUUID().replaceAll('-','').slice(0,24);
+ const {data,error}=await service.from('club_accounts').insert({username,display_name:name,event_ids:[eventId]}).select('id,username').single();
+ if(error)return reply({error:'Invitation impossible. Réessayez.'},400);account=data;
+ }else{
+ const {data}=await service.from('club_accounts').select('id,username,user_id,enabled,event_ids').eq('id',body.user_id).maybeSingle();
+ if(!data||data.user_id||!data.enabled||data.event_ids.length!==1||data.event_ids[0]!==eventId)return reply({error:'Cette invitation ne peut pas être renouvelée.'},400);account=data;
+ }
+ const token=Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,'0')).join('');
+ const expires=new Date(Date.now()+7*86400000).toISOString();
+ const {data:updated,error}=await service.from('club_accounts').update({invitation_hash:await digest(token),invite_expires_at:expires,invitation_opened_at:null,invitation_sent_at:null}).eq('id',account.id).is('user_id',null).eq('enabled',true).select('id').maybeSingle();
+ if(error||!updated)return reply({error:'Invitation indisponible.'},400);
+ return reply({user_id:account.id,expires_at:expires,link:'https://julyanabt.fr/vendredis-bt-suzini-etape-3-2026/club/compte.html#invitation?token='+token});
+ }
+
  if(body.action==='list'){
   const {data,error}=await service.from('club_accounts').select('id,user_id,username,display_name,email,enabled,event_ids,activated_at,invite_expires_at,invitation_sent_at,first_sign_in_at,last_activity_at,invitation_opened_at,invite_tracking_token').contains('event_ids',[scopedEvent]).order('created_at');
   if(error)throw new Error('Gestion des accès indisponible.');

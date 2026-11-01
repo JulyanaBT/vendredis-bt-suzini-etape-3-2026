@@ -1,0 +1,34 @@
+
+html[data-header-theme=admin]{--header-bg:#a91e2e;--header-fg:#fff;background:#a91e2e}
+body[data-space=admin] #publicHeader{background:#a91e2e}
+body[data-space=admin] .site-header{background:linear-gradient(110deg,#811426,#b22134 55%,#d74640);border-bottom:3px solid #ffda25}
+body[data-space=admin] .header-event strong,body[data-space=admin] .header-event small,body[data-space=admin] .site-nav a{color:#fff}
+body[data-space=admin] .site-nav a[aria-current=page]{background:#fff;color:#941c2b}
+body[data-space=admin] .site-nav{grid-template-columns:repeat(3,minmax(0,1fr))}
+body[data-space=admin] main{max-width:760px;padding:12px 12px calc(var(--sponsors-height,90px) + 18px)!important;overflow-y:auto!important}
+.admin-card,.account-card{padding:18px;border:1px solid #d9d9c8;border-radius:16px;background:#fffdf7;margin-bottom:12px;color:#082d45}
+.admin-card h1,.account-card h1{font-size:25px;line-height:1.15;margin:5px 0 12px}.admin-card h2{font-size:17px;margin:0}
+.admin-card p,.account-card p{font-size:14px;line-height:1.45;overflow-wrap:anywhere}
+.admin-eyebrow{font-size:10px;letter-spacing:1px;font-weight:850;color:#a32032}
+.admin-card form,.account-card form{display:grid;gap:10px}.admin-card label,.account-card label{font-size:13px;font-weight:750;display:grid;gap:5px}
+.admin-card input:not([type=checkbox]),.account-card input{display:block;box-sizing:border-box;max-width:100%;width:100%;min-height:44px;padding:10px;border:1px solid #b9ced0;border-radius:9px;font-size:16px;background:#fff;color:#082d45;margin:0!important}
+.admin-card small,.account-card small{font-size:12px;font-weight:450;line-height:1.45;color:#526776}
+.admin-card button,.admin-card .button,.account-card button,.account-enter{font:inherit;font-size:13px;font-weight:750;display:inline-flex;align-items:center;justify-content:center;min-height:44px;box-sizing:border-box;padding:10px 12px;border:1px solid #b9ced0;border-radius:10px;background:#082d45;color:#fff;text-decoration:none}
+.admin-card-title,.manager-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.admin-card-title h1{margin:0}
+.manager-item{border-top:1px solid #d6ded6;padding:16px 0}.manager-item:last-child{padding-bottom:0}.manager-state{border-radius:20px;padding:6px 9px;font-size:11px;background:#fff0c0;color:#715213}.manager-state.ready{background:#dcefe1;color:#1b673d}.manager-state.pending{background:#fff0c0}
+.manager-item details{font-size:13px}.manager-item dl{display:grid;grid-template-columns:1fr 1fr;gap:5px;font-size:12px}.manager-item dd{margin:0}
+.admin-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:12px}.admin-actions button:first-child{grid-column:1/-1}.admin-actions .danger{background:#fff2ee;color:#a32032;border-color:#e4bdb7}
+#invite-result{display:grid;gap:10px;margin-top:12px}#invite-result:empty{display:none}
+.maintenance-grid{border:0;padding:0;margin:0;display:grid;grid-template-columns:1fr 1fr;gap:8px}.maintenance-grid legend{font-size:13px;font-weight:800;margin-bottom:9px}
+.admin-card label.maintenance-tile{display:flex;align-items:center;gap:9px;border:1px solid #c4d8cf;border-radius:12px;padding:11px;background:#edf6ef;min-height:68px;cursor:pointer}
+.maintenance-tile input[type=checkbox]{width:20px;height:20px;min-height:20px;flex:none;accent-color:#ad2537;margin:0}
+.maintenance-tile strong,.maintenance-tile small{display:block}.maintenance-tile strong{font-size:13px}.maintenance-tile small{font-size:11px;margin-top:3px}
+.admin-card label.maintenance-tile:has(input:checked){background:#fff0e9;border-color:#d76965}.maintenance-club{margin:12px 0}
+.maintenance-light{width:9px;height:9px;flex:none;border-radius:50%;background:#48976a;margin-left:auto}.maintenance-tile:has(input:checked) .maintenance-light{background:#c53743}
+.account-password-option{border-top:1px solid #d9e1d9;margin-top:16px;padding-top:13px}.account-password-option summary{font-size:13px;font-weight:750;cursor:pointer;padding:5px 0 10px}
+.account-password-option label{margin-top:10px}.account-enter{display:flex;background:#087f90;margin:18px 0 9px}.account-card .secondary{background:white;color:#526776;width:100%}
+.site-in-maintenance main{visibility:hidden!important;pointer-events:none!important}
+.maintenance-cover{position:fixed;inset:140px 0 calc(var(--sponsors-height,90px) + 8px);z-index:100;overflow:auto;display:flex;align-items:center;justify-content:center;padding:14px;background:linear-gradient(145deg,#fff6df,#e9f6f3)}
+.maintenance-notice{width:min(100%,480px);box-sizing:border-box;text-align:center;padding:25px 18px;border:1px solid #d5d5bc;border-radius:20px;background:linear-gradient(#fff8e5e8,#fff8e5e8),url('img/home-empty-court-v26.jpg') center/cover}
+.maintenance-badge{display:grid;place-items:center;width:64px;height:64px;border-radius:20px;background:#082d45;color:#ffda25;font-size:32px;margin:0 auto 18px}.maintenance-notice small{font-size:10px;font-weight:800;color:#087b89;letter-spacing:1px}.maintenance-notice h1{font-size:27px;line-height:1.15;color:#082d45}.maintenance-notice p{font-size:14px;line-height:1.5;color:#3d5b62}.maintenance-notice a{display:block;padding:12px;background:#082d45;color:#ffda25;border-radius:10px;margin-top:18px}
+@media(max-width:600px){.admin-card,.account-card{padding:14px}.maintenance-grid{gap:6px}.admin-card label.maintenance-tile{padding:9px;min-height:74px}.maintenance-tile small{font-size:10px}.admin-card h1,.account-card h1{font-size:23px}.maintenance-notice{padding:20px 16px}.maintenance-notice h1{font-size:24px}}

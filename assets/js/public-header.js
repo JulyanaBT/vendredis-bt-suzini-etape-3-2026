@@ -1,3 +1,4 @@
+const appearance=document.createElement('link');appearance.rel='stylesheet';appearance.href=new URL('../admin-maintenance.css?v=90',import.meta.url).href;document.head.append(appearance);
 const mount=document.getElementById('publicHeader');
 const root=new URL('../../',import.meta.url);
 const url=path=>new URL(path,root).href;
@@ -8,8 +9,8 @@ const icons={home:'<path d="m3 10 9-7 9 7v10H7V10m3 10v-7h4v7"/>',signup:'<rect 
 export const symbol=key=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[key]}</svg>`;
 const infoPages=['reglement.html','tirage.html','contact.html','animations.html','infos.html','flyer.html'];
 const adminPage=location.pathname.includes('/admin/'),clubPage=location.pathname.includes('/club/');
-document.documentElement.dataset.headerTheme=clubPage?'club':'public';
-const themeColor=clubPage?'#ffda25':'#082d45';
+document.documentElement.dataset.headerTheme=adminPage?'admin':clubPage?'club':'public';
+const themeColor=adminPage?'#a91e2e':clubPage?'#ffda25':'#082d45';
 document.querySelector('meta[name="theme-color"]')?.setAttribute('content',themeColor);
 const nav=adminPage?[['admin/index.html#admin','teams','Gestionnaires'],['admin/index.html#admin-inviter','signup','Inviter'],['admin/index.html#admin-maintenance','info','Maintenance']]:clubPage?[['club/index.html','home','Accueil'],['club/inscriptions.html','signup','Inscription'],['club/equipes.html','teams','Équipes'],['club/programmation.html','calendar','Matchs'],['club/restauration.html','food','Restauration'],['club/infos.html','info','Infos']]:[['index.html','home','Accueil'],['public/inscriptions.html','signup','Inscription'],['public/equipes.html','teams','Équipes'],['public/programmation.html','calendar','Matchs'],['public/restauration.html','food','Restauration'],['public/infos.html','info','Infos']];
 const pairedPages=["inscriptions.html","equipes.html","programmation.html","restauration.html","infos.html","reglement.html","contact.html","flyer.html"];
@@ -29,6 +30,6 @@ new ResizeObserver(()=>document.documentElement.style.setProperty('--sponsors-he
 
 window.addEventListener('hashchange',()=>{if(adminPage)document.querySelectorAll('.site-nav a').forEach(a=>{if(a.hash===(location.hash||'#admin'))a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});});
 
-import './space-maintenance.js?v=54';
+import './space-maintenance.js?v=90';
 
 const switchLink=document.querySelector('.club-switch');if(switchLink)switchLink.addEventListener('click',()=>{const target=new URL(switchLink.href);const matchTab=document.querySelector('[data-programme][aria-selected=true]')?.dataset.programme;if(matchTab)target.searchParams.set('matchtab',matchTab);const registrationTab=document.querySelector('[data-club-registration-tab][aria-pressed=true]')?.dataset.clubRegistrationTab||document.querySelector('[data-signup-tab][aria-selected=true]')?.dataset.signupTab;if(registrationTab)target.searchParams.set('tab',registrationTab);switchLink.href=target.href;});
