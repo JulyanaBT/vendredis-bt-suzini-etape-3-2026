@@ -7,9 +7,10 @@ let visible=false,checking=false;
 async function checkMaintenance(){
  if(exempt||checking)return;checking=true;
  try{
- const [{data:state,error},{data:admin}]=await Promise.all([client.rpc('suzini_e3_maintenance'),client.rpc('suzini_e3_is_admin')]);
+ const [{data:state,error},{data:role}]=await Promise.all([client.rpc('suzini_e3_maintenance'),client.rpc('suzini_e3_preview_role')]);
  if(error||!state)return;
- const blocked=!admin&&(space==='club'?state.club_blocked:state.pages.includes(page));
+ const admin=role?.admin===true,preview=admin||role?.manager===true;
+ const blocked=space==='club'?!admin&&state.club_blocked:!preview&&state.pages.includes(page);
  document.body.classList.toggle('site-in-maintenance',blocked);
  if(blocked){
  let box=document.querySelector('.maintenance-cover');
