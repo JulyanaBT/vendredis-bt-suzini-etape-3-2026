@@ -30,7 +30,7 @@ export function parseOrder(mail,receivedAt,product){
  if(quantity){qty=Number(quantity[1]);const unit=Math.round(Number(quantity[2].replace(/ /g,'').replace(',','.'))*100);if(unit===1000&&qty>0&&qty<=2)cents=unit*qty;}
  const paid=/Payé par carte/i.test(text),verified=authenticatedSumup(mail.headers||[]);
  const productCount=orderLines.filter(l=>normalize(l)===normalize(product)).length;
- const eligible=paid&&productIndex>=0&&productCount===1&&qty===1&&cents===1000;
- let reason=!verified?'Authenticité du mail à vérifier':!paid?'Paiement non confirmé par carte':productIndex<0?'Article différent ou libellé non reconnu':cents===null?'Montant ou quantité à vérifier':qty===2?'Paiement de deux joueurs : attribuer l’équipe dans le Club':'Recherche du joueur inscrit';
+ const eligible=paid&&productIndex>=0&&productCount===1&&(qty===1&&cents===1000||qty===2&&cents===2000);
+ let reason=!verified?'Authenticité du mail à vérifier':!paid?'Paiement non confirmé par carte':productIndex<0?'Article différent ou libellé non reconnu':cents===null?'Montant ou quantité à vérifier':qty===2?'Paiement de deux joueurs : recherche de l’équipe du payeur':'Recherche du joueur inscrit';
  return {order_key:orderUuid?'sumup:'+orderUuid.toLowerCase():`sumup:${year}:${number}`,order_number:number,message_id:mail.messageId||null,received_at:receivedAt,buyer_name:buyer,amount_cents:cents,product_name:productIndex>=0?product:orderLines[0]||'',verified,eligible,reason,details:text.slice(0,10000)};
 }
