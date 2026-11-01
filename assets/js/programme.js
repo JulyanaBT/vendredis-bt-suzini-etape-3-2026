@@ -134,7 +134,7 @@ function toolbar(){
  const buttons=el('div','','match-mode-buttons');
  for(const [value,label] of [['real','Données réelles'],['simulation','Simulation privée']]){const b=el('button',label);b.type='button';b.dataset.matchMode=value;b.onclick=()=>{mode=value;try{localStorage.setItem('suzini_e3_match_mode',mode);}catch{}sync();load();};buttons.append(b);}
  const reset=el('button','Réinitialiser les essais');reset.type='button';reset.dataset.resetSimulation='';reset.onclick=async()=>{if(!confirm('Effacer uniquement les résultats et tirages fictifs ? Les équipes et résultats réels restent inchangés.'))return;reset.disabled=true;try{const {error}=await client.rpc('suzini_e3_match_simulation',{p_action:'reset'});if(error)throw error;await load();}catch(e){error=e.message;render();}finally{reset.disabled=false;}};
- box.append(buttons,reset);document.querySelector('main').prepend(box);sync();
+ box.append(buttons);if(isClub)box.append(reset);document.querySelector('main').prepend(box);sync();
 }
 function sync(){document.querySelectorAll('[data-match-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.matchMode===mode)));const reset=document.querySelector('[data-reset-simulation]');if(reset)reset.hidden=mode!=='simulation';}
 async function load(){
@@ -144,12 +144,21 @@ async function load(){
  if(wanted==='simulation'){const r=await withDeadline(client.rpc('suzini_e3_match_state',{p_simulation:true}));if(r.error)throw r.error;next=r.data;}
  else next=await rpc('suzini_e3_match_state',{p_simulation:false});
  if(version!==generation||wanted!==mode)return;data=next;error='';render();
- }catch(e){if(version!==generation)return;if(!isClub&&wanted==='simulation'){mode='real';await load();return;}error=e.message||'Vérifiez votre connexion.';render();}
+ }catch(e){if(version!==generation)return;if(!isClub&&wanted==='simulation'){mode='real';sync();await load();return;}error=e.message||'Vérifiez votre connexion.';render();}
 }
 if(isClub){
  async function ready(){const r=await client.rpc('suzini_e3_club');clubReady=!r.error;if(clubReady){try{mode=localStorage.getItem('suzini_e3_match_mode')||'simulation';}catch{mode='simulation';}toolbar();await load();}}
  document.addEventListener('club:ready',ready);ready();
-}else if(preview)mode='simulation';
+}else{
+ try{
+ const access=await withDeadline(client.rpc('suzini_e3_preview_role'));
+ if(!access.error&&(access.data?.admin||access.data?.manager)){
+   if(preview)mode='simulation';
+   else try{mode=localStorage.getItem('suzini_e3_match_mode')||'simulation';}catch{mode='simulation';}
+   toolbar();
+ }
+ }catch{}
+}
 document.querySelector('.club-switch')?.addEventListener('click',event=>{const a=event.currentTarget,u=new URL(a.href);if(data?.simulation)u.searchParams.set('simulation','1');else u.searchParams.delete('simulation');a.href=u.href;});
 const requested=tabs.find(t=>t.dataset.programme===params.get('matchtab'));if(requested)select(requested);
 await load();
