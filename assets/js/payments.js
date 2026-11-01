@@ -1,4 +1,4 @@
-import {rpc} from './supabase-site.js?v=54';
+import {rpc} from './supabase-site.js?v=77';
 import {displayShortPlayerName,displayFirstName} from './team-cards.js?v=54';
 import {config} from './supabase-config.js?v=54';
 const paymentUrl="https://tennis-club-de-suzini.sumupstore.com/product/beach-tennis-inscription-tournoi-pour-un-competiteur-de-la-paire";

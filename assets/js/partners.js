@@ -1,4 +1,4 @@
-import {rpc} from './supabase-site.js?v=54';
+import {rpc} from './supabase-site.js?v=77';
 import {selectSignupTab} from './registration-ui.js?v=65';
 const $=id=>document.getElementById(id),make=(tag,text,cls)=>{const n=document.createElement(tag);if(text)n.textContent=text;if(cls)n.className=cls;return n;};
 const api=(action,data={})=>rpc('suzini_e3_partners',{p_action:action,p_data:data});
@@ -29,3 +29,5 @@ owned();try{const state=await rpc('suzini_e3_status');open=state?.open===true;$(
 
 setInterval(()=>{if(!document.hidden&&!$('partenaire-panel').hidden)load();},30000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!$('partenaire-panel').hidden)load();});
+
+document.addEventListener('suzini:status',event=>{open=event.detail?.open===true;$('partner-submit').disabled=!open;$('partner-post-status').textContent=open?'La recherche ne vaut pas inscription au tournoi.':event.detail?.registration_state==='closed'?'Inscriptions clôturées.':'Inscriptions suspendues.';render();});

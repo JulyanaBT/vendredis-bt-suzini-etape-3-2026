@@ -22,13 +22,13 @@ if(document.getElementById('signupForm')){
  }
 }
 const form=document.getElementById('signupForm'),button=document.getElementById('submitBtn'),status=document.getElementById('status');
-let registrationOpen=false;
+let registrationOpen=false;let registrationState='suspended';
 if(button)button.disabled=true;
 async function loadStatus(){
- try{const data=await rpc('suzini_e3_status');registrationOpen=data?.open===true;
+ try{const data=await rpc('suzini_e3_status');registrationOpen=data?.open===true;registrationState=data?.registration_state||(!registrationOpen?'suspended':'open');const closedLabel=registrationState==='closed'?'Inscriptions clôturées':'Inscriptions suspendues';for(const a of document.querySelectorAll('.home-register')){a.setAttribute('aria-disabled',String(!registrationOpen));a.querySelector('.home-register-copy')?.setAttribute('data-registration-label',registrationOpen?'Inscrire mon équipe':closedLabel);}for(const n of document.querySelectorAll('[data-registration-state]')){n.textContent=registrationOpen?'Inscriptions ouvertes':closedLabel;n.hidden=registrationOpen;}
  document.dispatchEvent(new CustomEvent('suzini:status',{detail:data}));
- for(const note of document.querySelectorAll('[data-site-status]'))note.textContent=registrationOpen?'BT250 · Clôture le 4 novembre à minuit (Guyane).':'Site en préparation · Les inscriptions ne sont pas encore ouvertes.';
- if(form){button.disabled=!registrationOpen;button.textContent=registrationOpen?'Valider l’inscription':'Inscriptions prochainement';status.textContent=registrationOpen?'10 € par joueur · Inscription par équipe, sans compte joueur.':'Inscriptions prochainement.';}
+ for(const note of document.querySelectorAll('[data-site-status]'))note.textContent=registrationOpen?'BT250 · Clôture le 4 novembre à minuit (Guyane).':(registrationState==='closed'?'Inscriptions clôturées.':'Inscriptions suspendues.');
+ if(form){button.disabled=!registrationOpen;button.textContent=registrationOpen?'Valider l’inscription':closedLabel;status.textContent=registrationOpen?'10 € par joueur · Inscription par équipe, sans compte joueur.':closedLabel+'.';}
  }catch(error){if(form){status.textContent=error.message;button.textContent='Inscriptions indisponibles';}}
 }
 if(document.body.dataset.space==='public')loadStatus();
@@ -48,3 +48,5 @@ if(list){let teams=[],division=localStorage.getItem('suzini_etape3_public_epreuv
  document.addEventListener('publicZoneChange',event=>{division=event.detail.epreuve;render();});
  rpc('suzini_e3_teams').then(data=>{teams=data||[];render();}).catch(error=>{status.textContent=error.message;});
 }
+
+if(document.body.dataset.space==='public'){setInterval(()=>{if(!document.hidden)loadStatus();},5000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)loadStatus();});}

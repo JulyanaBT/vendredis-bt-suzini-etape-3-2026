@@ -1,4 +1,4 @@
-import {rpc} from './supabase-site.js?v=54';
+import {rpc} from './supabase-site.js?v=77';
 import {formatFor,COURTS,groupsFor,scheduleDraws,slotFor} from './tournament-format.js?v=54';
 const tabs=[...document.querySelectorAll('[data-programme]')],panel=document.getElementById('programme-panel');
 const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text)n.textContent=text;if(cls)n.className=cls;return n;};

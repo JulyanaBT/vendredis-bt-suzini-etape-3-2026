@@ -2,7 +2,7 @@ import {client} from './private-client.js?v=54';
 const content=document.getElementById('adminContent');
 const mount=document.createElement('details');mount.className='mail-payments';
 const summary=document.createElement('summary');summary.textContent='Synchronisation des paiements SumUp';mount.append(summary);
-content.insertBefore(mount,document.getElementById('adminCounts'));
+(document.getElementById('club-payment-panel')||content).prepend(mount);
 const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text)n.textContent=text;if(cls)n.className=cls;return n;};
 const state=el('p','Chargement…'),notice=el('p','','mail-notice'),actions=el('div','','admin-tools'),sync=el('button','Synchroniser'),refresh=el('button','Actualiser le suivi'),pause=el('button','Suspendre');
 for(const b of [sync,refresh,pause])b.type='button';actions.append(sync,refresh,pause);
