@@ -1,5 +1,7 @@
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let managerWatch;
 export async function accessManager(backend,main,isCurrent,logout){
+ clearTimeout(managerWatch);
  const {accounts}=await backend.access({action:'list'});if(!isCurrent())return;
  const invite=location.hash==='#admin-inviter';
  const date=v=>v?new Intl.DateTimeFormat('fr-FR',{dateStyle:'short',timeStyle:'short',timeZone:'America/Cayenne'}).format(new Date(v)):'—';
@@ -22,4 +24,8 @@ export async function accessManager(backend,main,isCurrent,logout){
  row.querySelector('[data-delete]').onclick=()=>{if(confirm('Supprimer l’accès gestionnaire de '+(a.display_name||a.username)+' ? Les inscriptions et résultats sportifs seront conservés.'))run({action:'delete',user_id:a.user_id});};
  const b=row.querySelector('[data-share]');if(b)b.onclick=async()=>{if(a.activated_at){const area=document.createElement('div');row.append(area);const link=document.createElement('a');link.className='button';link.target='_blank';link.rel='noopener';link.textContent='Partager Mon compte sur WhatsApp ↗';link.href='https://wa.me/?text='+encodeURIComponent('Ton espace Mon compte pour Les Vendredis du BT Suzini : https://julyanabt.fr/vendredis-bt-suzini-etape-3-2026/club/compte.html');area.append(link);return;}b.disabled=true;try{const r=await backend.access({action:'renew_simple',user_id:a.user_id});const area=document.createElement('div');row.append(area);share(r,area);}catch(e){row.querySelector('[role="status"]').textContent=e.message;}finally{b.disabled=false;}};
  });
+ if(!invite){
+ const watch=async()=>{if(!isCurrent()||location.hash!=='#admin')return;if(document.hidden||main.querySelector('button:disabled,#invite-result input,.manager-item input')){managerWatch=setTimeout(watch,15000);return;}try{const fresh=await backend.access({action:'list'});if(isCurrent()&&JSON.stringify(fresh.accounts)!==JSON.stringify(accounts)){await accessManager(backend,main,isCurrent,logout);return;}}catch{}managerWatch=setTimeout(watch,15000);};managerWatch=setTimeout(watch,15000);
+ }
+
 }
