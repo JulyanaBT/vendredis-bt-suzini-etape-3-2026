@@ -220,3 +220,11 @@ body[data-page=contacts] details>summary{font-size:12px}
 body[data-page=contacts] .contact-group{min-height:40px;height:40px}
 
 .rules-summary .rules-key-points{padding:0;margin:0;list-style:none;display:grid;gap:9px;text-align:left}.rules-summary .rules-key-points li{position:relative;padding:0 0 0 15px;font-size:13px;line-height:1.45;text-align:left}.rules-summary .rules-key-points li:before{content:'•';position:absolute;left:0;color:#087f90;font-weight:900}.rules-summary .rules-key-points strong{color:#082d45;font-weight:800}.rules-summary .rules-accordion-body{padding:12px!important}
+
+body[data-page=contacts] .contact-group{margin:0 0 8px}
+body[data-page=contacts] .contact-accordion>summary{font-size:14px;font-weight:800;min-height:30px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;list-style:none}
+body[data-page=contacts] .contact-accordion>summary::-webkit-details-marker{display:none}
+body[data-page=contacts] .contact-accordion>summary:after{content:'+';font-size:20px;color:#087f90}
+body[data-page=contacts] .contact-accordion[open]>summary:after{content:'−'}
+body[data-page=contacts] .contact-accordion>.contact-email{display:block;margin:5px 0 8px;font-size:12px;color:#087f90;overflow-wrap:anywhere}
+body[data-page=contacts] .contact-accordion>.contact-actions{margin-top:7px}
