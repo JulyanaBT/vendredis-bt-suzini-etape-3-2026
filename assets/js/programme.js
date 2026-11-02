@@ -5,6 +5,7 @@ import {buildTimeline,launchReadiness} from './match-timing.js?v=115';
 const panel=document.getElementById('programme-panel'),tabs=[...document.querySelectorAll('[data-programme]')],isClub=document.body.dataset.space==='club';
 const el=(tag,text='',cls='')=>{const e=document.createElement(tag);e.textContent=text;if(cls)e.className=cls;return e;};
 let scoreHistoryExpanded=false,upcomingExpanded=false;
+let drawReplay=null,serverOffset=0,drawRefreshBusy=false;
 let bracketView='final';try{bracketView=sessionStorage.getItem('suzini_e3_bracket')||'final';}catch{}
 let division='DM',selected='chrono',data=null,error='',clubReady=false,mode='real',generation=0;
 try{division=localStorage.getItem('suzini_etape3_public_epreuve')||'DM';}catch{}
@@ -191,7 +192,7 @@ function drawControls(d){
  validate.type='button';validate.disabled=!!d.validated_at||!formatFor(d.count)||(!data.simulation&&!data.registration_closed);
  async function act(action,b){b.disabled=true;status.textContent='Enregistrement…';try{const {error}=await client.rpc(data.simulation?'suzini_e3_match_simulation':'suzini_e3_programme_manage',{p_action:action,p_division:division});if(error)throw error;await load();}catch(e){status.textContent=e.message;b.disabled=false;}}
  validate.onclick=()=>act('validate',validate);
- if(!d.no_draw){const draw=el('button',d.drawn_at?'Tirage effectué':'Effectuer le tirage');draw.type='button';draw.disabled=!d.validated_at||!!d.drawn_at||(!data.simulation&&Date.now()<Date.parse(data.draw_at));draw.onclick=()=>act('draw',draw);box.append(draw);}
+ if(!d.no_draw){const draw=el('button',d.draw_started_at&&!d.draw_complete?'Tirage en direct…':d.drawn_at?'Tirage effectué':'Lancer le tirage en direct');draw.type='button';draw.disabled=!d.validated_at||!!d.draw_started_at||!!d.drawn_at||(!data.simulation&&Date.now()<Date.parse(data.draw_at));draw.onclick=()=>act('draw',draw);box.append(draw);}
  box.append(status);panel.append(box);
 }
 function expectedScore(score,format){
@@ -328,17 +329,8 @@ function render(){
 
  const matches=chrono(),count=matches.filter(m=>m.result).length;
  if(selected==='tirage'){
- panel.append(d.no_draw?drawInfo(d):note(d.drawn_at?'Tirage effectué ✅':'Tirage au sort',d.drawn_at?'Les équipes sont réparties. Consultez les poules ou le tableau final.':data.simulation?'Effectuez le tirage dans l’espace Club pour former les poules et préparer les rencontres.':'Le 5 novembre à 14 h, heure de Guyane.'));
- if(!d.no_draw)drawControls(d);
- if(d.count===8){
- const box=note('🎾 Placement dans le tableau','');box.lastChild.remove();
- const list=el('ol','','draw-placement-list');
- const order=d.drawn_at?d.draw_order:[null,null,null,null,null,null,null,null];
- order.forEach((id,i)=>{const row=el('li'),label=i===0?'Position 1 · TS2':i===7?'Position 8 · TS1':'Position '+(i+1)+' · tirage n°'+i;row.append(el('strong',label),el('span',id?name(id):i===0?'Tête de série 2':i===7?'Tête de série 1':'Équipe à tirer au sort'));list.append(row);});
- box.append(el('p','TS2 en haut, TS1 en bas. Les six autres équipes sont tirées successivement, sans remise, pour remplir les positions 2 à 7.'),list);panel.append(box);
- }
-
- return;
+ if(d.no_draw){panel.append(drawInfo(d));return;}
+ drawRoulette(d);drawControls(d);return;
  }
  if(!formatFor(d.count)){panel.append(note('Tableau en préparation',d.count+' équipe(s) inscrite(s). Il faut au moins 4 équipes pour maintenir ce tableau.'));return;}
  if(d.count>=6&&!d.drawn_at){panel.append(note('🎲 Tirage à effectuer','Aucune poule ni programmation avant le tirage. Rendez-vous dans Tirage'+(isClub?' pour répartir les équipes.':' : les rencontres seront ensuite publiées.')));return;}
@@ -396,6 +388,49 @@ function tennisBracket(matches){
  const placement=matches.find(m=>m.id===(consolation?'P7':'P3'));if(placement){const box=el('section','','bracket-placement');box.append(el('h3',consolation?'Match pour la 7e place':'🥉 Match pour la 3e place'),card(placement,matches.indexOf(placement)));panel.append(box);}
 }
 
+
+function drawKey(d){return [data.simulation,division,d.draw_started_at||d.drawn_at||'pending'].join(':');}
+function drawRoulette(d){
+ const box=el('section','','draw-roulette-card'),started=!!d.draw_started_at,complete=!!d.draw_complete||!!d.drawn_at;
+ const key=drawKey(d),replaying=drawReplay?.key===key,steps=d.draw_reveals||[],shown=replaying?steps.slice(0,drawReplay.index):steps;
+ box.append(el('h2',replaying?'⏪ Replay du tirage':started&&!complete?'🔴 Tirage en direct':'🎡 Tirage au sort'));
+ box.append(el('p',replaying?'Même tirage, sans l’attente d’une minute.':!started?(data.simulation?'Le gestionnaire peut lancer ce tirage de test depuis l’espace Club.':'Lancement prévu le 5 novembre à 14 h, heure de Guyane.'):'Une équipe révélée par minute · heure de Guyane.','draw-roulette-caption'));
+ const seeds=el('div','','roulette-seeds');
+ for(const [i,label] of [[1,d.count===6?'TS2 · Poule A':'TS2 · en haut'],[0,d.count===6?'TS1 · Poule B':'TS1 · en bas']]){const id=d.seeds?.[i];const seed=el('div');seed.append(el('small',label),el('strong',id?name(id):'Placement réservé'));seeds.append(seed);}
+ box.append(seeds);
+ const spinning=started&&(!complete||replaying&&drawReplay.index<steps.length);
+ const stage=el('div','','roulette-stage'+(spinning?' is-spinning':''));
+ const wheel=el('div','','roulette-wheel');wheel.setAttribute('aria-hidden','true');wheel.append(el('span','🎾'));stage.append(wheel);
+ const display=el('div','','roulette-display'),title=el('small',!started?'Prêts pour le grand tour ?':spinning?'La roulette tourne…':'Tirage terminé 🏆'),team=el('strong',!started?'En attente du lancement':spinning?'🎾 🎾 🎾':steps.length?name(steps.at(-1).team_id):'Tirage enregistré');team.dataset.rouletteName='';display.append(title,team);stage.append(display);box.append(stage);
+ const status=el('p','','roulette-countdown');status.dataset.rouletteCountdown='';status.setAttribute('aria-live','polite');box.append(status);
+ if(complete&&!replaying){const replay=el('button','▶ Revoir le tirage · version rapide','roulette-replay');replay.type='button';replay.onclick=()=>{drawReplay={key,index:0,started:Date.now()};render();};box.append(replay);}
+ if(replaying){const exit=el('button','Voir le résultat complet','roulette-replay');exit.type='button';exit.onclick=()=>{drawReplay=null;render();};box.append(exit);}
+ const list=el('ol','','roulette-reveals');list.setAttribute('aria-label','Équipes tirées');
+ const total=d.draw_total||d.count-2;
+ for(let i=0;i<total;i++){const step=shown[i],row=el('li', '',step?'is-revealed':'');row.append(el('span',String(i+1),'roulette-number'),el('strong',step?name(step.team_id):'Équipe à révéler'),el('small',step?step.label:(d.count===6?i<2?'Poule A':'Poule B':'Position '+(i+2))));list.append(row);}box.append(list);
+ if(started&&!complete)box.append(el('p','Les poules et la programmation seront disponibles à la dernière révélation.','draw-roulette-caption'));
+ panel.append(box);updateRoulette();
+}
+function updateRoulette(){
+ if(selected!=='tirage'||!data)return;
+ const d=current();if(!d||d.no_draw)return;
+ const key=drawKey(d),replaying=drawReplay?.key===key,total=d.draw_total||d.count-2;
+ if(replaying){const index=Math.min((d.draw_reveals||[]).length,Math.floor((Date.now()-drawReplay.started)/2200));if(index!==drawReplay.index){drawReplay.index=index;render();return;}}
+ const complete=!!d.draw_complete||!!d.drawn_at,spinning=d.draw_started_at&&(!complete||replaying&&drawReplay.index<(d.draw_reveals||[]).length);
+ const count=replaying?drawReplay.index:d.draw_reveal_count||0;
+ const displayed=document.querySelector('[data-roulette-name]'),status=document.querySelector('[data-roulette-countdown]');
+ if(!status)return;
+ if(!d.draw_started_at){status.textContent='Le lancement est réservé à la gestion Club.';return;}
+ if(!spinning){status.textContent=total+' équipes tirées · '+(replaying?'replay terminé':'tirage terminé');return;}
+ const revealed=(d.draw_reveals||[]).slice(0,count).map(x=>x.team_id),candidates=data.teams.filter(t=>t.division===division&&!(d.seeds||[]).includes(t.id)&&!revealed.includes(t.id));
+ if(displayed&&candidates.length)displayed.textContent=candidates[Math.floor(Date.now()/140)%candidates.length].team_name;
+ if(replaying){status.textContent='Replay rapide · '+count+' / '+total+' équipes révélées';return;}
+ const now=Date.now()+serverOffset,next=Date.parse(d.draw_started_at)+(count+1)*60000,seconds=Math.max(0,Math.ceil((next-now)/1000));
+ status.textContent=count+' / '+total+' équipes révélées · prochaine dans '+Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');
+ if(seconds===0&&!drawRefreshBusy){drawRefreshBusy=true;load().finally(()=>drawRefreshBusy=false);}
+}
+setInterval(updateRoulette,160);
+
 function select(tab){selected=tab.dataset.programme;try{const url=new URL(location.href);url.searchParams.set('matchtab',selected);history.replaceState(null,'',url);sessionStorage.setItem('suzini_e3_match_tab_'+document.body.dataset.space,selected);}catch{}tabs.forEach(b=>{const active=b===tab;b.setAttribute('aria-selected',String(active));b.tabIndex=active?0:-1;});panel.setAttribute('aria-labelledby',tab.id);render();}
 tabs.forEach((tab,i)=>{tab.onclick=()=>select(tab);tab.onkeydown=e=>{let n;if(e.key==='ArrowRight')n=(i+1)%tabs.length;else if(e.key==='ArrowLeft')n=(i+tabs.length-1)%tabs.length;else if(e.key==='Home')n=0;else if(e.key==='End')n=tabs.length-1;else return;e.preventDefault();select(tabs[n]);tabs[n].focus();};});
 document.addEventListener('publicZoneChange',e=>{division=e.detail.epreuve;render();});
@@ -414,7 +449,7 @@ async function load(){
  let next;
  if(wanted==='simulation'){const r=await withDeadline(client.rpc('suzini_e3_match_state',{p_simulation:true}));if(r.error)throw r.error;next=r.data;}
  else next=await rpc('suzini_e3_match_state',{p_simulation:false});
- if(version!==generation||wanted!==mode)return;data=next;error='';render();
+ if(version!==generation||wanted!==mode)return;data=next;serverOffset=Date.parse(next.server_now||new Date().toISOString())-Date.now();error='';render();
  }catch(e){if(version!==generation)return;if(!isClub&&wanted==='simulation'){mode='real';sync();await load();return;}error=e.message||'Vérifiez votre connexion.';render();}
 }
 if(isClub){
