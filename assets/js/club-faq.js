@@ -4,14 +4,14 @@ const key='suzini_e3_club_faq';let active=false;try{active=sessionStorage.getIte
 const file=location.pathname.split('/').pop()||'index.html';
 const group=file==='inscriptions.html'?'inscriptions':file==='equipes.html'?'equipes':['programmation.html','tirage.html'].includes(file)?'matchs':file==='restauration.html'?'restauration':['infos.html','reglement.html','flyer.html','contact.html'].includes(file)?'infos':file==='compte.html'?'compte':'accueil';
 const [title,items]=data[group];
-const style=document.createElement('link');style.rel='stylesheet';style.href=new URL('../club-faq.css?v=2',import.meta.url).href;document.head.append(style);
+const style=document.createElement('link');style.rel='stylesheet';style.href=new URL('../club-faq.css?v=3',import.meta.url).href;document.head.append(style);
 const bar=document.createElement('div');bar.className='club-faq-bar';
 const button=document.createElement('button');button.type='button';button.className='club-faq-toggle';button.setAttribute('aria-controls','club-faq-panel');bar.append(button);
 const panel=document.createElement('section');panel.id='club-faq-panel';panel.className='club-faq-panel container';panel.setAttribute('aria-label','FAQ et tutoriels : '+title);
 const heading=document.createElement('h1');heading.textContent='💡 '+title;panel.append(heading);
 const intro=document.createElement('p');intro.className='club-faq-intro';intro.textContent='Une question ? Touchez un encart. Changez de rubrique avec le bandeau ; retouchez FAQ / Tuto pour revenir aux outils.';panel.append(intro);
 items.forEach(([q,answers])=>{const d=document.createElement('details');d.className='club-faq-item';const s=document.createElement('summary');s.textContent=q;d.append(s);const list=document.createElement('ul');answers.forEach(a=>{const li=document.createElement('li');li.textContent=a;list.append(li);});d.append(list);d.addEventListener('toggle',()=>{if(d.open)panel.querySelectorAll('details').forEach(other=>{if(other!==d)other.open=false;});});panel.append(d);});
-const mount=document.getElementById('publicHeader');mount.after(bar,panel);
-function render(){document.body.classList.toggle('club-faq-active',active);panel.hidden=!active;button.setAttribute('aria-pressed',String(active));button.setAttribute('aria-expanded',String(active));button.textContent=active?'💡 FAQ / Tuto · Fermer':'💡 FAQ / Tuto';}
+const mount=document.getElementById('publicHeader');mount.querySelector('.site-header').after(bar);mount.after(panel);
+function render(){document.body.classList.toggle('club-faq-active',active);panel.hidden=!active;button.setAttribute('aria-pressed',String(active));button.setAttribute('aria-expanded',String(active));button.textContent='💡 FAQ / Tuto';button.setAttribute('aria-label',active?'FAQ / Tuto — fermer l’aide':'FAQ / Tuto — ouvrir l’aide');}
 button.addEventListener('click',()=>{active=!active;try{sessionStorage.setItem(key,active?'1':'0');}catch{}render();if(active)window.scrollTo({top:0,behavior:'smooth'});});render();
 }
