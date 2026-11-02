@@ -395,9 +395,22 @@ function drawRoulette(d){
  const key=drawKey(d),replaying=drawReplay?.key===key,steps=d.draw_reveals||[],shown=replaying?steps.slice(0,drawReplay.index):steps;
  box.append(el('h2',replaying?'⏪ Replay du tirage':started&&!complete?'🔴 Tirage en direct':'🎡 Tirage au sort'));
  box.append(el('p',replaying?'Même tirage, sans l’attente d’une minute.':!started?(data.simulation?'Le gestionnaire peut lancer ce tirage de test depuis l’espace Club.':'Lancement prévu le 5 novembre à 14 h, heure de Guyane.'):isClub?'Tirage immédiat en gestion Club · diffusion publique à une équipe par minute.':'Une équipe révélée par minute · heure de Guyane.','draw-roulette-caption'));
+
+ if(d.count===6){
+ const seedIds=d.seeds?.length?d.seeds:data.teams.filter(t=>t.division===division).sort((a,b)=>(a.p1_rank+a.p2_rank)-(b.p1_rank+b.p2_rank)).slice(0,2).map(t=>t.id);
+ const pools=el('div','','roulette-pools');pools.setAttribute('aria-label','Constitution des poules');
+ for(const [pool,seedIndex] of [['A',1],['B',0]]){
+ const card=el('section','','roulette-pool'),heading=el('h3','Poule '+pool),list=el('ol');card.append(heading);
+ const first=el('li','','roulette-pool-seed');first.append(el('small','TS'+(seedIndex+1)),el('strong',seedIds[seedIndex]?name(seedIds[seedIndex]):'Tête de série'));list.append(first);
+ for(let slot=0;slot<2;slot++){const index=slot*2+(pool==='A'?0:1),step=shown[index],row=el('li','',step?'is-revealed':'is-pending');row.append(el('small','Tirage '+(index+1)),el('strong',step?name(step.team_id):'Équipe à révéler'));list.append(row);}
+ card.append(list);pools.append(card);
+ }box.append(pools);
+ }else{
  const seeds=el('div','','roulette-seeds');
- for(const [i,label] of [[1,d.count===6?'TS2 · Poule A':'TS2 · en haut'],[0,d.count===6?'TS1 · Poule B':'TS1 · en bas']]){const id=d.seeds?.[i];const seed=el('div');seed.append(el('small',label),el('strong',id?name(id):'Placement réservé'));seeds.append(seed);}
+ for(const [i,label] of [[1,'TS2 · en haut'],[0,'TS1 · en bas']]){const id=d.seeds?.[i];const seed=el('div');seed.append(el('small',label),el('strong',id?name(id):'Placement réservé'));seeds.append(seed);}
  box.append(seeds);
+ }
+
  const spinning=started&&(!complete||replaying&&drawReplay.index<steps.length);
  const stage=el('div','','roulette-stage'+(spinning?' is-spinning':''));
  const wheel=el('div','','roulette-wheel');wheel.setAttribute('aria-hidden','true');wheel.append(el('span','🎾'));stage.append(wheel);
@@ -414,12 +427,12 @@ function drawRoulette(d){
  for(let i=0;i<4;i++)fixtures.push({id:'QF'+(i+1),a:positions[i*2]||'Position '+(i*2+1)+' · à tirer',b:positions[i*2+1]||'Position '+(i*2+2)+' · à tirer'});
  fixtures.push({id:'DF1',a:'Vainqueur QF1',b:'Vainqueur QF2'},{id:'DF2',a:'Vainqueur QF3',b:d.count===7?seeds[0]:'Vainqueur QF4'},{id:'F',a:'Vainqueur DF1',b:'Vainqueur DF2'});
  tennisBracket(fixtures,{host:box,drawing:true});
- }else{
+ }else if(d.count!==6){
  const list=el('ol','','roulette-reveals');list.setAttribute('aria-label','Équipes tirées');
  for(let i=0;i<total;i++){const step=shown[i],row=el('li','',step?'is-revealed':'');row.append(el('span',String(i+1),'roulette-number'),el('strong',step?name(step.team_id):'Équipe à révéler'),el('small',step?step.label:i%2===0?'Poule A':'Poule B'));list.append(row);}box.append(list);
  }
 
- if(started&&!complete)box.append(el('p','Les poules et la programmation seront disponibles à la dernière révélation.','draw-roulette-caption'));
+ if(started&&!complete)box.append(el('p','La programmation sera disponible à la dernière révélation.','draw-roulette-caption'));
  panel.append(box);updateRoulette();
 }
 function updateRoulette(){
