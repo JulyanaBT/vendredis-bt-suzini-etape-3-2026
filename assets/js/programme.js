@@ -4,6 +4,7 @@ import {COURTS,formatFor,scheduleDraws} from './tournament-format.js?v=102';
 import {buildTimeline,launchReadiness} from './match-timing.js?v=113';
 const panel=document.getElementById('programme-panel'),tabs=[...document.querySelectorAll('[data-programme]')],isClub=document.body.dataset.space==='club';
 const el=(tag,text='',cls='')=>{const e=document.createElement(tag);e.textContent=text;if(cls)e.className=cls;return e;};
+let scoreHistoryExpanded=false;
 let division='DM',selected='chrono',data=null,error='',clubReady=false,mode='real',generation=0;
 try{division=localStorage.getItem('suzini_etape3_public_epreuve')||'DM';}catch{}
 if(!COURTS[division])division='DM';
@@ -275,7 +276,7 @@ function resultForm(m,index){
  form.replaceChildren();
  const history=el('div','','set-history');
  saved.forEach((s,i)=>{const row=el('div','','set-validated');row.append(el('small',i===2?'Super TB':'Set '+(i+1)),el('strong',s.a+' – '+s.b),el('span','✓'));
- const edit=el('button','Modifier');edit.type='button';edit.disabled=!ready;edit.onclick=()=>editor(i);row.append(edit);history.append(row);});form.append(history);
+ const edit=el('button','Modifier');edit.type='button';edit.disabled=!ready;edit.onclick=()=>{form.dataset.dirty='true';editor(i);};row.append(edit);history.append(row);});form.append(history);
  if(active===null){form.append(el('p',committed?'✓ Match validé':'Tous les sets sont validés.','set-complete'));
  if(!committed){const retry=el('button','Valider le match');retry.type='button';retry.className='signup-submit';retry.onclick=async()=>{retry.disabled=true;try{const next=await finalize(saved);if(next){data=next;render();}else retry.disabled=false;}catch(e){alert(e.message);retry.disabled=false;}};form.append(retry);}return;}
  const title=el('h3',active===2?'Super tie-break':'Set '+(active+1),'set-active-title'),grid=el('div','','set-entry-grid'),values=[];
@@ -336,7 +337,7 @@ function render(){
  else panel.append(note(matches.length?'Tableau terminé 🏆':'Rencontres en attente',matches.length?'Tous les résultats sont validés.':'Les rencontres apparaîtront une fois les tableaux préparés.'));
  }
  const finished=matches.filter(m=>m.result);
- if(finished.length){const history=el('details','','score-history'),summary=el('summary','Matchs terminés · '+finished.length);history.append(summary);finished.forEach(m=>history.append(resultForm(m,matches.findIndex(x=>x.id===m.id))));panel.append(history);}
+ if(finished.length){const history=el('details','','score-history'),summary=el('summary','Matchs terminés · '+finished.length);history.open=scoreHistoryExpanded;summary.onclick=()=>{scoreHistoryExpanded=!history.open;};history.append(summary);finished.forEach(m=>history.append(resultForm(m,matches.findIndex(x=>x.id===m.id))));panel.append(history);}
  return;
  }
  if(selected==='poules'){
