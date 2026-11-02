@@ -34,11 +34,12 @@ export function launchReadiness(match,matches,{now=Date.now()}={}){
  const before=sorted.slice(0,index);
  const prior=[...before].reverse().find(m=>m.division===match.division);
  const courtPrior=[...before].reverse().find(m=>(m.court||m.division)===court);
- let until=0;
+ let until=0,recoveryUntil=0;
  if(courtPrior?.result)until=Date.parse(courtPrior.result.validated_at)+GAP_MINUTES*MINUTE;
  const rest=prior&&(same(prior,match)||depends(match,prior))?prior:courtPrior&&(same(courtPrior,match)||depends(match,courtPrior))?courtPrior:null;
  if(rest?.result)until=Math.max(until,Date.parse(rest.result.validated_at)+CONSECUTIVE_REST_MINUTES*MINUTE);
- for(const previous of matches.filter(m=>m.result&&same(m,match)))until=Math.max(until,Date.parse(previous.result.validated_at)+CONSECUTIVE_REST_MINUTES*MINUTE);
- if(until>now)return {allowed:false,canConfirm:true,until,reason:matches.some(m=>m.result&&same(m,match)&&Date.parse(m.result.validated_at)+CONSECUTIVE_REST_MINUTES*MINUTE>now)?'Pause de trente minutes pour l’équipe qui enchaîne.':'Battement de cinq minutes entre les matchs.'};
- return {allowed:true};
+ for(const previous of matches.filter(m=>m.result&&same(m,match)))recoveryUntil=Math.max(recoveryUntil,Date.parse(previous.result.validated_at)+CONSECUTIVE_REST_MINUTES*MINUTE);
+ until=Math.max(until,recoveryUntil);
+ if(until>now)return {allowed:false,canConfirm:true,until,recoveryUntil:recoveryUntil||null,reason:matches.some(m=>m.result&&same(m,match)&&Date.parse(m.result.validated_at)+CONSECUTIVE_REST_MINUTES*MINUTE>now)?'Pause de trente minutes pour l’équipe qui enchaîne.':'Battement de cinq minutes entre les matchs.'};
+ return {allowed:true,recoveryUntil:recoveryUntil||null};
 }
