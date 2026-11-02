@@ -31,6 +31,50 @@ function chrono(all=false){
  return {...m,planned,live,adjusted:!!latest};
  });
 }
+
+function teamLabel(id){
+ const label=el('span',name(id),'team-with-seed'),index=(current()?.seeds||[]).indexOf(id);
+ if(index===0||index===1)label.append(el('small','TS'+(index+1),'seed-pill'));
+ return label;
+}
+function noFinalsInfo(d){
+ const box=note('Pas de finales · '+d.count+' équipes','');box.classList.add('draw-friendly');box.lastChild.remove();
+ const picture=el('div','🏖️ 🤝 🏆','draw-picture');picture.setAttribute('aria-hidden','true');box.prepend(picture);
+ const list=el('ul');
+ for(const [icon,title,detail] of [
+ ['🤝','Tout se joue dans la poule','Chaque paire rencontre toutes les autres.'],
+ ['🏆','Le podium se gagne au fil des matchs','Le classement de la poule donne le classement final.'],
+ ['😎','La finale ? Pas besoin d’en rajouter !','TS1 et TS2 se retrouvent au dernier match.']
+ ]){const li=el('li'),symbol=el('span',icon),copy=el('div');symbol.setAttribute('aria-hidden','true');copy.append(el('strong',title),el('small',detail));li.append(symbol,copy);list.append(li);}
+ box.append(list);return box;
+}
+function rankingList(d,matches){
+ const complete=matches.length>0&&matches.every(m=>m.result),played=matches.filter(m=>m.result).length;
+ panel.append(el('h2',complete?'Classement final':'Classement provisoire'));
+ if(!complete)panel.append(el('p',played+' match'+(played>1?'s':'')+' joué'+(played>1?'s':'')+' · '+(matches.length-played)+' restant'+(matches.length-played>1?'s':''),'ranking-progress'));
+ let rows=[];
+ if(d.count<=5)rows=(d.standings_a||[]).map(r=>({id:r.id,position:Number(r.position),tied:r.tied}));
+ else{
+ for(const [id,rank] of [['F',1],['P3',3],['P5',5],['P7',7]]){
+ const r=matches.find(m=>m.id===id)?.result;
+ if(r)rows.push({id:r.winner,position:rank},{id:r.winner===r.team_a?r.team_b:r.team_a,position:rank+1});
+ }
+ if(d.count===7&&d.standings_c?.length)rows.push(...d.standings_c.map(r=>({id:r.id,position:Number(r.position)+4,tied:r.tied})));
+ const placed=new Set(rows.map(r=>r.id));
+ const pending=data.teams.filter(t=>t.division===division&&!placed.has(t.id)).sort((a,b)=>name(a.id).localeCompare(name(b.id),'fr'));
+ rows.push(...pending.map(t=>({id:t.id,position:null})));
+ }
+ rows.sort((a,b)=>(a.position??99)-(b.position??99)||name(a.id).localeCompare(name(b.id),'fr'));
+ const list=el('ol','','ranking-simple');
+ for(const r of rows){
+ const top=r.position&&r.position<=3&&!r.tied,li=el('li','','ranking-place'+(top?' podium-place podium-'+r.position:''));
+ const rank=el('span',r.position?(top?['🥇','🥈','🥉'][r.position-1]+' ':'')+r.position+(r.tied?' =':''):'—','ranking-number');
+ li.append(rank,el('span',name(r.id),'ranking-team'));list.append(li);
+ }
+ panel.append(list);
+ if(rows.some(r=>r.tied))panel.append(el('small','Équipes ex æquo : places encore à départager.','ranking-tie-note'));
+}
+
 function drawInfo(d){
  const box=note('Poule unique · '+d.count+' équipes','');
  box.classList.add('draw-friendly');box.lastChild.remove();
@@ -79,14 +123,14 @@ function card(m,index){
  c.append(el('small',(index+1)+'. '+m.stage),el('strong',name(m.a)+' / '+name(m.b)));
  if(m.result)c.append(el('b',scoreText(m.result),'match-score'),el('small','Validé à '+clock(m.result.validated_at,true)+' · Guyane'));
  else c.append(el('span',(m.adjusted?'Horaire actualisé : ':'Horaire initial : ')+clock(m.live??m.planned),'match-time'));
- c.append(el('small',COURTS[m.court||division].name));
+ if(selected!=='poules')c.append(el('small',COURTS[m.court||division].name));
  return c;
 }
 function note(title,text){const b=el('section','','match-info-card');b.append(el('h2',title),el('p',text));return b;}
 function table(rows,title='Classement de la poule',offset=0){
  const section=el('section','','pool-standings');section.append(el('h3',title));const wrap=el('div','','standings-scroll'),t=el('table');const head=el('thead'),tr=el('tr');
  for(const h of ['Rg','Équipe','J','V','Pts','Δ sets','Δ jeux'])tr.append(el('th',h));head.append(tr);t.append(head);const body=el('tbody');
- for(const r of rows){const row=el('tr');for(const v of [(Number(r.position)+offset)+(r.tied?' =':''),name(r.id),r.played,r.wins,r.points,r.sw-r.sl,r.gw-r.gl])row.append(el('td',String(v)));body.append(row);}
+ for(const r of rows){const row=el('tr');for(const v of [(Number(r.position)+offset)+(r.tied?' =':''),name(r.id),r.played,r.wins,r.points,r.sw-r.sl,r.gw-r.gl])row.append(el('td',String(v)));const labelCell=row.children[1];labelCell.replaceChildren(teamLabel(r.id));body.append(row);}
  t.append(body);wrap.append(t);section.append(wrap);section.append(el('small','2 pts victoire · 1 pt défaite jouée. Départage : différence de sets, puis de jeux, puis mêmes critères entre ex æquo.'));return section;
 }
 function drawControls(d){
@@ -127,10 +171,10 @@ function resultForm(m,index){
  section.append(form);return section;
 }
 function render(){
- panel.replaceChildren();const d=current();
+ panel.replaceChildren();document.body.dataset.matchView=selected;const d=current();
  if(error){panel.append(note('Chargement impossible',error));return;}if(!d){panel.append(el('p','Chargement des matchs…'));return;}
  document.body.dataset.matchSimulation=String(!!data.simulation);
- if(selected!=='tirage'&&selected!=='chrono')panel.append(el('div',COURTS[division].name,'programme-court '+COURTS[division].className));
+ if(!['tirage','chrono','poules','finales','classement'].includes(selected))panel.append(el('div',COURTS[division].name,'programme-court '+COURTS[division].className));
 
  const matches=chrono(),count=matches.filter(m=>m.result).length;
  if(selected==='tirage'){
@@ -153,27 +197,15 @@ function render(){
  if(d.count<=6){
  const pools=[d.pool_a,...(d.count===6?[d.pool_b]:[])];
  if(!pools[0]?.length){panel.append(note('Poules à venir','La composition des poules sera affichée après le tirage.'));return;}
- pools.forEach((pool,i)=>{const box=el('section','','programme-pool');box.append(el('h2',pools.length===1?'Poule unique':'Poule '+String.fromCharCode(65+i)));const list=el('ol');pool.forEach(id=>list.append(el('li',name(id))));box.append(list);panel.append(box,table(i?d.standings_b:d.standings_a,'Classement provisoire'));matches.filter(m=>m.phase==='poules'&&pool.includes(m.a)&&pool.includes(m.b)).forEach(m=>panel.append(card(m,matches.findIndex(x=>x.id===m.id))));});
+ pools.forEach((pool,i)=>{const box=el('section','','programme-pool');box.append(el('h2',pools.length===1?'Poule unique':'Poule '+String.fromCharCode(65+i)));const list=el('ol');pool.forEach(id=>{const li=el('li');li.append(teamLabel(id));list.append(li);});box.append(list);panel.append(box,table(i?d.standings_b:d.standings_a,'Classement provisoire'));matches.filter(m=>m.phase==='poules'&&pool.includes(m.a)&&pool.includes(m.b)).forEach(m=>panel.append(card(m,matches.findIndex(x=>x.id===m.id))));});
  }else{panel.append(note('Format sans poules préliminaires','Consultez Finales pour les quarts et les matchs de classement.'));matches.filter(m=>m.phase==='classement').forEach((m,i)=>panel.append(card(m,i)));}
  return;
  }
  if(selected==='finales'){
- if(d.count<=5){panel.append(note('Pas de phase finale','Le classement de la poule unique constitue le classement final du tableau.'));return;}
+ if(d.count<=5){panel.append(noFinalsInfo(d));return;}
  matches.filter(m=>m.phase!=='poules').forEach(m=>panel.append(card(m,matches.findIndex(x=>x.id===m.id))));return;
  }
- if(selected==='classement'){
- panel.append(el('h2',count===matches.length&&matches.length?'Classement final':'Classement provisoire'));
- if(d.count<=5)panel.append(table(d.standings_a,'Poule unique'));
- else{
- const positions=[];
- for(const [id,rank] of [['F',1],['P3',3],['P5',5],['P7',7]]){const r=matches.find(m=>m.id===id)?.result;if(r){positions.push([rank,r.winner],[rank+1,r.winner===r.team_a?r.team_b:r.team_a]);}}
- if(positions.length){const list=el('ol');positions.sort((a,b)=>a[0]-b[0]).forEach(([rank,id])=>{const li=el('li',name(id));li.value=rank;list.append(li);});panel.append(list);}
- if(d.count===7&&d.standings_c?.length)panel.append(table(d.standings_c,'Places 5 à 7',4));
- if(d.count===6){panel.append(table(d.standings_a,'Poule A'),table(d.standings_b,'Poule B'));}
- if(!positions.length&&d.count>=7)panel.append(el('p','Le classement des places sera complété après les matchs décisifs.'));
- }
- panel.append(el('small','Les égalités non départagées restent à trancher par le juge-arbitre.'));return;
- }
+ if(selected==='classement'){rankingList(d,matches);return; }
 }
 function select(tab){selected=tab.dataset.programme;tabs.forEach(b=>{const active=b===tab;b.setAttribute('aria-selected',String(active));b.tabIndex=active?0:-1;});panel.setAttribute('aria-labelledby',tab.id);render();}
 tabs.forEach((tab,i)=>{tab.onclick=()=>select(tab);tab.onkeydown=e=>{let n;if(e.key==='ArrowRight')n=(i+1)%tabs.length;else if(e.key==='ArrowLeft')n=(i+tabs.length-1)%tabs.length;else if(e.key==='Home')n=0;else if(e.key==='End')n=tabs.length-1;else return;e.preventDefault();select(tabs[n]);tabs[n].focus();};});
