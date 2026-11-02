@@ -50,8 +50,11 @@ function noFinalsInfo(d){
 }
 function rankingList(d,matches){
  const complete=matches.length>0&&matches.every(m=>m.result),played=matches.filter(m=>m.result).length;
- panel.append(el('h2',complete?'Classement final':'Classement provisoire'));
- if(!complete)panel.append(el('p',played+' match'+(played>1?'s':'')+' joué'+(played>1?'s':'')+' · '+(matches.length-played)+' restant'+(matches.length-played>1?'s':''),'ranking-progress'));
+ const box=el('section','','ranking-showcase'),header=el('header','','ranking-showcase-head');
+ const trophy=el('span','🏆','ranking-trophy');trophy.setAttribute('aria-hidden','true');
+ const heading=el('div');heading.append(el('small',division==='DM'?'DOUBLE MESSIEURS':'DOUBLE DAMES','ranking-division'),el('h2',complete?'Classement final':'Classement provisoire'));
+ header.append(trophy,heading,el('span',complete?'Terminé':'En cours','ranking-state'));box.append(header);panel.append(box);
+ if(!complete){const progress=el('div','','ranking-progress-card');progress.append(el('strong',played+' / '+matches.length),el('span','matchs joués'),el('small',(matches.length-played)+' match'+(matches.length-played>1?'s':'')+' restant'+(matches.length-played>1?'s':'')));const bar=el('div','','ranking-progress-track'),fill=el('span');fill.style.width=(matches.length?played/matches.length*100:0)+'%';bar.append(fill);progress.append(bar);box.append(progress);}
  let rows=[];
  if(d.count<=5)rows=(d.standings_a||[]).map(r=>({id:r.id,position:Number(r.position),tied:r.tied}));
  else{
@@ -65,14 +68,21 @@ function rankingList(d,matches){
  rows.push(...pending.map(t=>({id:t.id,position:null})));
  }
  rows.sort((a,b)=>(a.position??99)-(b.position??99)||name(a.id).localeCompare(name(b.id),'fr'));
+ const podium=el('div','','ranking-podium');
+ for(const place of [2,1,3]){
+ const r=rows.find(r=>r.position===place&&!r.tied),step=el('article','','ranking-podium-step step-'+place+(r?'':' podium-pending'));
+ step.append(el('span',['🥇','🥈','🥉'][place-1],'podium-medal'),el('strong',r?name(r.id):'À départager','podium-name'),el('span',place===1?'1re place':place+'e place','podium-rank'));
+ podium.append(step);
+ }
+ box.append(podium);
  const list=el('ol','','ranking-simple');
  for(const r of rows){
  const top=r.position&&r.position<=3&&!r.tied,li=el('li','','ranking-place'+(top?' podium-place podium-'+r.position:''));
  const rank=el('span',r.position?(top?['🥇','🥈','🥉'][r.position-1]+' ':'')+r.position+(r.tied?' =':''):'—','ranking-number');
  li.append(rank,el('span',name(r.id),'ranking-team'));list.append(li);
  }
- panel.append(list);
- if(rows.some(r=>r.tied))panel.append(el('small','Équipes ex æquo : places encore à départager.','ranking-tie-note'));
+ box.append(list);
+ if(rows.some(r=>r.tied))box.append(el('small','Équipes ex æquo : places encore à départager.','ranking-tie-note'));
 }
 
 function drawInfo(d){
@@ -182,11 +192,7 @@ function render(){
  drawControls(d);return;
  }
  if(!formatFor(d.count)){panel.append(note('Tableau en préparation',d.count+' équipe(s) inscrite(s). Il faut au moins 4 équipes pour maintenir ce tableau.'));return;}
- if(selected==='chrono'){
- const total=chrono(true);
- panel.append(el('h2','Chrono'),el('p',total.filter(m=>m.result).length+'/'+total.length+' résultats validés · horaires de Guyane','programme-eyebrow'));
- panel.append(el('p','25 min de jeu + 5 min de rotation. Après validation, le prochain match du terrain prend l’heure de validation.','match-caption'),chronoBoard());return;
- }
+ if(selected==='chrono'){panel.append(chronoBoard());return; }
  if(selected==='resultats'){
  if(!isClub||!clubReady){panel.append(note('Résultats','Consultez les scores validés dans Chrono, Poules et Finales.'));return;}
  panel.append(el('h2','Saisir les résultats'));
