@@ -39,6 +39,6 @@ export function launchReadiness(match,matches,{now=Date.now()}={}){
  const rest=prior&&(same(prior,match)||depends(match,prior))?prior:courtPrior&&(same(courtPrior,match)||depends(match,courtPrior))?courtPrior:null;
  if(rest?.result)until=Math.max(until,Date.parse(rest.result.validated_at)+CONSECUTIVE_REST_MINUTES*MINUTE);
  for(const previous of matches.filter(m=>m.result&&same(m,match)))until=Math.max(until,Date.parse(previous.result.validated_at)+CONSECUTIVE_REST_MINUTES*MINUTE);
- if(until>now)return {allowed:false,until,reason:matches.some(m=>m.result&&same(m,match)&&Date.parse(m.result.validated_at)+CONSECUTIVE_REST_MINUTES*MINUTE>now)?'Pause de trente minutes pour l’équipe qui enchaîne.':'Battement de cinq minutes entre les matchs.'};
+ if(until>now)return {allowed:false,canConfirm:true,until,reason:matches.some(m=>m.result&&same(m,match)&&Date.parse(m.result.validated_at)+CONSECUTIVE_REST_MINUTES*MINUTE>now)?'Pause de trente minutes pour l’équipe qui enchaîne.':'Battement de cinq minutes entre les matchs.'};
  return {allowed:true};
 }

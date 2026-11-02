@@ -27,3 +27,10 @@ assert(buildTimeline(ms,{now:base})[1].live===base+120*min,'Forced hour retained
 console.log('PASS: male/female durations, actual start/end, 30-minute rest, active match exclusion, forced hour');
 
 const cross=[job('X',ids[0],ids[1],0),{...job('Y',ids[0],ids[2],1),court:'DD'}];cross[0].result={validated_at:iso(base+25*min)};assert(!launchReadiness(cross[1],cross,{now:base+40*min}).allowed,'Rest also follows team across courts');assert(buildTimeline(cross,{now:base})[1].live>=base+55*min,'Team rest respected across courts');
+const sample=[job('X',ids[0],ids[1],0),job('Y',ids[0],ids[2],1)];
+sample[0].result={validated_at:iso(base+25*min)};
+let recoveryGate=launchReadiness(sample[1],sample,{now:base+40*min});
+assert(!recoveryGate.allowed&&recoveryGate.canConfirm===true,'Short recovery permits explicit confirmation');
+sample[0].started_at=iso(base);sample[0].result=null;
+recoveryGate=launchReadiness(sample[1],sample,{now:base+40*min});
+assert(!recoveryGate.allowed&&!recoveryGate.canConfirm,'Occupied court cannot be bypassed');

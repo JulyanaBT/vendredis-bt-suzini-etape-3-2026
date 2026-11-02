@@ -1,7 +1,7 @@
 import {rpc} from './supabase-site.js?v=94';
 import {client,withDeadline} from './private-client.js?v=94';
 import {COURTS,formatFor,scheduleDraws} from './tournament-format.js?v=102';
-import {buildTimeline,launchReadiness} from './match-timing.js?v=112';
+import {buildTimeline,launchReadiness} from './match-timing.js?v=113';
 const panel=document.getElementById('programme-panel'),tabs=[...document.querySelectorAll('[data-programme]')],isClub=document.body.dataset.space==='club';
 const el=(tag,text='',cls='')=>{const e=document.createElement(tag);e.textContent=text;if(cls)e.className=cls;return e;};
 let division='DM',selected='chrono',data=null,error='',clubReady=false,mode='real',generation=0;
@@ -20,7 +20,7 @@ function fixtures(all=false){
 }
 function chrono(all=false){return buildTimeline(fixtures(true)).filter(m=>all||m.division===division);}
 
-function planRows(){return fixtures(true).map(x=>({id:x.id,division:x.division,slot:x.slot,court:x.court||x.division,...(x.forced_at?{forced_at:x.forced_at}:{}),...(x.progress?{progress:x.progress}:{}),...(x.started_at?{started_at:x.started_at}:{})}));}
+function planRows(){return fixtures(true).map(x=>({id:x.id,division:x.division,slot:x.slot,court:x.court||x.division,...(x.forced_at?{forced_at:x.forced_at}:{}),...(x.progress?{progress:x.progress}:{}),...(x.started_at?{started_at:x.started_at}:{}),...(x.recovery_agreement?{recovery_agreement:x.recovery_agreement}:{})}));}
 async function moveMatch(m,direction,targetSlot){
  const plan=planRows(),item=plan.find(x=>x.id===m.id&&x.division===m.division),old={slot:item.slot,court:item.court};
  if(direction==='up'||direction==='down')item.slot=targetSlot??item.slot+(direction==='up'?-1:1);
@@ -196,22 +196,55 @@ function expectedScore(score,format){
  if(!score.super)return false;
  const [a,b]=score.super;return Math.max(a,b)===10&&Math.min(a,b)<=8||Math.max(a,b)>10&&Math.abs(a-b)===2;
 }
+function decisionDialog({title,content,confirmText,cancelText='Corriger',agreement=false}){
+ return new Promise(resolve=>{
+ const dialog=el('dialog','','match-confirm-dialog'),form=el('form');form.method='dialog';
+ const heading=el('h2',title),actions=el('div','','match-confirm-actions'),cancel=el('button',cancelText),accept=el('button',confirmText);
+ cancel.type='button';accept.type='submit';accept.className='confirm-primary';
+ form.append(heading,content);
+ if(agreement){const label=el('label','','recovery-consent'),box=el('input');box.type='checkbox';box.required=true;label.append(box,el('span','Je confirme que les deux équipes sont d’accord pour réduire ce délai.'));form.append(label);accept.disabled=true;box.onchange=()=>accept.disabled=!box.checked;}
+ actions.append(cancel,accept);form.append(actions);dialog.append(form);document.body.append(dialog);
+ let accepted=false;cancel.onclick=()=>dialog.close();form.onsubmit=e=>{e.preventDefault();accepted=true;dialog.close();};
+ dialog.addEventListener('close',()=>{dialog.remove();resolve(accepted);},{once:true});dialog.showModal();
+ });
+}
+function confirmMatchResult(m,sets){
+ const totals=['a','b'].map(p=>sets.filter(s=>s.winner===p).length),winning=totals[0]>totals[1]?m.a:m.b;
+ const content=el('div','','match-result-recap');content.append(el('span','🏆','result-trophy'),el('small','ÉQUIPE GAGNANTE'),el('strong',name(winning),'confirmed-winner'));
+ const table=el('table'),head=el('tr');head.append(el('th','Équipe'));sets.forEach((s,i)=>head.append(el('th',i===2?'Super TB':'Set '+(i+1))));table.append(head);
+ for(const [id,key] of [[m.a,'a'],[m.b,'b']]){const row=el('tr','','');if(id===winning)row.className='winning-score-row';row.append(el('td',name(id)));sets.forEach(s=>row.append(el('td',String(s[key]))));table.append(row);}
+ content.append(table,el('p','Vérifie le gagnant et le score avant de confirmer la fin du match.'));
+ return decisionDialog({title:'Confirmer le résultat',content,confirmText:'Valider le résultat',cancelText:'Corriger le score'});
+}
+function confirmEarlyStart(m,check){
+ const content=el('div','','recovery-warning');content.append(el('span','⏱️','result-trophy'),el('strong','Le délai entre deux matchs n’est pas respecté.'),el('p',check.reason),el('p','Le prochain lancement est normalement possible à '+clock(check.until)+', heure de Guyane.'),el('p',name(m.a)+' contre '+name(m.b)));
+ return decisionDialog({title:'Confirmer le lancement anticipé',content,confirmText:'Lancer avec l’accord des deux équipes',cancelText:'Attendre',agreement:true});
+}
 function launchCard(m){
  const card=el('section','','launch-card'),readiness=launchReadiness(m,fixtures(true));
  card.append(el('small','PROCHAIN MATCH','launch-kicker'),el('h2',name(m.a)+' contre '+name(m.b)),el('p',COURTS[m.court||division].name,'launch-court'),el('p',m.duration+' min de match · 5 min de battement','launch-duration'));
  const b=el('button','▶ Lancer le match'),status=el('p');b.type='button';b.className='signup-submit';status.setAttribute('role','status');
- b.disabled=!readiness.allowed||(!data.simulation&&!data.registration_closed);
- if(!readiness.allowed)status.textContent=readiness.reason+(readiness.until?' Disponible à '+clock(readiness.until)+'.':'');
+ b.disabled=(!readiness.allowed&&!readiness.canConfirm)||(!data.simulation&&!data.registration_closed);
+ if(!readiness.allowed)status.textContent=readiness.reason+(readiness.until?' Disponible à '+clock(readiness.until)+'.':'')+(readiness.canConfirm?' Un lancement anticipé nécessite l’accord des deux équipes.':'');
  else if(!data.simulation&&!data.registration_closed)status.textContent='Clôturez les inscriptions avant de lancer les matchs réels.';
  b.onclick=async()=>{
- b.disabled=true;status.textContent='Lancement…';
+ b.disabled=true;status.textContent='Vérification du lancement…';
  try{
+ let agreedUntil=0;
+ for(let attempt=0;attempt<4;attempt++){
  const fresh=await withDeadline(client.rpc('suzini_e3_match_state',{p_simulation:!!data.simulation}));if(fresh.error)throw fresh.error;data=fresh.data;
  const current=fixtures(true).find(x=>x.id===m.id&&x.division===m.division);if(!current||current.result||current.started_at)throw Error('Ce match a déjà changé. Actualisez la page.');
- const check=launchReadiness(current,fixtures(true));if(!check.allowed)throw Error(check.reason);
+ const check=launchReadiness(current,fixtures(true));if(!check.allowed&&!check.canConfirm)throw Error(check.reason);
+ if(check.canConfirm&&check.until>agreedUntil){
+ if(!await confirmEarlyStart(current,check)){status.textContent='Lancement annulé : le délai de récupération est conservé.';return;}
+ agreedUntil=check.until;continue;
+ }
  const plan=planRows(),entry=plan.find(x=>x.id===m.id&&x.division===m.division);entry.started_at=data.server_now||new Date().toISOString();
- await savePlan(plan);
- }catch(e){status.textContent=e.message;b.disabled=false;}
+ if(agreedUntil)entry.recovery_agreement={confirmed_at:entry.started_at,scheduled_not_before:new Date(agreedUntil).toISOString(),both_teams_agreed:true};
+ await savePlan(plan);return;
+ }
+ throw Error('Le programme a changé plusieurs fois. Réessayez le lancement.');
+ }catch(e){status.textContent=e.message;}finally{b.disabled=false;}
  };
  card.append(b,status);return card;
 }
@@ -232,7 +265,8 @@ function resultForm(m,index){
  section.append(el('small',(index+1)+'. '+(m.phase==='poules'&&current().count<=5?'Poule unique':m.stage),'score-caption'));
  const teams=el('div','','set-match-teams');teams.append(teamLabel(m.a),el('small','vs'),teamLabel(m.b));section.append(teams);
  const ready=/^[0-9a-f-]{36}$/i.test(m.a)&&/^[0-9a-f-]{36}$/i.test(m.b)&&m.deps.every(id=>fixtures().some(x=>x.id===id&&x.result))&&(data.simulation||data.registration_closed)&&!!(m.started_at||m.result);
- async function finalize(sets){
+ async function finalize(sets,confirmed=false){
+ if(!confirmed&&!await confirmMatchResult(m,sets))return null;
  const score={sets:sets.slice(0,2).map(s=>[s.a,s.b])};if(sets.length===3)score.super=[sets[2].a,sets[2].b];
  if(sets.some(s=>s.override)){score.override=true;score.winner=sets.filter(s=>s.winner==='a').length>sets.filter(s=>s.winner==='b').length?'a':'b';}
  const r=await withDeadline(client.rpc('suzini_e3_validate_result',{p_simulation:!!data.simulation,p_division:division,p_match:m.id,p_score:score,p_revision:m.result?.revision||0}));if(r.error)throw r.error;return r.data;
@@ -243,7 +277,7 @@ function resultForm(m,index){
  saved.forEach((s,i)=>{const row=el('div','','set-validated');row.append(el('small',i===2?'Super TB':'Set '+(i+1)),el('strong',s.a+' – '+s.b),el('span','✓'));
  const edit=el('button','Modifier');edit.type='button';edit.disabled=!ready;edit.onclick=()=>editor(i);row.append(edit);history.append(row);});form.append(history);
  if(active===null){form.append(el('p',committed?'✓ Match validé':'Tous les sets sont validés.','set-complete'));
- if(!committed){const retry=el('button','Valider le match');retry.type='button';retry.className='signup-submit';retry.onclick=async()=>{retry.disabled=true;try{data=await finalize(saved);render();}catch(e){alert(e.message);retry.disabled=false;}};form.append(retry);}return;}
+ if(!committed){const retry=el('button','Valider le match');retry.type='button';retry.className='signup-submit';retry.onclick=async()=>{retry.disabled=true;try{const next=await finalize(saved);if(next){data=next;render();}else retry.disabled=false;}catch(e){alert(e.message);retry.disabled=false;}};form.append(retry);}return;}
  const title=el('h3',active===2?'Super tie-break':'Set '+(active+1),'set-active-title'),grid=el('div','','set-entry-grid'),values=[];
  for(let p=0;p<2;p++){
  grid.append(teamLabel(p?m.b:m.a));
@@ -266,11 +300,13 @@ function resultForm(m,index){
  if(active<saved.length&&!confirm('Corriger ce set ? Les sets suivants devront être revalidés.'))return;
  button.disabled=true;form.dataset.submitting='true';status.textContent='Enregistrement du set…';
  try{
- const sets=[...saved.slice(0,active),{a,b,winner:side,override:!normal}],plan=planRows(),entry=plan.find(x=>x.id===m.id&&x.division===m.division);
+ const sets=[...saved.slice(0,active),{a,b,winner:side,override:!normal}];
+ const totals=['a','b'].map(p=>sets.filter(s=>s.winner===p).length);
+ if(Math.max(...totals)>=2&&!await confirmMatchResult(m,sets)){button.disabled=false;status.textContent='Tu peux corriger le score avant de valider.';return;}
+ const plan=planRows(),entry=plan.find(x=>x.id===m.id&&x.division===m.division);
  entry.progress={sets,result_revision:m.result?.revision||0};
  const r=await withDeadline(client.rpc('suzini_e3_save_planning',{p_simulation:!!data.simulation,p_plan:plan,p_revision:data.planning_revision||0}));if(r.error)throw r.error;data=r.data;
- const totals=['a','b'].map(p=>sets.filter(s=>s.winner===p).length);
- if(Math.max(...totals)>=2)data=await finalize(sets);
+ if(Math.max(...totals)>=2)data=await finalize(sets,true);
  document.dispatchEvent(new CustomEvent('suzini:form-saved',{detail:{form}}));render();
  }catch(e){status.textContent=e.message;button.disabled=false;}finally{delete form.dataset.submitting;}
  };
@@ -354,4 +390,4 @@ if(isClub){
 document.querySelector('.club-switch')?.addEventListener('click',event=>{const a=event.currentTarget,u=new URL(a.href);if(data?.simulation)u.searchParams.set('simulation','1');else u.searchParams.delete('simulation');a.href=u.href;});
 const requested=tabs.find(t=>t.dataset.programme===params.get('matchtab'));if(requested)select(requested);
 await load();
-setInterval(()=>{if(document.visibilityState==='visible'&&!document.querySelector('[data-result-form][data-dirty=true],[data-result-form][data-submitting=true]'))load();},10000);
+setInterval(()=>{if(document.visibilityState==='visible'&&!document.querySelector('dialog[open]')&&!document.querySelector('[data-result-form][data-dirty=true],[data-result-form][data-submitting=true]'))load();},10000);
