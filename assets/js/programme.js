@@ -5,6 +5,7 @@ import {buildTimeline,launchReadiness} from './match-timing.js?v=115';
 const panel=document.getElementById('programme-panel'),tabs=[...document.querySelectorAll('[data-programme]')],isClub=document.body.dataset.space==='club';
 const el=(tag,text='',cls='')=>{const e=document.createElement(tag);e.textContent=text;if(cls)e.className=cls;return e;};
 let scoreHistoryExpanded=false,upcomingExpanded=false;
+let bracketView='final';try{bracketView=sessionStorage.getItem('suzini_e3_bracket')||'final';}catch{}
 let division='DM',selected='chrono',data=null,error='',clubReady=false,mode='real',generation=0;
 try{division=localStorage.getItem('suzini_etape3_public_epreuve')||'DM';}catch{}
 if(!COURTS[division])division='DM';
@@ -20,7 +21,7 @@ const clock=(value,seconds=false)=>new Intl.DateTimeFormat('fr-FR',{timeZone:'Am
 function scoreText(r){return r?r.score.sets.map(s=>s.join('–')).join(' / ')+(r.score.super?' · STB '+r.score.super.join('–'):''):'';}
 function fixtures(all=false){
  if(!data)return [];
- const slots=scheduleDraws(data.divisions).map(m=>({...m,...(data.planning||[]).find(p=>p.id===m.id&&p.division===m.division)})).sort((a,b)=>a.slot-b.slot);
+ const slots=scheduleDraws(data.divisions.filter(d=>d.count<=5||d.drawn_at)).map(m=>({...m,...(data.planning||[]).find(p=>p.id===m.id&&p.division===m.division)})).sort((a,b)=>a.slot-b.slot);
  return slots.map(base=>{const m=data.matches.find(m=>m.division===base.division&&m.id===base.id);return m?{...base,...m}:null;}).filter(Boolean).filter(m=>all||m.division===division);
 }
 function chrono(all=false){return buildTimeline(fixtures(true)).filter(m=>all||m.division===division);}
@@ -189,7 +190,7 @@ function drawControls(d){
  const validate=el('button',d.validated_at?'Format validé':'Valider le format');
  validate.type='button';validate.disabled=!!d.validated_at||!formatFor(d.count)||(!data.simulation&&!data.registration_closed);
  async function act(action,b){b.disabled=true;status.textContent='Enregistrement…';try{const {error}=await client.rpc(data.simulation?'suzini_e3_match_simulation':'suzini_e3_programme_manage',{p_action:action,p_division:division});if(error)throw error;await load();}catch(e){status.textContent=e.message;b.disabled=false;}}
- validate.onclick=()=>act('validate',validate);box.append(validate);
+ validate.onclick=()=>act('validate',validate);
  if(!d.no_draw){const draw=el('button',d.drawn_at?'Tirage effectué':'Effectuer le tirage');draw.type='button';draw.disabled=!d.validated_at||!!d.drawn_at||(!data.simulation&&Date.now()<Date.parse(data.draw_at));draw.onclick=()=>act('draw',draw);box.append(draw);}
  box.append(status);panel.append(box);
 }
@@ -327,10 +328,12 @@ function render(){
 
  const matches=chrono(),count=matches.filter(m=>m.result).length;
  if(selected==='tirage'){
- panel.append(d.no_draw?drawInfo(d):note('Tirage au sort',data.simulation?'Tirage de test disponible immédiatement.':'Le 5 novembre à 14 h, heure de Guyane.'));
+ panel.append(d.no_draw?drawInfo(d):note(d.drawn_at?'Tirage effectué ✅':'Tirage au sort',d.drawn_at?'Les équipes sont réparties. Consultez les poules ou le tableau final.':data.simulation?'Effectuez le tirage dans l’espace Club pour former les poules et préparer les rencontres.':'Le 5 novembre à 14 h, heure de Guyane.'));
+ if(!d.no_draw)drawControls(d);
  return;
  }
  if(!formatFor(d.count)){panel.append(note('Tableau en préparation',d.count+' équipe(s) inscrite(s). Il faut au moins 4 équipes pour maintenir ce tableau.'));return;}
+ if(d.count>=6&&!d.drawn_at){panel.append(note('🎲 Tirage à effectuer','Aucune poule ni programmation avant le tirage. Rendez-vous dans Tirage'+(isClub?' pour répartir les équipes.':' : les rencontres seront ensuite publiées.')));return;}
  if(selected==='chrono'){panel.append(chronoBoard());return; }
  if(selected==='resultats'){
  if(!isClub||!clubReady){panel.append(note('Résultats','Consultez les scores validés dans Chrono, Poules et Finales.'));return;}
@@ -361,10 +364,30 @@ function render(){
  }
  if(selected==='finales'){
  if(d.count<=5){panel.append(noFinalsInfo(d));return;}
+ if(d.count===8){tennisBracket(matches);return;}
  matches.filter(m=>m.phase!=='poules').forEach(m=>panel.append(card(m,matches.findIndex(x=>x.id===m.id))));return;
  }
  if(selected==='classement'){rankingList(d,matches);return; }
 }
+
+function tennisBracket(matches){
+ const nav=el('nav','','tennis-bracket-tabs');nav.setAttribute('aria-label','Choix du tableau');
+ for(const [value,label] of [['final','Tableau final'],['5-8','Tableau 5–8']]){const b=el('button',label);b.type='button';b.setAttribute('aria-pressed',String(bracketView===value));b.onclick=()=>{bracketView=value;try{sessionStorage.setItem('suzini_e3_bracket',value);}catch{}render();};nav.append(b);}panel.append(nav);
+ const consolation=bracketView==='5-8',scroll=el('div','','tennis-bracket-scroll');scroll.tabIndex=0;scroll.setAttribute('aria-label',consolation?'Tableau de tennis des places 5 à 8':'Tableau de tennis final');
+ const rounds=consolation?[['Demi-finales 5–8',['DC1','DC2']],['5e place',['P5']]]:[['Quarts de finale',['QF1','QF2','QF3','QF4']],['Demi-finales',['DF1','DF2']],['Finale',['F']]];
+ const wrap=el('div','','tennis-bracket '+(consolation?'two-rounds':'three-rounds')),heads=el('div','','tennis-bracket-heads'),grid=el('div','','tennis-bracket-grid');
+ rounds.forEach(([label])=>heads.append(el('strong',label)));
+ const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');svg.setAttribute('viewBox','0 0 1000 800');svg.setAttribute('preserveAspectRatio','none');svg.setAttribute('aria-hidden','true');svg.classList.add('tennis-bracket-lines');
+ const paths=consolation?['M480 200 H500 V600 H480','M500 400 H520']:['M312 100 H328 V300 H312','M328 200 H344','M312 500 H328 V700 H312','M328 600 H344','M656 200 H672 V600 H656','M672 400 H688'];
+ paths.forEach(line=>{const path=document.createElementNS(ns,'path');path.setAttribute('d',line);svg.append(path);});grid.append(svg);
+ rounds.forEach(([,ids],col)=>ids.forEach((id,i)=>{const m=matches.find(x=>x.id===id);if(!m)return;const node=el('article','','tennis-bracket-match');node.style.gridColumn=String(col+1);node.style.gridRow=(ids.length===4?1+i*2:ids.length===2?2+i*4:4)+' / span 2';
+ node.append(el('small',id==='F'?'🏆 Finale':id==='P5'?'5e place':id));
+ for(const [team,side] of [[m.a,0],[m.b,1]]){const row=el('div','','tennis-bracket-team');if(m.result?.winner===team)row.classList.add('bracket-winner');row.append(teamLabel(team));const scores=m.result?.score;if(scores){const score=el('b',scores.sets.map(set=>set[side]).join(' · ')+(scores.super?' ('+scores.super[side]+')':''));row.append(score);}node.append(row);}if(m.result)node.append(el('small','✓ Terminé','bracket-result'));grid.append(node);
+ }));
+ wrap.append(heads,grid);scroll.append(wrap);panel.append(scroll);
+ const placement=matches.find(m=>m.id===(consolation?'P7':'P3'));if(placement){const box=el('section','','bracket-placement');box.append(el('h3',consolation?'Match pour la 7e place':'🥉 Match pour la 3e place'),card(placement,matches.indexOf(placement)));panel.append(box);}
+}
+
 function select(tab){selected=tab.dataset.programme;try{const url=new URL(location.href);url.searchParams.set('matchtab',selected);history.replaceState(null,'',url);sessionStorage.setItem('suzini_e3_match_tab_'+document.body.dataset.space,selected);}catch{}tabs.forEach(b=>{const active=b===tab;b.setAttribute('aria-selected',String(active));b.tabIndex=active?0:-1;});panel.setAttribute('aria-labelledby',tab.id);render();}
 tabs.forEach((tab,i)=>{tab.onclick=()=>select(tab);tab.onkeydown=e=>{let n;if(e.key==='ArrowRight')n=(i+1)%tabs.length;else if(e.key==='ArrowLeft')n=(i+tabs.length-1)%tabs.length;else if(e.key==='Home')n=0;else if(e.key==='End')n=tabs.length-1;else return;e.preventDefault();select(tabs[n]);tabs[n].focus();};});
 document.addEventListener('publicZoneChange',e=>{division=e.detail.epreuve;render();});
