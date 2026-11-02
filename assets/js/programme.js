@@ -333,6 +333,7 @@ function render(){
  drawRoulette(d);drawControls(d);return;
  }
  if(!formatFor(d.count)){panel.append(note('Tableau en préparation',d.count+' équipe(s) inscrite(s). Il faut au moins 4 équipes pour maintenir ce tableau.'));return;}
+ if(selected==='poules'&&d.count>=7){panel.append(note('🐔 Les poules sont au repos !','À 7 ou 8 équipes, on entre directement dans le tableau. Direction « Finales » pour les rencontres et les matchs de classement ! 🎾'));return;}
  if(d.count>=6&&!d.drawn_at){panel.append(note('🎲 Tirage à effectuer','Aucune poule ni programmation avant le tirage. Rendez-vous dans Tirage'+(isClub?' pour répartir les équipes.':' : les rencontres seront ensuite publiées.')));return;}
  if(selected==='chrono'){panel.append(chronoBoard());return; }
  if(selected==='resultats'){
@@ -359,7 +360,7 @@ function render(){
  const pools=[d.pool_a,...(d.count===6?[d.pool_b]:[])];
  if(!pools[0]?.length){panel.append(note('Poules à venir','La composition des poules sera affichée après le tirage.'));return;}
  pools.forEach((pool,i)=>{const box=el('section','','programme-pool');box.append(el('h2',pools.length===1?'Poule unique':'Poule '+String.fromCharCode(65+i)));const list=el('ol');pool.forEach(id=>{const li=el('li');li.append(teamLabel(id));list.append(li);});box.append(list);panel.append(box,table(i?d.standings_b:d.standings_a,'Classement provisoire'));matches.filter(m=>m.phase==='poules'&&pool.includes(m.a)&&pool.includes(m.b)).forEach(m=>panel.append(card(m,matches.findIndex(x=>x.id===m.id))));});
- }else{panel.append(note('Format sans poules préliminaires','Consultez Finales pour les quarts et les matchs de classement.'));matches.filter(m=>m.phase==='classement').forEach((m,i)=>panel.append(card(m,i)));}
+ }
  return;
  }
  if(selected==='finales'){
