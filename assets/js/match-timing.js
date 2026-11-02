@@ -12,7 +12,7 @@ export function buildTimeline(matches,{now=Date.now(),start=BASE}={}){
  for(const dep of m.deps||[])if(ends[m.division+':'+dep]!==undefined)earliest=Math.max(earliest,ends[m.division+':'+dep]+GAP_MINUTES*MINUTE);
  let restUntil=null;
  if(restMatch){restUntil=ends[restMatch.division+':'+restMatch.id]+CONSECUTIVE_REST_MINUTES*MINUTE;earliest=Math.max(earliest,restUntil);}
- for(const id of [m.a,m.b])if(teamLast[id])earliest=Math.max(earliest,teamLast[id].end+GAP_MINUTES*MINUTE);
+ for(const id of [m.a,m.b])if(teamLast[id])earliest=Math.max(earliest,teamLast[id].end+CONSECUTIVE_REST_MINUTES*MINUTE);
  if(m.forced_at)earliest=Math.max(earliest,Date.parse(m.forced_at));
  const actualStart=m.started_at?Date.parse(m.started_at):null;
  const began=actualStart??earliest;
@@ -38,6 +38,7 @@ export function launchReadiness(match,matches,{now=Date.now()}={}){
  if(courtPrior?.result)until=Date.parse(courtPrior.result.validated_at)+GAP_MINUTES*MINUTE;
  const rest=prior&&(same(prior,match)||depends(match,prior))?prior:courtPrior&&(same(courtPrior,match)||depends(match,courtPrior))?courtPrior:null;
  if(rest?.result)until=Math.max(until,Date.parse(rest.result.validated_at)+CONSECUTIVE_REST_MINUTES*MINUTE);
- if(until>now)return {allowed:false,until,reason:rest?'Pause de trente minutes pour l’équipe qui enchaîne.':'Battement de cinq minutes entre les matchs.'};
+ for(const previous of matches.filter(m=>m.result&&same(m,match)))until=Math.max(until,Date.parse(previous.result.validated_at)+CONSECUTIVE_REST_MINUTES*MINUTE);
+ if(until>now)return {allowed:false,until,reason:matches.some(m=>m.result&&same(m,match)&&Date.parse(m.result.validated_at)+CONSECUTIVE_REST_MINUTES*MINUTE>now)?'Pause de trente minutes pour l’équipe qui enchaîne.':'Battement de cinq minutes entre les matchs.'};
  return {allowed:true};
 }

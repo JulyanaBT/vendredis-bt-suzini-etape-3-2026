@@ -1,7 +1,7 @@
 import {rpc} from './supabase-site.js?v=94';
 import {client,withDeadline} from './private-client.js?v=94';
 import {COURTS,formatFor,scheduleDraws} from './tournament-format.js?v=102';
-import {buildTimeline,launchReadiness} from './match-timing.js?v=111';
+import {buildTimeline,launchReadiness} from './match-timing.js?v=112';
 const panel=document.getElementById('programme-panel'),tabs=[...document.querySelectorAll('[data-programme]')],isClub=document.body.dataset.space==='club';
 const el=(tag,text='',cls='')=>{const e=document.createElement(tag);e.textContent=text;if(cls)e.className=cls;return e;};
 let division='DM',selected='chrono',data=null,error='',clubReady=false,mode='real',generation=0;
@@ -198,7 +198,7 @@ function expectedScore(score,format){
 }
 function launchCard(m){
  const card=el('section','','launch-card'),readiness=launchReadiness(m,fixtures(true));
- card.append(el('small','PROCHAIN MATCH','launch-kicker'),el('h2',name(m.a)+' / '+name(m.b)),el('p',COURTS[m.court||division].name,'launch-court'),el('p',m.duration+' min de match · 5 min de battement','launch-duration'));
+ card.append(el('small','PROCHAIN MATCH','launch-kicker'),el('h2',name(m.a)+' contre '+name(m.b)),el('p',COURTS[m.court||division].name,'launch-court'),el('p',m.duration+' min de match · 5 min de battement','launch-duration'));
  const b=el('button','▶ Lancer le match'),status=el('p');b.type='button';b.className='signup-submit';status.setAttribute('role','status');
  b.disabled=!readiness.allowed||(!data.simulation&&!data.registration_closed);
  if(!readiness.allowed)status.textContent=readiness.reason+(readiness.until?' Disponible à '+clock(readiness.until)+'.':'');
