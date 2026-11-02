@@ -12,16 +12,66 @@ function current(){return data?.divisions.find(d=>d.division===division);}
 function name(id){return data?.teams.find(t=>t.id===id)?.team_name||id||'À déterminer';}
 const clock=(value,seconds=false)=>new Intl.DateTimeFormat('fr-FR',{timeZone:'America/Cayenne',hour:'2-digit',minute:'2-digit',...(seconds?{second:'2-digit'}:{})}).format(new Date(value));
 function scoreText(r){return r?r.score.sets.map(s=>s.join('–')).join(' / ')+(r.score.super?' · STB '+r.score.super.join('–'):''):'';}
-function fixtures(){
+function fixtures(all=false){
  if(!data)return [];
  const slots=scheduleDraws(data.divisions);
- return slots.map(base=>{const m=data.matches.find(m=>m.division===base.division&&m.id===base.id);return m?{...base,...m}:null;}).filter(Boolean).filter(m=>m.division===division);
+ return slots.map(base=>{const m=data.matches.find(m=>m.division===base.division&&m.id===base.id);return m?{...base,...m}:null;}).filter(Boolean).filter(m=>all||m.division===division);
 }
-function chrono(){
- const matches=fixtures(),completed=matches.filter(m=>m.result),latest=completed.sort((a,b)=>Date.parse(b.result.validated_at)-Date.parse(a.result.validated_at))[0];
- const anchor=latest?Date.parse(latest.result.validated_at):Date.parse('2026-11-06T21:00:00Z');let pending=0;
- return matches.map(m=>({...m,planned:Date.parse('2026-11-06T21:00:00Z')+m.slot*30*60000,live:!m.result?(latest?anchor+pending++*30*60000:Date.parse('2026-11-06T21:00:00Z')+m.slot*30*60000):null,adjusted:!!latest}));
+function chrono(all=false){
+ const matches=fixtures(all),latestByCourt={};
+ for(const m of matches.filter(m=>m.result)){
+ const court=m.court||m.division,previous=latestByCourt[court];
+ if(!previous||Date.parse(m.result.validated_at)>Date.parse(previous.result.validated_at))latestByCourt[court]=m;
+ }
+ const pending={};
+ return matches.map(m=>{
+ const court=m.court||m.division,latest=latestByCourt[court],planned=Date.parse('2026-11-06T21:00:00Z')+m.slot*30*60000;
+ const live=m.result?null:latest?Date.parse(latest.result.validated_at)+(pending[court]||0)*30*60000:planned;
+ if(!m.result)pending[court]=(pending[court]||0)+1;
+ return {...m,planned,live,adjusted:!!latest};
+ });
 }
+function drawInfo(d){
+ const box=note('Poule unique · '+d.count+' équipes','');
+ box.classList.add('draw-friendly');box.lastChild.remove();
+ const picture=el('div','🎩 🏖️ 🎾','draw-picture');picture.setAttribute('aria-hidden','true');
+ box.prepend(picture);
+ const list=el('ul');
+ for(const [icon,title,detail] of [
+ ['🤝','Tout le monde rencontre tout le monde',d.count+' équipes · '+(d.count*(d.count-1)/2)+' matchs dans une seule poule.'],
+ ['🎩','Le chapeau reste au vestiaire','Pas de tirage au sort : personne à tirer du chapeau !'],
+ ['🏆','TS1 contre TS2 : le bouquet final','Les deux têtes de série se retrouvent au dernier match.']
+ ]){const li=el('li'),symbol=el('span',icon),copy=el('div');symbol.setAttribute('aria-hidden','true');copy.append(el('strong',title),el('small',detail));li.append(symbol,copy);list.append(li);}
+ box.append(list);return box;
+}
+function chronoBoard(){
+ const all=chrono(true),board=el('section','','rose-chrono'),head=el('div','','rose-chrono-head');
+ head.append(el('span','Tour'));
+ for(const court of ['DM','DD'])head.append(el('strong',COURTS[court].name,COURTS[court].className));
+ board.append(head);
+ const slots=[...new Set(all.map(m=>m.slot))].sort((a,b)=>a-b);
+ for(const slot of slots){
+ const ms=all.filter(m=>m.slot===slot),row=el('section','','rose-chrono-row'),tour=el('div','','rose-tour');
+ tour.append(el('b',String(slot+1)),el('small',ms.every(m=>m.result)?'Terminé':'À venir'));row.append(tour);
+ for(const court of ['DM','DD']){
+ const m=ms.find(m=>(m.court||m.division)===court),cell=el('article','','rose-match '+COURTS[court].className);
+ if(!m){cell.append(el('small','Terrain disponible','rose-empty'));row.append(cell);continue;}
+ cell.append(el('small',m.stage,'rose-stage'),el('b',clock(m.result?m.result.validated_at:m.live??m.planned),'rose-hour'));
+ if(m.result)cell.lastChild.title='Heure de validation · Guyane';
+ const a=el('div','','rose-team'),b=el('div','','rose-team');
+ for(const [id,target] of [[m.a,a],[m.b,b]]){name(id).split(' / ').forEach(player=>target.append(el('span',player)));if(m.result?.winner===id)target.classList.add('rose-winner');}
+ const versus=el('div','','rose-versus');versus.append(el(m.result?'strong':'small',m.result?scoreText(m.result):'vs'));
+ cell.append(a,versus,b);
+ if(m.result)cell.append(el('small','✓ Résultat validé','rose-status'));
+ else cell.append(el('small',m.adjusted?'Horaire actualisé':'Horaire initial','rose-status'));
+ row.append(cell);
+ }
+ board.append(row);
+ }
+ if(!slots.length)board.append(note('Programme à venir','Les rencontres apparaîtront une fois les tableaux préparés.'));
+ return board;
+}
+
 function card(m,index){
  const c=el('article','','programme-match '+COURTS[m.court||division].className);
  if(m.result)c.classList.add('match-finished');
@@ -83,15 +133,14 @@ function render(){
  if(data.simulation)panel.append(el('p','SIMULATION PRIVÉE · Équipes et résultats fictifs','simulation-notice'));
  const matches=chrono(),count=matches.filter(m=>m.result).length;
  if(selected==='tirage'){
- panel.append(note(d.no_draw?'Poule unique · sans tirage au sort':'Tirage au sort',d.no_draw?'Avec 4 équipes, toutes les paires se rencontrent dans une poule unique. Aucun tirage au sort n’est nécessaire. Les deux têtes de série se rencontrent au dernier match.':data.simulation?'Tirage de test disponible immédiatement.':'Le 5 novembre à 14 h, heure de Guyane.'));
+ panel.append(d.no_draw?drawInfo(d):note('Tirage au sort',data.simulation?'Tirage de test disponible immédiatement.':'Le 5 novembre à 14 h, heure de Guyane.'));
  drawControls(d);return;
  }
  if(!formatFor(d.count)){panel.append(note('Tableau en préparation',d.count+' équipe(s) inscrite(s). Il faut au moins 4 équipes pour maintenir ce tableau.'));return;}
  if(selected==='chrono'){
- panel.append(el('h2','Chrono'),el('p',count+'/'+matches.length+' résultats validés · horaires de Guyane','programme-eyebrow'));
- panel.append(el('p','Prévision initiale : 25 min de jeu et 5 min de rotation. Après validation d’un résultat, le prochain match non joué prend cette heure de départ. Horaires indicatifs, ajustables par le juge-arbitre selon les repos.','match-caption'));
- if(!matches.length)panel.append(note('Programme à venir','Les rencontres apparaîtront après le tirage.'));
- matches.forEach((m,i)=>panel.append(card(m,i)));return;
+ const total=chrono(true);
+ panel.append(el('h2','Chrono'),el('p',total.filter(m=>m.result).length+'/'+total.length+' résultats validés · horaires de Guyane','programme-eyebrow'));
+ panel.append(el('p','25 min de jeu + 5 min de rotation. Après validation, le prochain match du terrain prend l’heure de validation.','match-caption'),chronoBoard());return;
  }
  if(selected==='resultats'){
  if(!isClub||!clubReady){panel.append(note('Résultats','Consultez les scores validés dans Chrono, Poules et Finales.'));return;}
