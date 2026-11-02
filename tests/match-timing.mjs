@@ -1,0 +1,27 @@
+import {buildTimeline,launchReadiness} from '../assets/js/match-timing.js';
+
+const assert=(v,m)=>{if(!v)throw Error(m);},iso=n=>new Date(n).toISOString(),base=Date.parse('2026-11-06T21:00:00Z'),min=60000;
+const ids=Array.from({length:8},(_,i)=>'00000000-0000-4000-8000-'+String(i+1).padStart(12,'0'));
+const job=(id,a,b,slot,division='DM')=>({id,a,b,slot,division,court:division,deps:[]});
+let ms=[job('A',ids[0],ids[1],0),job('B',ids[2],ids[3],1),job('C',ids[0],ids[2],2),job('D',ids[4],ids[5],0,'DD'),job('E',ids[6],ids[7],1,'DD')];
+let r=buildTimeline(ms,{now:base});
+assert(r.find(x=>x.id==='B').live===base+30*min,'Men: 25+5');
+assert(r.find(x=>x.id==='E').live===base+45*min,'Women: 40+5');
+assert(r.find(x=>x.id==='C').live===base+85*min,'Consecutive team: 30 minutes after previous end');
+ms=[job('A',ids[0],ids[1],0),job('B',ids[0],ids[2],1)];
+ms[0].started_at=iso(base);ms[0].result={validated_at:iso(base+35*min)};
+r=buildTimeline(ms,{now:base+35*min});
+assert(r[1].live===base+65*min,'Actual match end controls 30-minute rest');
+let gate=launchReadiness(ms[1],ms,{now:base+64*min});
+assert(!gate.allowed&&gate.until===base+65*min,'Rest blocks early launch');
+assert(launchReadiness(ms[1],ms,{now:base+65*min}).allowed,'Launch permitted after rest');
+ms[0].result=null;
+assert(!launchReadiness(ms[1],ms,{now:base+90*min}).allowed,'Running court blocks launch');
+r=buildTimeline(ms,{now:base+90*min});
+assert(r[0].end===base+90*min,'Overrunning match remains running until result validation');
+ms=[job('A',ids[0],ids[1],0),job('B',ids[2],ids[3],1)];
+ms[0].started_at=iso(base-10*min);ms[0].result={validated_at:iso(base+10*min)};
+assert(buildTimeline(ms,{now:base})[1].live===base+15*min,'Actual finish + 5-minute gap');
+ms[1].forced_at=iso(base+120*min);
+assert(buildTimeline(ms,{now:base})[1].live===base+120*min,'Forced hour retained');
+console.log('PASS: male/female durations, actual start/end, 30-minute rest, active match exclusion, forced hour');

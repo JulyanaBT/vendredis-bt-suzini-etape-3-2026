@@ -1,6 +1,7 @@
 import {rpc} from './supabase-site.js?v=94';
 import {client,withDeadline} from './private-client.js?v=94';
 import {COURTS,formatFor,scheduleDraws} from './tournament-format.js?v=102';
+import {buildTimeline,launchReadiness} from './match-timing.js?v=111';
 const panel=document.getElementById('programme-panel'),tabs=[...document.querySelectorAll('[data-programme]')],isClub=document.body.dataset.space==='club';
 const el=(tag,text='',cls='')=>{const e=document.createElement(tag);e.textContent=text;if(cls)e.className=cls;return e;};
 let division='DM',selected='chrono',data=null,error='',clubReady=false,mode='real',generation=0;
@@ -17,31 +18,20 @@ function fixtures(all=false){
  const slots=scheduleDraws(data.divisions).map(m=>({...m,...(data.planning||[]).find(p=>p.id===m.id&&p.division===m.division)})).sort((a,b)=>a.slot-b.slot);
  return slots.map(base=>{const m=data.matches.find(m=>m.division===base.division&&m.id===base.id);return m?{...base,...m}:null;}).filter(Boolean).filter(m=>all||m.division===division);
 }
-function chrono(all=false){
- const matches=fixtures(true),anchors={};
- const rows=matches.map(m=>{
- const court=m.court||m.division,planned=Date.parse('2026-11-06T21:00:00Z')+m.slot*30*60000;
- let live=anchors[court]??planned;
- if(m.forced_at)live=Date.parse(m.forced_at);
- const adjusted=anchors[court]!==undefined||!!m.forced_at;
- if(m.result)anchors[court]=Date.parse(m.result.validated_at);
- else anchors[court]=live+30*60000;
- return {...m,planned,live:m.result?null:live,adjusted};
- });
- return rows.filter(m=>all||m.division===division);
-}
-function planRows(){return fixtures(true).map(x=>({id:x.id,division:x.division,slot:x.slot,court:x.court||x.division,...(x.forced_at?{forced_at:x.forced_at}:{}),...(x.progress?{progress:x.progress}:{})}));}
+function chrono(all=false){return buildTimeline(fixtures(true)).filter(m=>all||m.division===division);}
+
+function planRows(){return fixtures(true).map(x=>({id:x.id,division:x.division,slot:x.slot,court:x.court||x.division,...(x.forced_at?{forced_at:x.forced_at}:{}),...(x.progress?{progress:x.progress}:{}),...(x.started_at?{started_at:x.started_at}:{})}));}
 async function moveMatch(m,direction,targetSlot){
  const plan=planRows(),item=plan.find(x=>x.id===m.id&&x.division===m.division),old={slot:item.slot,court:item.court};
  if(direction==='up'||direction==='down')item.slot=targetSlot??item.slot+(direction==='up'?-1:1);
  else item.court=item.court==='DM'?'DD':'DM';
  if(item.slot<0)return;
  const other=plan.find(x=>x!==item&&x.slot===item.slot&&x.court===item.court);
- if(other){if(fixtures(true).find(x=>x.id===other.id&&x.division===other.division)?.result)throw Error('Ce créneau contient un résultat déjà validé.');other.slot=old.slot;other.court=old.court;}
+ if(other){if(fixtures(true).find(x=>x.id===other.id&&x.division===other.division)?.result||fixtures(true).find(x=>x.id===other.id&&x.division===other.division)?.started_at)throw Error('Ce créneau contient un match en cours ou déjà validé.');other.slot=old.slot;other.court=old.court;}
  await savePlan(plan);
 }
 function exchangeButton(m,dir,targetSlot,other){
- const b=el('button',dir==='court'?'⇄':'⇅','chrono-exchange');b.type='button';b.title=dir==='court'?'Échanger les terrains':'Échanger les horaires';b.setAttribute('aria-label',b.title+(m?' · '+name(m.a)+' contre '+name(m.b):''));b.disabled=!m||!!m.result||!!other?.result;
+ const b=el('button',dir==='court'?'⇄':'⇅','chrono-exchange');b.type='button';b.title=dir==='court'?'Échanger les terrains':'Échanger les horaires';b.setAttribute('aria-label',b.title+(m?' · '+name(m.a)+' contre '+name(m.b):''));b.disabled=!m||!!m.result||!!m.started_at||!!other?.result||!!other?.started_at;
  b.onclick=async()=>{b.disabled=true;try{await moveMatch(m,dir,targetSlot);}catch(e){alert(e.message);b.disabled=false;}};return b;
 }
 async function savePlan(plan){
@@ -51,7 +41,7 @@ async function savePlan(plan){
 function planningControls(m){
  const box=el('div','','match-plan-controls');
  const label='Match '+name(m.a)+' contre '+name(m.b);
- const time=el('button','🕒');time.type='button';time.title='Forcer une heure';time.setAttribute('aria-label','Forcer une heure · '+label);time.disabled=!!m.result;
+ const time=el('button','🕒');time.type='button';time.title='Forcer une heure';time.setAttribute('aria-label','Forcer une heure · '+label);time.disabled=!!m.result||!!m.started_at;
  time.onclick=()=>{
  const dialog=el('dialog','','match-time-dialog'),form=el('form');form.method='dialog';
  const local=new Date((m.live??m.planned)-3*3600000).toISOString(),date=local.slice(0,10);
@@ -142,18 +132,20 @@ function chronoBoard(){
  for(let si=0;si<slots.length;si++){
  const slot=slots[si],ms=all.filter(m=>m.slot===slot),row=el('section','','rose-chrono-row'),tour=el('div','','rose-tour');
  const left=ms.find(m=>(m.court||m.division)==='DM'),right=ms.find(m=>(m.court||m.division)==='DD');
- tour.append(el('b',String(slot+1)),el('small',ms.every(m=>m.result)?'Terminé':'À venir'));row.append(tour);
+ tour.append(el('b',String(slot+1)),el('small',ms.every(m=>m.result)?'Terminé':ms.some(m=>m.started_at&&!m.result)?'En cours':'À venir'));row.append(tour);
  for(const court of ['DM','DD']){
  if(court==='DD'&&editable)row.append(exchangeButton(left||right,'court',null,left?right:null));
  const m=court==='DM'?left:right,cell=el('article','','rose-match '+COURTS[court].className);
  if(!m){cell.append(el('small','Terrain disponible','rose-empty'));row.append(cell);continue;}
  if(!(m.phase==='poules'&&data.divisions.find(d=>d.division===m.division)?.count<=5))cell.append(el('small',m.stage,'rose-stage'));
- cell.append(el('b',clock(m.result?m.result.validated_at:m.live??m.planned),'rose-hour'));
+ cell.append(el('b',clock(m.started_at||(m.result?m.result.validated_at:m.live||m.planned)),'rose-hour'));
  const a=el('div','','rose-team'),b=el('div','','rose-team');
  for(const [id,target] of [[m.a,a],[m.b,b]]){target.append(el('span',name(id)));if(m.result?.winner===id)target.classList.add('rose-winner');}
  const versus=el('div','','rose-versus'),partial=!m.result&&m.progress?.sets?.length?m.progress.sets.map(s=>s.a+'–'+s.b).join(' / '):null;
  versus.append(el(m.result||partial?'strong':'small',m.result?scoreText(m.result):partial||'vs'));cell.append(a,versus,b);
- if(m.result)cell.append(el('small','✓ Résultat validé','rose-status'));else if(partial)cell.append(el('small','Match en cours','rose-status'));
+ if(m.result)cell.append(el('small','✓ Terminé à '+clock(m.result.validated_at),'rose-status'));
+ else if(m.started_at)cell.append(el('small','● En cours · lancé à '+clock(m.started_at),'rose-status'));
+ else {cell.append(el('small',m.duration+' min + 5 min','rose-status'));if(m.restUntil)cell.append(el('small','Pause équipe · 30 min','rose-rest'));}
  if(editable)cell.append(planningControls(m));row.append(cell);
  }
  board.append(row);
@@ -204,6 +196,25 @@ function expectedScore(score,format){
  if(!score.super)return false;
  const [a,b]=score.super;return Math.max(a,b)===10&&Math.min(a,b)<=8||Math.max(a,b)>10&&Math.abs(a-b)===2;
 }
+function launchCard(m){
+ const card=el('section','','launch-card'),readiness=launchReadiness(m,fixtures(true));
+ card.append(el('small','PROCHAIN MATCH','launch-kicker'),el('h2',name(m.a)+' / '+name(m.b)),el('p',COURTS[m.court||division].name,'launch-court'),el('p',m.duration+' min de match · 5 min de battement','launch-duration'));
+ const b=el('button','▶ Lancer le match'),status=el('p');b.type='button';b.className='signup-submit';status.setAttribute('role','status');
+ b.disabled=!readiness.allowed||(!data.simulation&&!data.registration_closed);
+ if(!readiness.allowed)status.textContent=readiness.reason+(readiness.until?' Disponible à '+clock(readiness.until)+'.':'');
+ else if(!data.simulation&&!data.registration_closed)status.textContent='Clôturez les inscriptions avant de lancer les matchs réels.';
+ b.onclick=async()=>{
+ b.disabled=true;status.textContent='Lancement…';
+ try{
+ const fresh=await withDeadline(client.rpc('suzini_e3_match_state',{p_simulation:!!data.simulation}));if(fresh.error)throw fresh.error;data=fresh.data;
+ const current=fixtures(true).find(x=>x.id===m.id&&x.division===m.division);if(!current||current.result||current.started_at)throw Error('Ce match a déjà changé. Actualisez la page.');
+ const check=launchReadiness(current,fixtures(true));if(!check.allowed)throw Error(check.reason);
+ const plan=planRows(),entry=plan.find(x=>x.id===m.id&&x.division===m.division);entry.started_at=data.server_now||new Date().toISOString();
+ await savePlan(plan);
+ }catch(e){status.textContent=e.message;b.disabled=false;}
+ };
+ card.append(b,status);return card;
+}
 function recordedSets(m){
  if(m.progress&&(!m.result||m.progress.result_revision===m.result.revision))return m.progress.sets||[];
  if(!m.result)return [];
@@ -220,7 +231,7 @@ function resultForm(m,index){
  const finished=Math.max(...wins())>=2,committed=!!m.result&&(!m.progress||m.progress.result_revision!==m.result.revision);
  section.append(el('small',(index+1)+'. '+(m.phase==='poules'&&current().count<=5?'Poule unique':m.stage),'score-caption'));
  const teams=el('div','','set-match-teams');teams.append(teamLabel(m.a),el('small','vs'),teamLabel(m.b));section.append(teams);
- const ready=/^[0-9a-f-]{36}$/i.test(m.a)&&/^[0-9a-f-]{36}$/i.test(m.b)&&m.deps.every(id=>fixtures().some(x=>x.id===id&&x.result))&&(data.simulation||data.registration_closed);
+ const ready=/^[0-9a-f-]{36}$/i.test(m.a)&&/^[0-9a-f-]{36}$/i.test(m.b)&&m.deps.every(id=>fixtures().some(x=>x.id===id&&x.result))&&(data.simulation||data.registration_closed)&&!!(m.started_at||m.result);
  async function finalize(sets){
  const score={sets:sets.slice(0,2).map(s=>[s.a,s.b])};if(sets.length===3)score.super=[sets[2].a,sets[2].b];
  if(sets.some(s=>s.override)){score.override=true;score.winner=sets.filter(s=>s.winner==='a').length>sets.filter(s=>s.winner==='b').length?'a':'b';}
@@ -270,7 +281,7 @@ function render(){
  panel.replaceChildren();document.body.dataset.matchView=selected;const d=current();
  if(error){panel.append(note('Chargement impossible',error));return;}if(!d){panel.append(el('p','Chargement des matchs…'));return;}
  document.body.dataset.matchSimulation=String(!!data.simulation);
- if(!['tirage','chrono','poules','finales','classement'].includes(selected))panel.append(el('div',COURTS[division].name,'programme-court '+COURTS[division].className));
+ if(!['tirage','chrono','poules','finales','classement'].includes(selected)){const focus=chrono().find(m=>m.started_at&&!m.result)||chrono().find(m=>!m.result),court=focus?.court||division;panel.append(el('div',COURTS[court].name,'programme-court '+COURTS[court].className));}
 
  const matches=chrono(),count=matches.filter(m=>m.result).length;
  if(selected==='tirage'){
@@ -281,9 +292,16 @@ function render(){
  if(selected==='chrono'){panel.append(chronoBoard());return; }
  if(selected==='resultats'){
  if(!isClub||!clubReady){panel.append(note('Résultats','Consultez les scores validés dans Chrono, Poules et Finales.'));return;}
- panel.append(el('h2','Saisir les résultats'));
- if(!matches.length)panel.append(note('Rencontres en attente','Effectuez le tirage pour déterminer les matchs.'));
- matches.forEach((m,i)=>panel.append(resultForm(m,i)));return;
+ const running=matches.filter(m=>m.started_at&&!m.result);
+ if(running.length){panel.append(el('h2','Match en cours'));for(const m of running){panel.append(el('p','Lancé à '+clock(m.started_at)+' · '+m.duration+' min prévues','live-match-status'),resultForm(m,matches.findIndex(x=>x.id===m.id)));}}
+ else{
+ const next=matches.find(m=>!m.result);
+ if(next)panel.append(launchCard(next));
+ else panel.append(note(matches.length?'Tableau terminé 🏆':'Rencontres en attente',matches.length?'Tous les résultats sont validés.':'Les rencontres apparaîtront une fois les tableaux préparés.'));
+ }
+ const finished=matches.filter(m=>m.result);
+ if(finished.length){const history=el('details','','score-history'),summary=el('summary','Matchs terminés · '+finished.length);history.append(summary);finished.forEach(m=>history.append(resultForm(m,matches.findIndex(x=>x.id===m.id))));panel.append(history);}
+ return;
  }
  if(selected==='poules'){
  if(d.count<=6){
