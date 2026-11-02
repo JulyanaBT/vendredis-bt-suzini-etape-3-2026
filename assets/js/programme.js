@@ -370,10 +370,10 @@ function render(){
  if(selected==='classement'){rankingList(d,matches);return; }
 }
 
-function tennisBracket(matches){
+function tennisBracket(matches,{host=panel,drawing=false}={}){
  const nav=el('nav','','tennis-bracket-tabs');nav.setAttribute('aria-label','Choix du tableau');
- for(const [value,label] of [['final','Tableau final'],['5-8','Tableau 5–8']]){const b=el('button',label);b.type='button';b.setAttribute('aria-pressed',String(bracketView===value));b.onclick=()=>{bracketView=value;try{sessionStorage.setItem('suzini_e3_bracket',value);}catch{}render();};nav.append(b);}panel.append(nav);
- const consolation=bracketView==='5-8',scroll=el('div','','tennis-bracket-scroll');scroll.tabIndex=0;scroll.setAttribute('aria-label',consolation?'Tableau de tennis des places 5 à 8':'Tableau de tennis final');
+ for(const [value,label] of [['final','Tableau final'],['5-8','Tableau 5–8']]){const b=el('button',label);b.type='button';b.setAttribute('aria-pressed',String(bracketView===value));b.onclick=()=>{bracketView=value;try{sessionStorage.setItem('suzini_e3_bracket',value);}catch{}render();};nav.append(b);}if(!drawing)host.append(nav);
+ const consolation=!drawing&&bracketView==='5-8',scroll=el('div','','tennis-bracket-scroll');scroll.tabIndex=0;scroll.setAttribute('aria-label',consolation?'Tableau de tennis des places 5 à 8':'Tableau de tennis final');
  const rounds=consolation?[['Demi-finales 5–8',['DC1','DC2']],['5e place',['P5']]]:[['Quarts de finale',['QF1','QF2','QF3','QF4']],['Demi-finales',['DF1','DF2']],['Finale',['F']]];
  const wrap=el('div','','tennis-bracket '+(consolation?'two-rounds':'three-rounds')),heads=el('div','','tennis-bracket-heads'),grid=el('div','','tennis-bracket-grid');
  rounds.forEach(([label])=>heads.append(el('strong',label)));
@@ -384,8 +384,8 @@ function tennisBracket(matches){
  node.append(el('small',id==='F'?'🏆 Finale':id==='P5'?'5e place':id));
  for(const [team,side] of [[m.a,0],[m.b,1]]){const row=el('div','','tennis-bracket-team');if(m.result?.winner===team)row.classList.add('bracket-winner');row.append(teamLabel(team));const scores=m.result?.score;if(scores){const score=el('b',scores.sets.map(set=>set[side]).join(' · ')+(scores.super?' ('+scores.super[side]+')':''));row.append(score);}node.append(row);}if(m.result)node.append(el('small','✓ Terminé','bracket-result'));grid.append(node);
  }));
- wrap.append(heads,grid);scroll.append(wrap);panel.append(scroll);
- const placement=matches.find(m=>m.id===(consolation?'P7':'P3'));if(placement){const box=el('section','','bracket-placement');box.append(el('h3',consolation?'Match pour la 7e place':'🥉 Match pour la 3e place'),card(placement,matches.indexOf(placement)));panel.append(box);}
+ wrap.append(heads,grid);scroll.append(wrap);host.append(scroll);
+ const placement=!drawing&&matches.find(m=>m.id===(consolation?'P7':'P3'));if(placement){const box=el('section','','bracket-placement');box.append(el('h3',consolation?'Match pour la 7e place':'🥉 Match pour la 3e place'),card(placement,matches.indexOf(placement)));host.append(box);}
 }
 
 
@@ -394,7 +394,7 @@ function drawRoulette(d){
  const box=el('section','','draw-roulette-card'),started=!!d.draw_started_at,complete=!!d.draw_complete||!!d.drawn_at;
  const key=drawKey(d),replaying=drawReplay?.key===key,steps=d.draw_reveals||[],shown=replaying?steps.slice(0,drawReplay.index):steps;
  box.append(el('h2',replaying?'⏪ Replay du tirage':started&&!complete?'🔴 Tirage en direct':'🎡 Tirage au sort'));
- box.append(el('p',replaying?'Même tirage, sans l’attente d’une minute.':!started?(data.simulation?'Le gestionnaire peut lancer ce tirage de test depuis l’espace Club.':'Lancement prévu le 5 novembre à 14 h, heure de Guyane.'):'Une équipe révélée par minute · heure de Guyane.','draw-roulette-caption'));
+ box.append(el('p',replaying?'Même tirage, sans l’attente d’une minute.':!started?(data.simulation?'Le gestionnaire peut lancer ce tirage de test depuis l’espace Club.':'Lancement prévu le 5 novembre à 14 h, heure de Guyane.'):isClub?'Tirage immédiat en gestion Club · diffusion publique à une équipe par minute.':'Une équipe révélée par minute · heure de Guyane.','draw-roulette-caption'));
  const seeds=el('div','','roulette-seeds');
  for(const [i,label] of [[1,d.count===6?'TS2 · Poule A':'TS2 · en haut'],[0,d.count===6?'TS1 · Poule B':'TS1 · en bas']]){const id=d.seeds?.[i];const seed=el('div');seed.append(el('small',label),el('strong',id?name(id):'Placement réservé'));seeds.append(seed);}
  box.append(seeds);
@@ -405,9 +405,20 @@ function drawRoulette(d){
  const status=el('p','','roulette-countdown');status.dataset.rouletteCountdown='';status.setAttribute('aria-live','polite');box.append(status);
  if(complete&&!replaying){const replay=el('button','▶ Revoir le tirage · version rapide','roulette-replay');replay.type='button';replay.onclick=()=>{drawReplay={key,index:0,started:Date.now()};render();};box.append(replay);}
  if(replaying){const exit=el('button','Voir le résultat complet','roulette-replay');exit.type='button';exit.onclick=()=>{drawReplay=null;render();};box.append(exit);}
- const list=el('ol','','roulette-reveals');list.setAttribute('aria-label','Équipes tirées');
  const total=d.draw_total||d.count-2;
- for(let i=0;i<total;i++){const step=shown[i],row=el('li', '',step?'is-revealed':'');row.append(el('span',String(i+1),'roulette-number'),el('strong',step?name(step.team_id):'Équipe à révéler'),el('small',step?step.label:(d.count===6?i<2?'Poule A':'Poule B':'Position '+(i+2))));list.append(row);}box.append(list);
+ if(d.count>=7){
+ const seeds=d.seeds?.length?d.seeds:data.teams.filter(t=>t.division===division).sort((a,b)=>(a.p1_rank+a.p2_rank)-(b.p1_rank+b.p2_rank)).slice(0,2).map(t=>t.id);
+ const positions=Array(8).fill(null);positions[0]=seeds[1];positions[7]=seeds[0];if(d.count===7)positions[6]='Exemptée';
+ shown.forEach((step,i)=>{positions[i+1]=step.team_id;});
+ const fixtures=[];
+ for(let i=0;i<4;i++)fixtures.push({id:'QF'+(i+1),a:positions[i*2]||'Position '+(i*2+1)+' · à tirer',b:positions[i*2+1]||'Position '+(i*2+2)+' · à tirer'});
+ fixtures.push({id:'DF1',a:'Vainqueur QF1',b:'Vainqueur QF2'},{id:'DF2',a:'Vainqueur QF3',b:d.count===7?seeds[0]:'Vainqueur QF4'},{id:'F',a:'Vainqueur DF1',b:'Vainqueur DF2'});
+ tennisBracket(fixtures,{host:box,drawing:true});
+ }else{
+ const list=el('ol','','roulette-reveals');list.setAttribute('aria-label','Équipes tirées');
+ for(let i=0;i<total;i++){const step=shown[i],row=el('li','',step?'is-revealed':'');row.append(el('span',String(i+1),'roulette-number'),el('strong',step?name(step.team_id):'Équipe à révéler'),el('small',step?step.label:i%2===0?'Poule A':'Poule B'));list.append(row);}box.append(list);
+ }
+
  if(started&&!complete)box.append(el('p','Les poules et la programmation seront disponibles à la dernière révélation.','draw-roulette-caption'));
  panel.append(box);updateRoulette();
 }
@@ -447,7 +458,8 @@ async function load(){
  const version=++generation,wanted=mode;
  try{
  let next;
- if(wanted==='simulation'){const r=await withDeadline(client.rpc('suzini_e3_match_state',{p_simulation:true}));if(r.error)throw r.error;next=r.data;}
+ if(wanted==='simulation'){const r=await withDeadline(client.rpc(isClub?'suzini_e3_match_manager_state':'suzini_e3_match_state',{p_simulation:true}));if(r.error)throw r.error;next=r.data;}
+ else if(isClub){const r=await withDeadline(client.rpc('suzini_e3_match_manager_state',{p_simulation:false}));if(r.error)throw r.error;next=r.data;}
  else next=await rpc('suzini_e3_match_state',{p_simulation:false});
  if(version!==generation||wanted!==mode)return;data=next;serverOffset=Date.parse(next.server_now||new Date().toISOString())-Date.now();error='';render();
  }catch(e){if(version!==generation)return;if(!isClub&&wanted==='simulation'){mode='real';sync();await load();return;}error=e.message||'Vérifiez votre connexion.';render();}
