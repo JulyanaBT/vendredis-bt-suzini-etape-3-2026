@@ -382,7 +382,7 @@ function tennisBracket(matches,{host=panel,drawing=false}={}){
  const paths=consolation?['M480 200 H500 V600 H480','M500 400 H520']:['M312 100 H328 V300 H312','M328 200 H344','M312 500 H328 V700 H312','M328 600 H344','M656 200 H672 V600 H656','M672 400 H688'];
  paths.forEach(line=>{const path=document.createElementNS(ns,'path');path.setAttribute('d',line);svg.append(path);});grid.append(svg);
  rounds.forEach(([,ids],col)=>ids.forEach((id,i)=>{const m=matches.find(x=>x.id===id);if(!m)return;const node=el('article','','tennis-bracket-match');node.style.gridColumn=String(col+1);node.style.gridRow=(ids.length===4?1+i*2:ids.length===2?2+i*4:4)+' / span 2';
- node.append(el('small',id==='F'?'🏆 Finale':id==='P5'?'5e place':id));
+ node.append(el('small',drawing&&current()?.count===7&&id==='QF4'?'TS1 exemptée de quart':id==='F'?'🏆 Finale':id==='P5'?'5e place':id));
  for(const [team,side] of [[m.a,0],[m.b,1]]){const row=el('div','','tennis-bracket-team');if(m.result?.winner===team)row.classList.add('bracket-winner');row.append(teamLabel(team));const scores=m.result?.score;if(scores){const score=el('b',scores.sets.map(set=>set[side]).join(' · ')+(scores.super?' ('+scores.super[side]+')':''));row.append(score);}node.append(row);}if(m.result)node.append(el('small','✓ Terminé','bracket-result'));grid.append(node);
  }));
  wrap.append(heads,grid);scroll.append(wrap);host.append(scroll);
@@ -411,6 +411,7 @@ function drawRoulette(d){
  for(const [i,label] of [[1,'TS2 · en haut'],[0,'TS1 · en bas']]){const id=d.seeds?.[i];const seed=el('div');seed.append(el('small',label),el('strong',id?name(id):'Placement réservé'));seeds.append(seed);}
  box.append(seeds);
  }
+ if(d.count===7)box.append(el('p','Position 1 : TS2 · positions 2 à 6 : tirage · position 7 libre · position 8 : TS1, exemptée de quart.','draw-roulette-caption'));
 
  const spinning=started&&(!complete||replaying&&drawReplay.index<steps.length);
  const stage=el('div','','roulette-stage'+(spinning?' is-spinning':''));
@@ -422,7 +423,7 @@ function drawRoulette(d){
  const total=d.draw_total||d.count-2;
  if(d.count>=7){
  const seeds=d.seeds?.length?d.seeds:data.teams.filter(t=>t.division===division).sort((a,b)=>(a.p1_rank+a.p2_rank)-(b.p1_rank+b.p2_rank)).slice(0,2).map(t=>t.id);
- const positions=Array(8).fill(null);positions[0]=seeds[1];positions[7]=seeds[0];if(d.count===7)positions[6]='Exemptée';
+ const positions=Array(8).fill(null);positions[0]=seeds[1];positions[7]=seeds[0];if(d.count===7)positions[6]='Position 7 · libre';
  shown.forEach((step,i)=>{positions[i+1]=step.team_id;});
  const fixtures=[];
  for(let i=0;i<4;i++)fixtures.push({id:'QF'+(i+1),a:positions[i*2]||'Position '+(i*2+1)+' · à tirer',b:positions[i*2+1]||'Position '+(i*2+2)+' · à tirer'});
