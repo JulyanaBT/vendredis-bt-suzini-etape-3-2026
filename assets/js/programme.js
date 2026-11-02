@@ -56,14 +56,15 @@ function chronoBoard(){
  for(const court of ['DM','DD']){
  const m=ms.find(m=>(m.court||m.division)===court),cell=el('article','','rose-match '+COURTS[court].className);
  if(!m){cell.append(el('small','Terrain disponible','rose-empty'));row.append(cell);continue;}
- cell.append(el('small',m.stage,'rose-stage'),el('b',clock(m.result?m.result.validated_at:m.live??m.planned),'rose-hour'));
+ if(!(m.phase==='poules'&&data.divisions.find(d=>d.division===m.division)?.count<=5))cell.append(el('small',m.stage,'rose-stage'));
+ cell.append(el('b',clock(m.result?m.result.validated_at:m.live??m.planned),'rose-hour'));
  if(m.result)cell.lastChild.title='Heure de validation · Guyane';
  const a=el('div','','rose-team'),b=el('div','','rose-team');
- for(const [id,target] of [[m.a,a],[m.b,b]]){name(id).split(' / ').forEach(player=>target.append(el('span',player)));if(m.result?.winner===id)target.classList.add('rose-winner');}
+ for(const [id,target] of [[m.a,a],[m.b,b]]){target.append(el('span',name(id)));if(m.result?.winner===id)target.classList.add('rose-winner');}
  const versus=el('div','','rose-versus');versus.append(el(m.result?'strong':'small',m.result?scoreText(m.result):'vs'));
  cell.append(a,versus,b);
  if(m.result)cell.append(el('small','✓ Résultat validé','rose-status'));
- else cell.append(el('small',m.adjusted?'Horaire actualisé':'Horaire initial','rose-status'));
+
  row.append(cell);
  }
  board.append(row);
@@ -129,8 +130,8 @@ function render(){
  panel.replaceChildren();const d=current();
  if(error){panel.append(note('Chargement impossible',error));return;}if(!d){panel.append(el('p','Chargement des matchs…'));return;}
  document.body.dataset.matchSimulation=String(!!data.simulation);
- panel.append(el('div',COURTS[division].name,'programme-court '+COURTS[division].className));
- if(data.simulation)panel.append(el('p','SIMULATION PRIVÉE · Équipes et résultats fictifs','simulation-notice'));
+ if(selected!=='tirage'&&selected!=='chrono')panel.append(el('div',COURTS[division].name,'programme-court '+COURTS[division].className));
+
  const matches=chrono(),count=matches.filter(m=>m.result).length;
  if(selected==='tirage'){
  panel.append(d.no_draw?drawInfo(d):note('Tirage au sort',data.simulation?'Tirage de test disponible immédiatement.':'Le 5 novembre à 14 h, heure de Guyane.'));
@@ -196,7 +197,7 @@ async function load(){
  }catch(e){if(version!==generation)return;if(!isClub&&wanted==='simulation'){mode='real';sync();await load();return;}error=e.message||'Vérifiez votre connexion.';render();}
 }
 if(isClub){
- async function ready(){const r=await client.rpc('suzini_e3_club');clubReady=!r.error;if(clubReady){try{mode=localStorage.getItem('suzini_e3_match_mode')||'simulation';}catch{mode='simulation';}toolbar();await load();}}
+ async function ready(){const r=await client.rpc('suzini_e3_club');clubReady=!r.error;if(clubReady){try{mode=localStorage.getItem('suzini_e3_match_mode')||'simulation';}catch{mode='simulation';}await load();}}
  document.addEventListener('club:ready',ready);ready();
 }else{
  try{
@@ -204,7 +205,7 @@ if(isClub){
  if(!access.error&&(access.data?.admin||access.data?.manager)){
    if(preview)mode='simulation';
    else try{mode=localStorage.getItem('suzini_e3_match_mode')||'simulation';}catch{mode='simulation';}
-   toolbar();
+
  }
  }catch{}
 }

@@ -18,3 +18,10 @@ body[data-space=public] .match-data-mode{border:1px solid #bed1cf;border-radius:
 .draw-friendly li{display:flex;gap:10px;align-items:center;padding:10px;background:#fffdf5c9;border:1px solid #e2dbbc;border-radius:10px}
 .draw-friendly li>span{font-size:26px;flex:none}.draw-friendly strong,.draw-friendly small{display:block}.draw-friendly strong{font-size:14px;line-height:1.35}.draw-friendly small{font-size:12px;line-height:1.4;margin-top:4px;color:#526776}
 @media(max-width:400px){.rose-chrono-head,.rose-chrono-row{grid-template-columns:34px minmax(0,1fr) minmax(0,1fr);gap:5px}.rose-team span{font-size:12px}.rose-match{padding:8px 5px}.rose-chrono-head{font-size:10px}.rose-tour small{font-size:8px}}
+
+/* Repère discret pour les essais, sans panneau de simulation. */
+body[data-match-simulation=true] .public-zone-line button{background:#fff1f7!important;color:#171419!important;border-color:#db6a9b!important}
+body[data-match-simulation=true] .public-zone-line button[aria-pressed=true]{background:#171419!important;color:#ff87bc!important;border-color:#171419!important}
+body[data-match-simulation=true] .public-zonebar{background:#fbe2ef!important;border-bottom-color:#df9cba!important}
+.rose-match{padding:8px 6px;gap:4px}.rose-team{display:block;min-width:0}.rose-team span{display:block;white-space:nowrap;font-size:clamp(9px,2.6vw,13px);line-height:1.35;overflow-wrap:normal}
+.rose-versus{padding:0}.rose-hour{font-size:12px}.rose-status{font-size:9px}
