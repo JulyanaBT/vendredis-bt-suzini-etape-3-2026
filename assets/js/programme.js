@@ -63,7 +63,7 @@ function planningControls(m){
  const save=el('button','Appliquer'),cancel=el('button','Annuler'),reset=el('button','Revenir à l’heure calculée');save.type='submit';cancel.type=reset.type='button';cancel.onclick=()=>dialog.close();
  async function persist(value){save.disabled=true;try{const plan=planRows();const item=plan.find(x=>x.id===m.id&&x.division===m.division);delete item.forced_at;if(value)item.forced_at=value;await savePlan(plan);dialog.close();}catch(e){status.textContent=e.message;save.disabled=false;}}
  form.onsubmit=e=>{e.preventDefault();persist(new Date(date+'T'+hour.value+':'+minute.value+':00-03:00').toISOString());};reset.onclick=()=>persist(null);
- form.append(el('h2','Heure du match'),lab,wheels,el('small','Les matchs suivants du terrain seront décalés à partir de cette heure.'),status,save,reset,cancel);dialog.append(form);document.body.append(dialog);dialog.addEventListener('close',()=>dialog.remove(),{once:true});dialog.showModal();
+ form.append(el('h2','Heure du match'),lab,wheels,el('small','Les matchs suivants du terrain seront décalés à partir de cette heure.'),status,save,reset,cancel);dialog.append(form);document.body.append(dialog);dialog.addEventListener('close',()=>dialog.remove(),{once:true});dialog.showModal();requestAnimationFrame(()=>{for(const select of [hour,minute])select.scrollTop=Math.max(0,(select.selectedIndex+.5)*(select.scrollHeight/select.options.length)-select.clientHeight/2);});
  };
  box.append(time);return box;
 }
@@ -244,7 +244,7 @@ function resultForm(m,index){
  }
  const winner=el('select');winner.setAttribute('aria-label','Gagnant du set en cas d’égalité');
  for(const [v,label] of [['','Gagnant du set à préciser'],['a',name(m.a)],['b',name(m.b)]]){const o=el('option',label);o.value=v;winner.append(o);}
- winner.hidden=+values[0].value!==+values[1].value;grid.addEventListener('input',()=>{winner.hidden=+values[0].value!==+values[1].value;});
+ winner.hidden=+values[0].value!==+values[1].value||+values[0].value+ +values[1].value===0;grid.addEventListener('input',()=>{winner.hidden=+values[0].value!==+values[1].value;});
  const button=el('button','Valider '+(active===2?'le super tie-break':'le set '+(active+1))),status=el('p');button.type='submit';button.className='signup-submit';button.disabled=!ready;status.setAttribute('role','status');
  form.append(title,grid,winner,button,status);if(!ready)form.append(el('small','En attente des matchs précédents ou de la clôture des inscriptions.'));
  form.onsubmit=async event=>{
