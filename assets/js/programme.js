@@ -330,6 +330,14 @@ function render(){
  if(selected==='tirage'){
  panel.append(d.no_draw?drawInfo(d):note(d.drawn_at?'Tirage effectué ✅':'Tirage au sort',d.drawn_at?'Les équipes sont réparties. Consultez les poules ou le tableau final.':data.simulation?'Effectuez le tirage dans l’espace Club pour former les poules et préparer les rencontres.':'Le 5 novembre à 14 h, heure de Guyane.'));
  if(!d.no_draw)drawControls(d);
+ if(d.count===8){
+ const box=note('🎾 Placement dans le tableau','');box.lastChild.remove();
+ const list=el('ol','','draw-placement-list');
+ const order=d.drawn_at?d.draw_order:[null,null,null,null,null,null,null,null];
+ order.forEach((id,i)=>{const row=el('li'),label=i===0?'Position 1 · TS2':i===7?'Position 8 · TS1':'Position '+(i+1)+' · tirage n°'+i;row.append(el('strong',label),el('span',id?name(id):i===0?'Tête de série 2':i===7?'Tête de série 1':'Équipe à tirer au sort'));list.append(row);});
+ box.append(el('p','TS2 en haut, TS1 en bas. Les six autres équipes sont tirées successivement, sans remise, pour remplir les positions 2 à 7.'),list);panel.append(box);
+ }
+
  return;
  }
  if(!formatFor(d.count)){panel.append(note('Tableau en préparation',d.count+' équipe(s) inscrite(s). Il faut au moins 4 équipes pour maintenir ce tableau.'));return;}
