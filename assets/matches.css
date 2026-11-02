@@ -85,3 +85,6 @@ body[data-space=club] .rose-chrono-head{top:45px}
 .programme-court{font-size:clamp(10px,3.1vw,14px)!important;text-align:center;line-height:1.35}
 .launch-court{font-size:clamp(11px,3.1vw,14px);line-height:1.45}.launch-card .launch-court{margin-bottom:16px}
 .upcoming-match{border:1px solid #d9ddc9;border-radius:10px;padding:10px;margin-top:7px;display:grid;gap:5px}.upcoming-match small{font-size:10px;line-height:1.4}.upcoming-match strong{font-size:12px;line-height:1.4}.upcoming-match.court-manon{background:#fff8d9;border-color:#ddcb86}.upcoming-match.court-lisa{background:#fff0eb;border-color:#e3b8ad}
+
+/* Historiques toujours accessibles, même sans rencontre. */
+.score-history.upcoming-history{background:#eef7fb;border:1px solid #add3e3;border-radius:12px;padding:12px}.score-history.upcoming-history>summary{color:#125b7a}.score-history.finished-history{background:#edf7ee;border:1px solid #afd3b3;border-radius:12px;padding:12px}.score-history.finished-history>summary{color:#27653a}.match-history-empty{margin:12px 0 0;font-size:13px;line-height:1.5;color:#526776}

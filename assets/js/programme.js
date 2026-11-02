@@ -150,7 +150,7 @@ function chronoBoard(){
  versus.append(el(m.result||partial?'strong':'small',m.result?scoreText(m.result):partial||'vs'));cell.append(a,versus,b);
  if(m.result)cell.append(el('small','✓ Terminé à '+clock(m.result.validated_at),'rose-status'));
  else if(m.started_at)cell.append(el('small','● En cours · lancé à '+clock(m.started_at),'rose-status'));
- else {cell.append(el('small',m.duration+' min + 5 min','rose-status'));if(m.restUntil)cell.append(el('small','Pause équipe · 30 min','rose-rest'));}
+ else if(m.restUntil)cell.append(el('small','Pause équipe · 30 min','rose-rest'));
  if(editable)cell.append(planningControls(m));row.append(cell);
  }
  board.append(row);
@@ -342,14 +342,13 @@ function render(){
  else panel.append(note(matches.length?'Tableau terminé 🏆':'Rencontres en attente',matches.length?'Tous les résultats sont validés.':'Les rencontres apparaîtront une fois les tableaux préparés.'));
  }
  const upcoming=matches.filter(m=>!m.result&&!m.started_at).slice(running.length?0:1);
- if(upcoming.length){
  const details=el('details','','score-history upcoming-history'),summary=el('summary','Matchs à venir · '+upcoming.length);
  details.open=upcomingExpanded;summary.onclick=()=>{upcomingExpanded=!details.open;};details.append(summary);
  for(const m of upcoming){const item=el('article','','upcoming-match '+COURTS[m.court||division].className);item.append(el('small',clock(m.live??m.planned)+' · '+courtName(m.court||division,true)),el('strong',name(m.a)+' contre '+name(m.b)));details.append(item);}
+ if(!upcoming.length)details.append(el('p','Aucun match à venir.','match-history-empty'));
  panel.append(details);
- }
  const finished=matches.filter(m=>m.result);
- if(finished.length){const history=el('details','','score-history'),summary=el('summary','Matchs terminés · '+finished.length);history.open=scoreHistoryExpanded;summary.onclick=()=>{scoreHistoryExpanded=!history.open;};history.append(summary);finished.forEach(m=>history.append(resultForm(m,matches.findIndex(x=>x.id===m.id))));panel.append(history);}
+ const history=el('details','','score-history finished-history'),finishedSummary=el('summary','Matchs terminés · '+finished.length);history.open=scoreHistoryExpanded;finishedSummary.onclick=()=>{scoreHistoryExpanded=!history.open;};history.append(finishedSummary);finished.forEach(m=>history.append(resultForm(m,matches.findIndex(x=>x.id===m.id))));if(!finished.length)history.append(el('p','Aucun match terminé.','match-history-empty'));panel.append(history);
  return;
  }
  if(selected==='poules'){
