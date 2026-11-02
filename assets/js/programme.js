@@ -30,6 +30,20 @@ function chrono(all=false){
  });
  return rows.filter(m=>all||m.division===division);
 }
+function planRows(){return fixtures(true).map(x=>({id:x.id,division:x.division,slot:x.slot,court:x.court||x.division,...(x.forced_at?{forced_at:x.forced_at}:{}),...(x.progress?{progress:x.progress}:{})}));}
+async function moveMatch(m,direction,targetSlot){
+ const plan=planRows(),item=plan.find(x=>x.id===m.id&&x.division===m.division),old={slot:item.slot,court:item.court};
+ if(direction==='up'||direction==='down')item.slot=targetSlot??item.slot+(direction==='up'?-1:1);
+ else item.court=item.court==='DM'?'DD':'DM';
+ if(item.slot<0)return;
+ const other=plan.find(x=>x!==item&&x.slot===item.slot&&x.court===item.court);
+ if(other){if(fixtures(true).find(x=>x.id===other.id&&x.division===other.division)?.result)throw Error('Ce créneau contient un résultat déjà validé.');other.slot=old.slot;other.court=old.court;}
+ await savePlan(plan);
+}
+function exchangeButton(m,dir,targetSlot,other){
+ const b=el('button',dir==='court'?'⇄':'⇅','chrono-exchange');b.type='button';b.title=dir==='court'?'Échanger les terrains':'Échanger les horaires';b.setAttribute('aria-label',b.title+(m?' · '+name(m.a)+' contre '+name(m.b):''));b.disabled=!m||!!m.result||!!other?.result;
+ b.onclick=async()=>{b.disabled=true;try{await moveMatch(m,dir,targetSlot);}catch(e){alert(e.message);b.disabled=false;}};return b;
+}
 async function savePlan(plan){
  const {data:next,error}=await withDeadline(client.rpc('suzini_e3_save_planning',{p_simulation:!!data.simulation,p_plan:plan,p_revision:data.planning_revision||0}));
  if(error)throw error;data=next;render();
@@ -37,30 +51,19 @@ async function savePlan(plan){
 function planningControls(m){
  const box=el('div','','match-plan-controls');
  const label='Match '+name(m.a)+' contre '+name(m.b);
- async function move(direction){
- const plan=fixtures(true).map(x=>({id:x.id,division:x.division,slot:x.slot,court:x.court||x.division,...(x.forced_at?{forced_at:x.forced_at}:{})}));
- const item=plan.find(x=>x.id===m.id&&x.division===m.division),old={slot:item.slot,court:item.court};
- if(direction==='up'||direction==='down')item.slot+=direction==='up'?-1:1;
- else item.court=item.court==='DM'?'DD':'DM';
- if(item.slot<0)return;
- const other=plan.find(x=>x!==item&&x.slot===item.slot&&x.court===item.court);
- if(other){if(fixtures(true).find(x=>x.id===other.id&&x.division===other.division)?.result)throw Error('Ce créneau contient un résultat déjà validé.');other.slot=old.slot;other.court=old.court;}
- await savePlan(plan);
- }
- for(const [dir,icon,title] of [['up','↑','Avancer le match'],['down','↓','Retarder le match'],['left','←','Changer de terrain'],['right','→','Changer de terrain']]){
- const b=el('button',icon);b.type='button';b.title=title;b.setAttribute('aria-label',title+' · '+label);
- b.disabled=!!m.result||(dir==='up'&&m.slot===0)||(dir==='left'&&m.court==='DM')||(dir==='right'&&m.court==='DD');
- b.onclick=async()=>{b.disabled=true;try{await move(dir);}catch(e){alert(e.message);b.disabled=false;}};box.append(b);
- }
  const time=el('button','🕒');time.type='button';time.title='Forcer une heure';time.setAttribute('aria-label','Forcer une heure · '+label);time.disabled=!!m.result;
  time.onclick=()=>{
  const dialog=el('dialog','','match-time-dialog'),form=el('form');form.method='dialog';
- const input=el('input');input.type='datetime-local';input.required=true;input.value=new Date((m.live??m.planned)-3*3600000).toISOString().slice(0,16);
- const lab=el('label','Heure de Guyane');lab.append(input);const status=el('p');status.setAttribute('role','status');
+ const local=new Date((m.live??m.planned)-3*3600000).toISOString(),date=local.slice(0,10);
+ const wheels=el('div','','time-wheels'),hour=el('select'),minute=el('select');
+ hour.size=minute.size=5;hour.setAttribute('aria-label','Heures');minute.setAttribute('aria-label','Minutes');
+ for(const [select,max,value] of [[hour,24,local.slice(11,13)],[minute,60,local.slice(14,16)]])for(let i=0;i<max;i++){const v=String(i).padStart(2,'0'),o=el('option',v);o.value=v;select.append(o);select.value=value;}
+ wheels.append(hour,el('strong',':'),minute);
+ const lab=el('label','Heure de Guyane');const status=el('p');status.setAttribute('role','status');
  const save=el('button','Appliquer'),cancel=el('button','Annuler'),reset=el('button','Revenir à l’heure calculée');save.type='submit';cancel.type=reset.type='button';cancel.onclick=()=>dialog.close();
- async function persist(value){save.disabled=true;try{const plan=fixtures(true).map(x=>({id:x.id,division:x.division,slot:x.slot,court:x.court||x.division,...(x.forced_at?{forced_at:x.forced_at}:{})}));const item=plan.find(x=>x.id===m.id&&x.division===m.division);delete item.forced_at;if(value)item.forced_at=value;await savePlan(plan);dialog.close();}catch(e){status.textContent=e.message;save.disabled=false;}}
- form.onsubmit=e=>{e.preventDefault();persist(new Date(input.value+'-03:00').toISOString());};reset.onclick=()=>persist(null);
- form.append(el('h2','Heure du match'),lab,el('small','Les matchs suivants du terrain seront décalés à partir de cette heure.'),status,save,reset,cancel);dialog.append(form);document.body.append(dialog);dialog.addEventListener('close',()=>dialog.remove(),{once:true});dialog.showModal();
+ async function persist(value){save.disabled=true;try{const plan=planRows();const item=plan.find(x=>x.id===m.id&&x.division===m.division);delete item.forced_at;if(value)item.forced_at=value;await savePlan(plan);dialog.close();}catch(e){status.textContent=e.message;save.disabled=false;}}
+ form.onsubmit=e=>{e.preventDefault();persist(new Date(date+'T'+hour.value+':'+minute.value+':00-03:00').toISOString());};reset.onclick=()=>persist(null);
+ form.append(el('h2','Heure du match'),lab,wheels,el('small','Les matchs suivants du terrain seront décalés à partir de cette heure.'),status,save,reset,cancel);dialog.append(form);document.body.append(dialog);dialog.addEventListener('close',()=>dialog.remove(),{once:true});dialog.showModal();
  };
  box.append(time);return box;
 }
@@ -132,39 +135,45 @@ function drawInfo(d){
  box.append(list);return box;
 }
 function chronoBoard(){
- const all=chrono(true),board=el('section','','rose-chrono'),head=el('div','','rose-chrono-head');
- head.append(el('span','Tour'));
- for(const court of ['DM','DD'])head.append(el('strong',COURTS[court].name,COURTS[court].className));
- board.append(head);
+ const all=chrono(true),editable=isClub&&clubReady,board=el('section','','rose-chrono'+(editable?' chrono-editable':'')),head=el('div','','rose-chrono-head');
+ head.append(el('span','Tour'),el('strong',COURTS.DM.name,COURTS.DM.className));
+ if(editable)head.append(el('span','','exchange-spacer'));head.append(el('strong',COURTS.DD.name,COURTS.DD.className));board.append(head);
  const slots=[...new Set(all.map(m=>m.slot))].sort((a,b)=>a-b);
- for(const slot of slots){
- const ms=all.filter(m=>m.slot===slot),row=el('section','','rose-chrono-row'),tour=el('div','','rose-tour');
+ for(let si=0;si<slots.length;si++){
+ const slot=slots[si],ms=all.filter(m=>m.slot===slot),row=el('section','','rose-chrono-row'),tour=el('div','','rose-tour');
+ const left=ms.find(m=>(m.court||m.division)==='DM'),right=ms.find(m=>(m.court||m.division)==='DD');
  tour.append(el('b',String(slot+1)),el('small',ms.every(m=>m.result)?'Terminé':'À venir'));row.append(tour);
  for(const court of ['DM','DD']){
- const m=ms.find(m=>(m.court||m.division)===court),cell=el('article','','rose-match '+COURTS[court].className);
+ if(court==='DD'&&editable)row.append(exchangeButton(left||right,'court',null,left?right:null));
+ const m=court==='DM'?left:right,cell=el('article','','rose-match '+COURTS[court].className);
  if(!m){cell.append(el('small','Terrain disponible','rose-empty'));row.append(cell);continue;}
  if(!(m.phase==='poules'&&data.divisions.find(d=>d.division===m.division)?.count<=5))cell.append(el('small',m.stage,'rose-stage'));
  cell.append(el('b',clock(m.result?m.result.validated_at:m.live??m.planned),'rose-hour'));
- if(m.result)cell.lastChild.title='Heure de validation · Guyane';
  const a=el('div','','rose-team'),b=el('div','','rose-team');
  for(const [id,target] of [[m.a,a],[m.b,b]]){target.append(el('span',name(id)));if(m.result?.winner===id)target.classList.add('rose-winner');}
- const versus=el('div','','rose-versus');versus.append(el(m.result?'strong':'small',m.result?scoreText(m.result):'vs'));
- cell.append(a,versus,b);
- if(m.result)cell.append(el('small','✓ Résultat validé','rose-status'));
-
- if(isClub&&clubReady)cell.append(planningControls(m));
- row.append(cell);
+ const versus=el('div','','rose-versus'),partial=!m.result&&m.progress?.sets?.length?m.progress.sets.map(s=>s.a+'–'+s.b).join(' / '):null;
+ versus.append(el(m.result||partial?'strong':'small',m.result?scoreText(m.result):partial||'vs'));cell.append(a,versus,b);
+ if(m.result)cell.append(el('small','✓ Résultat validé','rose-status'));else if(partial)cell.append(el('small','Match en cours','rose-status'));
+ if(editable)cell.append(planningControls(m));row.append(cell);
  }
  board.append(row);
+ if(editable&&si<slots.length-1){
+ const next=slots[si+1],separator=el('div','','chrono-between');separator.append(el('span',''));
+ for(const court of ['DM','DD']){
+ if(court==='DD')separator.append(el('span',''));
+ const top=all.find(m=>m.slot===slot&&(m.court||m.division)===court),bottom=all.find(m=>m.slot===next&&(m.court||m.division)===court);
+ separator.append(exchangeButton(top||bottom,top?'down':'up',top?next:slot,top?bottom:null));
+ }board.append(separator);
  }
- if(!slots.length)board.append(note('Programme à venir','Les rencontres apparaîtront une fois les tableaux préparés.'));
- return board;
+ }
+ if(!slots.length)board.append(note('Programme à venir','Les rencontres apparaîtront une fois les tableaux préparés.'));return board;
 }
 
 function card(m,index){
  const c=el('article','','programme-match '+COURTS[m.court||division].className);
  if(m.result)c.classList.add('match-finished');
  c.append(el('small',(index+1)+'. '+m.stage),el('strong',name(m.a)+' / '+name(m.b)));
+ if(!m.result&&m.progress?.sets?.length)c.append(el('b',m.progress.sets.map(s=>s.a+'–'+s.b).join(' / ')+' · en cours','match-score'));
  if(m.result)c.append(el('b',scoreText(m.result),'match-score'),el('small','Validé à '+clock(m.result.validated_at,true)+' · Guyane'));
  else c.append(el('span',(m.adjusted?'Horaire actualisé : ':'Horaire initial : ')+clock(m.live??m.planned),'match-time'));
  if(selected!=='poules')c.append(el('small',COURTS[m.court||division].name));
@@ -195,42 +204,67 @@ function expectedScore(score,format){
  if(!score.super)return false;
  const [a,b]=score.super;return Math.max(a,b)===10&&Math.min(a,b)<=8||Math.max(a,b)>10&&Math.abs(a-b)===2;
 }
+function recordedSets(m){
+ if(m.progress&&(!m.result||m.progress.result_revision===m.result.revision))return m.progress.sets||[];
+ if(!m.result)return [];
+ const pairs=[...m.result.score.sets,...(m.result.score.super?[m.result.score.super]:[])];
+ return pairs.map(([a,b])=>({a,b,winner:a>b?'a':'b',override:!!m.result.score.override}));
+}
+function expectedSet(a,b,index,format){
+ const high=Math.max(a,b),low=Math.min(a,b),target=format===4?6:4;
+ return index===2?(high===10&&low<=8||high>10&&high-low===2):(high===target&&low<=target-2||high===target+1&&[target-1,target].includes(low));
+}
 function resultForm(m,index){
  const section=el('article','','score-card '+COURTS[division].className),form=el('form');form.dataset.resultForm=m.id;
+ const saved=recordedSets(m),wins=()=>['a','b'].map(p=>saved.filter(s=>s.winner===p).length);
+ const finished=Math.max(...wins())>=2,committed=!!m.result&&(!m.progress||m.progress.result_revision!==m.result.revision);
  section.append(el('small',(index+1)+'. '+(m.phase==='poules'&&current().count<=5?'Poule unique':m.stage),'score-caption'));
- const inputs=[[],[]],grid=el('div','','score-grid-stepper');
- grid.append(el('span',''),el('strong','Set 1'),el('strong','Set 2'),el('strong','Super TB'));
+ const teams=el('div','','set-match-teams');teams.append(teamLabel(m.a),el('small','vs'),teamLabel(m.b));section.append(teams);
+ const ready=/^[0-9a-f-]{36}$/i.test(m.a)&&/^[0-9a-f-]{36}$/i.test(m.b)&&m.deps.every(id=>fixtures().some(x=>x.id===id&&x.result))&&(data.simulation||data.registration_closed);
+ async function finalize(sets){
+ const score={sets:sets.slice(0,2).map(s=>[s.a,s.b])};if(sets.length===3)score.super=[sets[2].a,sets[2].b];
+ if(sets.some(s=>s.override)){score.override=true;score.winner=sets.filter(s=>s.winner==='a').length>sets.filter(s=>s.winner==='b').length?'a':'b';}
+ const r=await withDeadline(client.rpc('suzini_e3_validate_result',{p_simulation:!!data.simulation,p_division:division,p_match:m.id,p_score:score,p_revision:m.result?.revision||0}));if(r.error)throw r.error;return r.data;
+ }
+ function editor(active){
+ form.replaceChildren();
+ const history=el('div','','set-history');
+ saved.forEach((s,i)=>{const row=el('div','','set-validated');row.append(el('small',i===2?'Super TB':'Set '+(i+1)),el('strong',s.a+' – '+s.b),el('span','✓'));
+ const edit=el('button','Modifier');edit.type='button';edit.disabled=!ready;edit.onclick=()=>editor(i);row.append(edit);history.append(row);});form.append(history);
+ if(active===null){form.append(el('p',committed?'✓ Match validé':'Tous les sets sont validés.','set-complete'));
+ if(!committed){const retry=el('button','Valider le match');retry.type='button';retry.className='signup-submit';retry.onclick=async()=>{retry.disabled=true;try{data=await finalize(saved);render();}catch(e){alert(e.message);retry.disabled=false;}};form.append(retry);}return;}
+ const title=el('h3',active===2?'Super tie-break':'Set '+(active+1),'set-active-title'),grid=el('div','','set-entry-grid'),values=[];
  for(let p=0;p<2;p++){
  grid.append(teamLabel(p?m.b:m.a));
- for(let s=0;s<3;s++){
  const wrap=el('div','','score-stepper'),minus=el('button','−'),input=el('input'),plus=el('button','+');
- minus.type=plus.type='button';input.type='number';input.min='0';input.step='1';input.inputMode='numeric';
- input.value=String(s<2?(m.result?.score.sets[s]?.[p]??0):(m.result?.score.super?.[p]??0));
- const label=name(p?m.b:m.a)+' · '+(s===2?'Super tie-break':'Set '+(s+1));input.setAttribute('aria-label',label);minus.setAttribute('aria-label','Retirer un point · '+label);plus.setAttribute('aria-label','Ajouter un point · '+label);
- function change(delta){input.value=String(Math.max(0,Number(input.value||0)+delta));input.dispatchEvent(new Event('input',{bubbles:true}));}
- minus.onclick=()=>change(-1);plus.onclick=()=>change(1);wrap.append(minus,input,plus);inputs[p][s]=input;grid.append(wrap);
+ minus.type=plus.type='button';input.type='number';input.min='0';input.step='1';input.inputMode='numeric';input.value=String(saved[active]?.[p?'b':'a']??0);
+ const label=name(p?m.b:m.a)+' · '+title.textContent;input.setAttribute('aria-label',label);minus.setAttribute('aria-label','Retirer un point · '+label);plus.setAttribute('aria-label','Ajouter un point · '+label);
+ function change(delta){input.value=String(Math.max(0,+input.value+delta));input.dispatchEvent(new Event('input',{bubbles:true}));}
+ minus.onclick=()=>change(-1);plus.onclick=()=>change(1);wrap.append(minus,input,plus);grid.append(wrap);values.push(input);
  }
- }
- const winner=el('select');winner.setAttribute('aria-label','Équipe gagnante');
- for(const [value,label] of [['','Gagnant à préciser'],['a',name(m.a)],['b',name(m.b)]]){const o=el('option',label);o.value=value;winner.append(o);}
- function scoreValue(){const score={sets:[[+inputs[0][0].value,+inputs[1][0].value],[+inputs[0][1].value,+inputs[1][1].value]]};if(+inputs[0][2].value||+inputs[1][2].value)score.super=[+inputs[0][2].value,+inputs[1][2].value];return score;}
- function derive(){const s=scoreValue();let a=0,b=0;for(const [x,y] of [...s.sets,...(s.super?[s.super]:[])]){if(x>y)a++;if(y>x)b++;}winner.value=a>b?'a':b>a?'b':'';winner.disabled=expectedScore(s,m.format);}
- grid.addEventListener('input',derive);derive();
- const b=el('button',m.result?'Corriger et valider':'Valider'),status=el('p');b.type='submit';b.className='signup-submit';status.setAttribute('role','status');
- const ready=/^[0-9a-f-]{36}$/i.test(m.a)&&/^[0-9a-f-]{36}$/i.test(m.b)&&m.deps.every(id=>fixtures().some(x=>x.id===id&&x.result))&&(data.simulation||data.registration_closed);
- b.disabled=!ready;form.append(grid,winner,b,status);if(!ready)form.append(el('small','En attente des matchs précédents ou de la clôture des inscriptions.'));
- form.onsubmit=async e=>{
- e.preventDefault();const score=scoreValue();
- if(!winner.value){status.textContent='Précisez l’équipe gagnante.';winner.focus();return;}
- if(!expectedScore(score,m.format)){
- if(!confirm('Ce score ne correspond pas au format attendu ('+(m.format===4?'deux sets à 6 jeux':'deux sets à 4 jeux')+', super tie-break à un set partout). Valider quand même avec '+name(winner.value==='a'?m.a:m.b)+' gagnante ?'))return;
- score.override=true;score.winner=winner.value;
- }else if(m.result&&!confirm('Remplacer le résultat validé ?'))return;
- b.disabled=true;form.dataset.submitting='true';status.textContent='Validation…';
- try{const r=await withDeadline(client.rpc('suzini_e3_validate_result',{p_simulation:!!data.simulation,p_division:division,p_match:m.id,p_score:score,p_revision:m.result?.revision||0}));if(r.error)throw r.error;document.dispatchEvent(new CustomEvent('suzini:form-saved',{detail:{form}}));data=r.data;render();}
- catch(error){status.textContent=error.message;b.disabled=false;}finally{delete form.dataset.submitting;}
+ const winner=el('select');winner.setAttribute('aria-label','Gagnant du set en cas d’égalité');
+ for(const [v,label] of [['','Gagnant du set à préciser'],['a',name(m.a)],['b',name(m.b)]]){const o=el('option',label);o.value=v;winner.append(o);}
+ winner.hidden=+values[0].value!==+values[1].value;grid.addEventListener('input',()=>{winner.hidden=+values[0].value!==+values[1].value;});
+ const button=el('button','Valider '+(active===2?'le super tie-break':'le set '+(active+1))),status=el('p');button.type='submit';button.className='signup-submit';button.disabled=!ready;status.setAttribute('role','status');
+ form.append(title,grid,winner,button,status);if(!ready)form.append(el('small','En attente des matchs précédents ou de la clôture des inscriptions.'));
+ form.onsubmit=async event=>{
+ event.preventDefault();const a=+values[0].value,b=+values[1].value,normal=expectedSet(a,b,active,m.format);
+ const side=a>b?'a':b>a?'b':winner.value;
+ if(!side||a+b===0){status.textContent='Renseignez le score et le gagnant du set.';return;}
+ if(!normal&&!confirm('Ce score ne correspond pas au format attendu pour '+title.textContent.toLowerCase()+'. Valider ce set quand même ?'))return;
+ if(active<saved.length&&!confirm('Corriger ce set ? Les sets suivants devront être revalidés.'))return;
+ button.disabled=true;form.dataset.submitting='true';status.textContent='Enregistrement du set…';
+ try{
+ const sets=[...saved.slice(0,active),{a,b,winner:side,override:!normal}],plan=planRows(),entry=plan.find(x=>x.id===m.id&&x.division===m.division);
+ entry.progress={sets,result_revision:m.result?.revision||0};
+ const r=await withDeadline(client.rpc('suzini_e3_save_planning',{p_simulation:!!data.simulation,p_plan:plan,p_revision:data.planning_revision||0}));if(r.error)throw r.error;data=r.data;
+ const totals=['a','b'].map(p=>sets.filter(s=>s.winner===p).length);
+ if(Math.max(...totals)>=2)data=await finalize(sets);
+ document.dispatchEvent(new CustomEvent('suzini:form-saved',{detail:{form}}));render();
+ }catch(e){status.textContent=e.message;button.disabled=false;}finally{delete form.dataset.submitting;}
  };
- section.append(form);return section;
+ }
+ editor(finished?null:saved.length);section.append(form);return section;
 }
 function render(){
  panel.replaceChildren();document.body.dataset.matchView=selected;const d=current();
