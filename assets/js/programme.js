@@ -14,22 +14,55 @@ const clock=(value,seconds=false)=>new Intl.DateTimeFormat('fr-FR',{timeZone:'Am
 function scoreText(r){return r?r.score.sets.map(s=>s.join('–')).join(' / ')+(r.score.super?' · STB '+r.score.super.join('–'):''):'';}
 function fixtures(all=false){
  if(!data)return [];
- const slots=scheduleDraws(data.divisions);
+ const slots=scheduleDraws(data.divisions).map(m=>({...m,...(data.planning||[]).find(p=>p.id===m.id&&p.division===m.division)})).sort((a,b)=>a.slot-b.slot);
  return slots.map(base=>{const m=data.matches.find(m=>m.division===base.division&&m.id===base.id);return m?{...base,...m}:null;}).filter(Boolean).filter(m=>all||m.division===division);
 }
 function chrono(all=false){
- const matches=fixtures(all),latestByCourt={};
- for(const m of matches.filter(m=>m.result)){
- const court=m.court||m.division,previous=latestByCourt[court];
- if(!previous||Date.parse(m.result.validated_at)>Date.parse(previous.result.validated_at))latestByCourt[court]=m;
- }
- const pending={};
- return matches.map(m=>{
- const court=m.court||m.division,latest=latestByCourt[court],planned=Date.parse('2026-11-06T21:00:00Z')+m.slot*30*60000;
- const live=m.result?null:latest?Date.parse(latest.result.validated_at)+(pending[court]||0)*30*60000:planned;
- if(!m.result)pending[court]=(pending[court]||0)+1;
- return {...m,planned,live,adjusted:!!latest};
+ const matches=fixtures(true),anchors={};
+ const rows=matches.map(m=>{
+ const court=m.court||m.division,planned=Date.parse('2026-11-06T21:00:00Z')+m.slot*30*60000;
+ let live=anchors[court]??planned;
+ if(m.forced_at)live=Date.parse(m.forced_at);
+ const adjusted=anchors[court]!==undefined||!!m.forced_at;
+ if(m.result)anchors[court]=Date.parse(m.result.validated_at);
+ else anchors[court]=live+30*60000;
+ return {...m,planned,live:m.result?null:live,adjusted};
  });
+ return rows.filter(m=>all||m.division===division);
+}
+async function savePlan(plan){
+ const {data:next,error}=await withDeadline(client.rpc('suzini_e3_save_planning',{p_simulation:!!data.simulation,p_plan:plan,p_revision:data.planning_revision||0}));
+ if(error)throw error;data=next;render();
+}
+function planningControls(m){
+ const box=el('div','','match-plan-controls');
+ const label='Match '+name(m.a)+' contre '+name(m.b);
+ async function move(direction){
+ const plan=fixtures(true).map(x=>({id:x.id,division:x.division,slot:x.slot,court:x.court||x.division,...(x.forced_at?{forced_at:x.forced_at}:{})}));
+ const item=plan.find(x=>x.id===m.id&&x.division===m.division),old={slot:item.slot,court:item.court};
+ if(direction==='up'||direction==='down')item.slot+=direction==='up'?-1:1;
+ else item.court=item.court==='DM'?'DD':'DM';
+ if(item.slot<0)return;
+ const other=plan.find(x=>x!==item&&x.slot===item.slot&&x.court===item.court);
+ if(other){if(fixtures(true).find(x=>x.id===other.id&&x.division===other.division)?.result)throw Error('Ce créneau contient un résultat déjà validé.');other.slot=old.slot;other.court=old.court;}
+ await savePlan(plan);
+ }
+ for(const [dir,icon,title] of [['up','↑','Avancer le match'],['down','↓','Retarder le match'],['left','←','Changer de terrain'],['right','→','Changer de terrain']]){
+ const b=el('button',icon);b.type='button';b.title=title;b.setAttribute('aria-label',title+' · '+label);
+ b.disabled=!!m.result||(dir==='up'&&m.slot===0)||(dir==='left'&&m.court==='DM')||(dir==='right'&&m.court==='DD');
+ b.onclick=async()=>{b.disabled=true;try{await move(dir);}catch(e){alert(e.message);b.disabled=false;}};box.append(b);
+ }
+ const time=el('button','🕒');time.type='button';time.title='Forcer une heure';time.setAttribute('aria-label','Forcer une heure · '+label);time.disabled=!!m.result;
+ time.onclick=()=>{
+ const dialog=el('dialog','','match-time-dialog'),form=el('form');form.method='dialog';
+ const input=el('input');input.type='datetime-local';input.required=true;input.value=new Date((m.live??m.planned)-3*3600000).toISOString().slice(0,16);
+ const lab=el('label','Heure de Guyane');lab.append(input);const status=el('p');status.setAttribute('role','status');
+ const save=el('button','Appliquer'),cancel=el('button','Annuler'),reset=el('button','Revenir à l’heure calculée');save.type='submit';cancel.type=reset.type='button';cancel.onclick=()=>dialog.close();
+ async function persist(value){save.disabled=true;try{const plan=fixtures(true).map(x=>({id:x.id,division:x.division,slot:x.slot,court:x.court||x.division,...(x.forced_at?{forced_at:x.forced_at}:{})}));const item=plan.find(x=>x.id===m.id&&x.division===m.division);delete item.forced_at;if(value)item.forced_at=value;await savePlan(plan);dialog.close();}catch(e){status.textContent=e.message;save.disabled=false;}}
+ form.onsubmit=e=>{e.preventDefault();persist(new Date(input.value+'-03:00').toISOString());};reset.onclick=()=>persist(null);
+ form.append(el('h2','Heure du match'),lab,el('small','Les matchs suivants du terrain seront décalés à partir de cette heure.'),status,save,reset,cancel);dialog.append(form);document.body.append(dialog);dialog.addEventListener('close',()=>dialog.remove(),{once:true});dialog.showModal();
+ };
+ box.append(time);return box;
 }
 
 function teamLabel(id){
@@ -119,6 +152,7 @@ function chronoBoard(){
  cell.append(a,versus,b);
  if(m.result)cell.append(el('small','✓ Résultat validé','rose-status'));
 
+ if(isClub&&clubReady)cell.append(planningControls(m));
  row.append(cell);
  }
  board.append(row);
@@ -153,30 +187,48 @@ function drawControls(d){
  if(!d.no_draw){const draw=el('button',d.drawn_at?'Tirage effectué':'Effectuer le tirage');draw.type='button';draw.disabled=!d.validated_at||!!d.drawn_at||(!data.simulation&&Date.now()<Date.parse(data.draw_at));draw.onclick=()=>act('draw',draw);box.append(draw);}
  box.append(status);panel.append(box);
 }
+function expectedScore(score,format){
+ const target=format===4?6:4;
+ if(score.sets.some(([a,b])=>!((Math.max(a,b)===target&&Math.min(a,b)<=target-2)||(Math.max(a,b)===target+1&&[target-1,target].includes(Math.min(a,b))))))return false;
+ const wins=score.sets.map(([a,b])=>a>b?'a':'b');
+ if(wins[0]===wins[1])return !score.super;
+ if(!score.super)return false;
+ const [a,b]=score.super;return Math.max(a,b)===10&&Math.min(a,b)<=8||Math.max(a,b)>10&&Math.abs(a-b)===2;
+}
 function resultForm(m,index){
- const section=card(m,index),form=el('form');form.dataset.resultForm=m.id;form.noValidate=false;
- const grid=el('div','','score-grid');grid.append(el('span',''),el('strong','Set 1'),el('strong','Set 2'),el('strong','Super TB'));
- const inputs=[[],[]];
+ const section=el('article','','score-card '+COURTS[division].className),form=el('form');form.dataset.resultForm=m.id;
+ section.append(el('small',(index+1)+'. '+(m.phase==='poules'&&current().count<=5?'Poule unique':m.stage),'score-caption'));
+ const inputs=[[],[]],grid=el('div','','score-grid-stepper');
+ grid.append(el('span',''),el('strong','Set 1'),el('strong','Set 2'),el('strong','Super TB'));
  for(let p=0;p<2;p++){
- grid.append(el('span',name(p?m.b:m.a)));
- for(let s=0;s<3;s++){const input=document.createElement('input');input.type='number';input.inputMode='numeric';input.min='0';input.max=s===2?'999':m.format===4?'7':'5';input.step='1';input.setAttribute('aria-label',name(p?m.b:m.a)+' · '+(s===2?'Super tie-break':'Set '+(s+1)));input.value=s<2?(m.result?.score.sets[s]?.[p]??''):(m.result?.score.super?.[p]??'');if(s<2)input.required=true;inputs[p][s]=input;grid.append(input);}
+ grid.append(teamLabel(p?m.b:m.a));
+ for(let s=0;s<3;s++){
+ const wrap=el('div','','score-stepper'),minus=el('button','−'),input=el('input'),plus=el('button','+');
+ minus.type=plus.type='button';input.type='number';input.min='0';input.step='1';input.inputMode='numeric';
+ input.value=String(s<2?(m.result?.score.sets[s]?.[p]??0):(m.result?.score.super?.[p]??0));
+ const label=name(p?m.b:m.a)+' · '+(s===2?'Super tie-break':'Set '+(s+1));input.setAttribute('aria-label',label);minus.setAttribute('aria-label','Retirer un point · '+label);plus.setAttribute('aria-label','Ajouter un point · '+label);
+ function change(delta){input.value=String(Math.max(0,Number(input.value||0)+delta));input.dispatchEvent(new Event('input',{bubbles:true}));}
+ minus.onclick=()=>change(-1);plus.onclick=()=>change(1);wrap.append(minus,input,plus);inputs[p][s]=input;grid.append(wrap);
  }
- function superState(){const a1=inputs[0][0].value,b1=inputs[1][0].value,a2=inputs[0][1].value,b2=inputs[1][1].value;const split=[a1,b1,a2,b2].every(x=>x!=='')&&((+a1>+b1)!==(+a2>+b2));for(const row of inputs){row[2].disabled=!split;row[2].required=split;if(!split)row[2].value='';}}
- grid.addEventListener('input',superState);superState();
- const b=el('button',m.result?'Corriger et valider':'Valider le résultat'),status=el('p');b.type='submit';b.className='signup-submit';status.setAttribute('role','status');
- const depsDone=m.deps.every(id=>fixtures().some(x=>x.id===id&&x.result));
- const ready=/^[0-9a-f-]{36}$/i.test(m.a)&&/^[0-9a-f-]{36}$/i.test(m.b)&&depsDone&&(data.simulation||data.registration_closed&&current().validated_at);
- b.disabled=!ready;
- form.append(grid,el('small',m.format===4?'Deux sets à 6 jeux, tie-break à 6–6. Super tie-break à un set partout.':'Deux sets à 4 jeux, tie-break à 4–4. Super tie-break à un set partout.'),b,status);
- if(!ready)form.append(el('small','En attente de validation du format ou des matchs précédents.'));
- form.onsubmit=async event=>{
- event.preventDefault();if(m.result&&!confirm('Remplacer ce résultat et recalculer le classement et le chrono ?'))return;
- const score={sets:[[Number(inputs[0][0].value),Number(inputs[1][0].value)],[Number(inputs[0][1].value),Number(inputs[1][1].value)]]};
- if(!inputs[0][2].disabled)score.super=[Number(inputs[0][2].value),Number(inputs[1][2].value)];
+ }
+ const winner=el('select');winner.setAttribute('aria-label','Équipe gagnante');
+ for(const [value,label] of [['','Gagnant à préciser'],['a',name(m.a)],['b',name(m.b)]]){const o=el('option',label);o.value=value;winner.append(o);}
+ function scoreValue(){const score={sets:[[+inputs[0][0].value,+inputs[1][0].value],[+inputs[0][1].value,+inputs[1][1].value]]};if(+inputs[0][2].value||+inputs[1][2].value)score.super=[+inputs[0][2].value,+inputs[1][2].value];return score;}
+ function derive(){const s=scoreValue();let a=0,b=0;for(const [x,y] of [...s.sets,...(s.super?[s.super]:[])]){if(x>y)a++;if(y>x)b++;}winner.value=a>b?'a':b>a?'b':'';winner.disabled=expectedScore(s,m.format);}
+ grid.addEventListener('input',derive);derive();
+ const b=el('button',m.result?'Corriger et valider':'Valider'),status=el('p');b.type='submit';b.className='signup-submit';status.setAttribute('role','status');
+ const ready=/^[0-9a-f-]{36}$/i.test(m.a)&&/^[0-9a-f-]{36}$/i.test(m.b)&&m.deps.every(id=>fixtures().some(x=>x.id===id&&x.result))&&(data.simulation||data.registration_closed);
+ b.disabled=!ready;form.append(grid,winner,b,status);if(!ready)form.append(el('small','En attente des matchs précédents ou de la clôture des inscriptions.'));
+ form.onsubmit=async e=>{
+ e.preventDefault();const score=scoreValue();
+ if(!winner.value){status.textContent='Précisez l’équipe gagnante.';winner.focus();return;}
+ if(!expectedScore(score,m.format)){
+ if(!confirm('Ce score ne correspond pas au format attendu ('+(m.format===4?'deux sets à 6 jeux':'deux sets à 4 jeux')+', super tie-break à un set partout). Valider quand même avec '+name(winner.value==='a'?m.a:m.b)+' gagnante ?'))return;
+ score.override=true;score.winner=winner.value;
+ }else if(m.result&&!confirm('Remplacer le résultat validé ?'))return;
  b.disabled=true;form.dataset.submitting='true';status.textContent='Validation…';
- try{const {data:next,error}=await withDeadline(client.rpc('suzini_e3_validate_result',{p_simulation:!!data.simulation,p_division:division,p_match:m.id,p_score:score,p_revision:m.result?.revision||0}));if(error)throw error;
- document.dispatchEvent(new CustomEvent('suzini:form-saved',{detail:{form}}));data=next;render();
- }catch(e){status.textContent=e.message;b.disabled=false;}finally{delete form.dataset.submitting;}
+ try{const r=await withDeadline(client.rpc('suzini_e3_validate_result',{p_simulation:!!data.simulation,p_division:division,p_match:m.id,p_score:score,p_revision:m.result?.revision||0}));if(r.error)throw r.error;document.dispatchEvent(new CustomEvent('suzini:form-saved',{detail:{form}}));data=r.data;render();}
+ catch(error){status.textContent=error.message;b.disabled=false;}finally{delete form.dataset.submitting;}
  };
  section.append(form);return section;
 }
@@ -189,7 +241,7 @@ function render(){
  const matches=chrono(),count=matches.filter(m=>m.result).length;
  if(selected==='tirage'){
  panel.append(d.no_draw?drawInfo(d):note('Tirage au sort',data.simulation?'Tirage de test disponible immédiatement.':'Le 5 novembre à 14 h, heure de Guyane.'));
- drawControls(d);return;
+ return;
  }
  if(!formatFor(d.count)){panel.append(note('Tableau en préparation',d.count+' équipe(s) inscrite(s). Il faut au moins 4 équipes pour maintenir ce tableau.'));return;}
  if(selected==='chrono'){panel.append(chronoBoard());return; }
