@@ -295,7 +295,7 @@ function resultForm(m,index){
  for(let p=0;p<2;p++){
  grid.append(teamLabel(p?m.b:m.a));
  const wrap=el('div','','score-stepper'),minus=el('button','−'),input=el('input'),plus=el('button','+');
- minus.type=plus.type='button';input.type='number';input.min='0';input.step='1';input.inputMode='numeric';input.value=String(saved[active]?.[p?'b':'a']??0);
+ minus.type=plus.type='button';minus.className='score-minus';plus.className='score-plus';minus.textContent=plus.textContent='';wrap.addEventListener('dblclick',event=>event.preventDefault());input.type='number';input.min='0';input.step='1';input.inputMode='numeric';input.value=String(saved[active]?.[p?'b':'a']??0);
  const label=name(p?m.b:m.a)+' · '+title.textContent;input.setAttribute('aria-label',label);minus.setAttribute('aria-label','Retirer un point · '+label);plus.setAttribute('aria-label','Ajouter un point · '+label);
  function change(delta){input.value=String(Math.max(0,+input.value+delta));input.dispatchEvent(new Event('input',{bubbles:true}));}
  minus.onclick=()=>change(-1);plus.onclick=()=>change(1);wrap.append(minus,input,plus);grid.append(wrap);values.push(input);
