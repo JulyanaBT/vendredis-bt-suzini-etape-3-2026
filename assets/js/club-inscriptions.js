@@ -1,5 +1,5 @@
 import {rpc as publicRpc} from './supabase-site.js?v=94';
-import {readRankingPdf} from './ranking-pdf.js?v=131';
+import {readRankingPdf} from './ranking-pdf.js?v=132';
 import {hasRankingConflict,rankingCounts,createRankingDetails} from './ranking-info.js?v=94';
 import {createTeamCard,rankTeams,displayPlayerName} from './team-cards.js?v=94';
 if(location.hash.startsWith('#compte'))location.replace(new URL('compte.html',location.href));
@@ -80,7 +80,7 @@ if(teamsPage){
  licenceSync=el('details','','ranking-sync licence-sync');licenceSummary=el('summary','Vérification des licences');licenceBody=el('div','','ranking-sync-body');licenceSync.append(licenceSummary,licenceBody);rankingSync.after(licenceSync);
  const box=el('details','','ranking-sync ranking-import'),title=el('summary','Importer de nouveaux classements PDF'),form=el('form','','compact-signup');
  box.append(title,form);licenceSync.after(box);
- const note=el('p','Chargez le classement FFT complet dames et/ou messieurs. L’import relance tous les contrôles et remplace les classements manuels. Les licences saisies ne sont pas corrigées sans votre validation.');form.append(note,el('small','Lecteur PDF · version 131 · compatible iPhone'));
+ const note=el('p','Chargez le classement FFT complet dames et/ou messieurs. L’import relance tous les contrôles et remplace les classements manuels. Les licences saisies ne sont pas corrigées sans votre validation.');form.append(note,el('small','Lecteur PDF · version 132 · compatible iPhone'));
  const monthLabel=el('label','Mois des classements','field'),month=el('input');month.type='month';month.required=true;month.value=new Date().toLocaleDateString('sv-SE',{timeZone:'America/Cayenne'}).slice(0,7);monthLabel.append(month);form.append(monthLabel);
  const inputs={};
  for(const [division,label] of [['DD','PDF dames'],['DM','PDF messieurs']]){const field=el('label',label,'field'),input=el('input');input.type='file';input.accept='.pdf,application/pdf';inputs[division]=input;field.append(input);form.append(field);}

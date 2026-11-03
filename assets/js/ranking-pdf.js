@@ -19,6 +19,18 @@ async function loadPdfLibrary(){
  }).catch(()=>{pdfLibraryPromise=null;throw Error('Le lecteur PDF n’a pas pu se charger. Vérifiez la connexion puis relancez l’analyse.');});
  return pdfLibraryPromise;
 }
+// Use getReader: Safari versions without async iteration on ReadableStream
+// cannot run PDF.js getTextContent(), including its legacy build.
+async function readPageText(page){
+ const reader=page.streamTextContent().getReader();
+ const items=[];
+ try{
+  while(true){const chunk=await reader.read();if(chunk.done)break;
+   for(const item of chunk.value.items)items.push(item);
+  }
+ }finally{reader.releaseLock();}
+ return {items};
+}
 export async function readRankingPdf(file,division,month,onProgress=()=>{}){
  if(!file||!file.name.toLowerCase().endsWith('.pdf')||file.size>20*1024*1024)throw Error('Choisissez un PDF de moins de 20 Mo.');
  if(!/^\d{4}-\d{2}$/.test(month))throw Error('Choisissez le mois du classement.');
@@ -32,10 +44,10 @@ export async function readRankingPdf(file,division,month,onProgress=()=>{}){
  doc=await task.promise;
  if(doc.numPages>100)throw Error('Ce PDF dépasse 100 pages.');
  const rows=[];let header=false;
- for(let p=1;p<=doc.numPages;p++){stage='lecture de la page '+p;onProgress(p,doc.numPages);const content=await(await doc.getPage(p)).getTextContent();const text=content.items.map(x=>x.str||'').join(' ');header=header||/Rang/i.test(text)&&/licence/i.test(text)&&/Nom/i.test(text);rows.push(...extractFftRows(content.items,p,division));}
+ for(let p=1;p<=doc.numPages;p++){stage='lecture de la page '+p;onProgress(p,doc.numPages);const content=await readPageText(await doc.getPage(p));const text=content.items.map(x=>x.str||'').join(' ');header=header||/Rang/i.test(text)&&/licence/i.test(text)&&/Nom/i.test(text);rows.push(...extractFftRows(content.items,p,division));}
  stage='contrôle des lignes FFT';
  if(!header||rows.length<100)throw Error('Classement FFT complet non reconnu. Aucun remplacement effectué.');
  if(new Set(rows.map(r=>r.licence)).size!==rows.length)throw Error('Licences en double dans ce PDF. Aucun remplacement effectué.');
  return {division,name:file.name,month:month+'-01',sha256:hash,pages:doc.numPages,rows};
- }catch(error){throw Error('Lecteur 131 · '+stage+' : '+(error.message||String(error)));}finally{await task.destroy();}
+ }catch(error){throw Error('Lecteur 132 · '+stage+' : '+(error.message||String(error)));}finally{await task.destroy();}
 }
