@@ -232,9 +232,10 @@ function confirmEarlyStart(m,check){
  const content=el('div','','recovery-warning');content.append(el('span','⏱️','result-trophy'),el('strong','Le délai entre deux matchs n’est pas respecté.'),el('p',check.reason),el('p','Le prochain lancement est normalement possible à '+clock(check.until)+', heure de Guyane.'),el('p',name(m.a)+' contre '+name(m.b)));
  return decisionDialog({title:'Confirmer le lancement anticipé',content,confirmText:'Lancer avec l’accord des deux équipes',cancelText:'Attendre',agreement:true});
 }
+function matchStage(m){if(m.id==='P3')return 'Match pour la 3e place';if(m.id==='P5')return 'Match pour la 5e place';if(m.id==='P7')return 'Match pour la 7e place';if(m.id==='F')return 'Finale';return m.phase==='poules'&&current()?.count<=5?'Poule unique':m.stage;}
 function launchCard(m){
  const card=el('section','','launch-card '+COURTS[m.court||division].className),readiness=launchReadiness(m,fixtures(true));
- card.append(el('small','PROCHAIN MATCH','launch-kicker'),el('h2',name(m.a)+' contre '+name(m.b)),el('p',courtName(m.court||division),'launch-court'));
+ card.append(el('small','PROCHAIN MATCH','launch-kicker'),el('strong',matchStage(m),'launch-stage'),el('h2',name(m.a)+' contre '+name(m.b)),el('p',courtName(m.court||division),'launch-court'));
  const b=el('button','▶ Lancer le match'),status=el('p');b.type='button';b.className='signup-submit';status.setAttribute('role','status');
  b.disabled=(!readiness.allowed&&!readiness.canConfirm)||(!data.simulation&&!data.registration_closed);
  if(readiness.recoveryUntil)status.textContent='Heure réglementaire : '+clock(readiness.recoveryUntil)+', heure de Guyane. Tout lancement avant cette heure nécessite le consentement des deux équipes.';
@@ -245,7 +246,7 @@ function launchCard(m){
  try{
  let agreedUntil=0;
  for(let attempt=0;attempt<4;attempt++){
- const fresh=await withDeadline(client.rpc('suzini_e3_match_state',{p_simulation:!!data.simulation}));if(fresh.error)throw fresh.error;data=fresh.data;
+ const fresh=await withDeadline(client.rpc('suzini_e3_match_manager_state',{p_simulation:!!data.simulation}));if(fresh.error)throw fresh.error;data=fresh.data;
  const current=fixtures(true).find(x=>x.id===m.id&&x.division===m.division);if(!current||current.result||current.started_at)throw Error('Ce match a déjà changé. Actualisez la page.');
  const check=launchReadiness(current,fixtures(true));if(!check.allowed&&!check.canConfirm)throw Error(check.reason);
  if(check.canConfirm&&check.until>agreedUntil){
@@ -275,7 +276,7 @@ function resultForm(m,index){
  const section=el('article','','score-card '+COURTS[m.court||division].className),form=el('form');form.dataset.resultForm=m.id;
  const saved=recordedSets(m),wins=()=>['a','b'].map(p=>saved.filter(s=>s.winner===p).length);
  const finished=Math.max(...wins())>=2,committed=!!m.result&&(!m.progress||m.progress.result_revision!==m.result.revision);
- section.append(el('small',(index+1)+'. '+(m.phase==='poules'&&current().count<=5?'Poule unique':m.stage),'score-caption'));
+ section.append(el('small',(index+1)+'. '+matchStage(m),'score-caption'));
  const teams=el('div','','set-match-teams');teams.append(teamLabel(m.a),el('small','vs'),teamLabel(m.b));section.append(teams);
  const ready=/^[0-9a-f-]{36}$/i.test(m.a)&&/^[0-9a-f-]{36}$/i.test(m.b)&&m.deps.every(id=>fixtures().some(x=>x.id===id&&x.result))&&(data.simulation||data.registration_closed)&&!!(m.started_at||m.result);
  async function finalize(sets,confirmed=false){
@@ -370,30 +371,44 @@ function render(){
  }
  if(selected==='finales'){
  if(d.count<=5){panel.append(noFinalsInfo(d));return;}
- if(d.count===8){tennisBracket(matches);return;}
- matches.filter(m=>m.phase!=='poules').forEach(m=>panel.append(card(m,matches.findIndex(x=>x.id===m.id))));return;
+ tennisBracket(matches);return;
  }
  if(selected==='classement'){rankingList(d,matches);return; }
 }
 
-function tennisBracket(matches,{host=panel,drawing=false}={}){
- const nav=el('nav','','tennis-bracket-tabs');nav.setAttribute('aria-label','Choix du tableau');
- for(const [value,label] of [['final','Tableau final'],['5-8','Tableau 5–8']]){const b=el('button',label);b.type='button';b.setAttribute('aria-pressed',String(bracketView===value));b.onclick=()=>{bracketView=value;try{sessionStorage.setItem('suzini_e3_bracket',value);}catch{}render();};nav.append(b);}if(!drawing)host.append(nav);
- const consolation=!drawing&&bracketView==='5-8',scroll=el('div','','tennis-bracket-scroll');scroll.tabIndex=0;scroll.setAttribute('aria-label',consolation?'Tableau de tennis des places 5 à 8':'Tableau de tennis final');
- const rounds=consolation?[['Demi-finales 5–8',['DC1','DC2']],['5e place',['P5']]]:[['Quarts de finale',['QF1','QF2','QF3','QF4']],['Demi-finales',['DF1','DF2']],['Finale',['F']]];
- const wrap=el('div','','tennis-bracket '+(consolation?'two-rounds':'three-rounds')),heads=el('div','','tennis-bracket-heads'),grid=el('div','','tennis-bracket-grid');
- rounds.forEach(([label])=>heads.append(el('strong',label)));
- const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');svg.setAttribute('viewBox','0 0 1000 800');svg.setAttribute('preserveAspectRatio','none');svg.setAttribute('aria-hidden','true');svg.classList.add('tennis-bracket-lines');
- const paths=consolation?['M480 200 H500 V600 H480','M500 400 H520']:['M312 100 H328 V300 H312','M328 200 H344','M312 500 H328 V700 H312','M328 600 H344','M656 200 H672 V600 H656','M672 400 H688'];
- paths.forEach(line=>{const path=document.createElementNS(ns,'path');path.setAttribute('d',line);svg.append(path);});grid.append(svg);
- rounds.forEach(([,ids],col)=>ids.forEach((id,i)=>{const m=matches.find(x=>x.id===id);if(!m)return;const node=el('article','','tennis-bracket-match');node.style.gridColumn=String(col+1);node.style.gridRow=(ids.length===4?1+i*2:ids.length===2?2+i*4:4)+' / span 2';
- node.append(el('small',drawing&&current()?.count===7&&id==='QF4'?'TS1 exemptée de quart':id==='F'?'🏆 Finale':id==='P5'?'5e place':id));
- for(const [team,side] of [[m.a,0],[m.b,1]]){const row=el('div','','tennis-bracket-team');if(m.result?.winner===team)row.classList.add('bracket-winner');row.append(teamLabel(team));const scores=m.result?.score;if(scores){const score=el('b',scores.sets.map(set=>set[side]).join(' · ')+(scores.super?' ('+scores.super[side]+')':''));row.append(score);}node.append(row);}if(m.result)node.append(el('small','✓ Terminé','bracket-result'));grid.append(node);
- }));
- wrap.append(heads,grid);scroll.append(wrap);host.append(scroll);
- const placement=!drawing&&matches.find(m=>m.id===(consolation?'P7':'P3'));if(placement){const box=el('section','','bracket-placement');box.append(el('h3',consolation?'Match pour la 7e place':'🥉 Match pour la 3e place'),card(placement,matches.indexOf(placement)));host.append(box);}
-}
 
+function tennisBracket(matches,{host=panel,drawing=false}={}){
+ const n=current()?.count||8,consolation=!drawing&&bracketView==='5-8';
+ if(!drawing){
+ const nav=el('nav','','tennis-bracket-tabs');nav.setAttribute('aria-label','Choix du tableau');
+ for(const [value,label] of [['final','Tableau final'],['5-8',n===6?'Places 5–6':n===7?'Places 5–7':'Tableau 5–8']]){const b=el('button',label);b.type='button';b.setAttribute('aria-pressed',String(bracketView===value));b.onclick=()=>{bracketView=value;try{sessionStorage.setItem('suzini_e3_bracket',value);}catch{}render();};nav.append(b);}host.append(nav);
+ }
+ const chartMatches=[...matches];
+ if(n===7&&!chartMatches.some(m=>m.id==='QF4'))chartMatches.push({id:'QF4',a:'Position 7 · libre',b:current()?.seeds?.[0]});
+ let rounds;
+ if(consolation)rounds=n===6?[['Match pour la 5e place',['P5']]]:n===7?[['Poule de classement · places 5–7',['C1','C2','C3']]]:[['Demi-finales 5–8',['DC1','DC2']],['5e place',['P5']]];
+ else rounds=n===6?[['Demi-finales',['DF1','DF2']],['Finale',['F']]]:[['Quarts de finale',['QF1','QF2','QF3','QF4']],['Demi-finales',['DF1','DF2']],['Finale',['F']]];
+ function chart(rounds,label){
+ const scroll=el('div','','tennis-bracket-scroll');scroll.tabIndex=0;scroll.setAttribute('aria-label',label);
+ const columns=rounds.length,wrap=el('div','','tennis-bracket '+(columns===1?'one-round':columns===2?'two-rounds':'three-rounds')),heads=el('div','','tennis-bracket-heads'),grid=el('div','','tennis-bracket-grid');
+ rounds.forEach(([title])=>heads.append(el('strong',title)));
+ if(columns>1){
+ const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');svg.setAttribute('viewBox','0 0 1000 800');svg.setAttribute('preserveAspectRatio','none');svg.setAttribute('aria-hidden','true');svg.classList.add('tennis-bracket-lines');
+ const paths=columns===2?['M480 200 H500 V600 H480','M500 400 H520']:['M312 100 H328 V300 H312','M328 200 H344','M312 500 H328 V700 H312','M328 600 H344','M656 200 H672 V600 H656','M672 400 H688'];
+ paths.forEach(line=>{const path=document.createElementNS(ns,'path');path.setAttribute('d',line);svg.append(path);});grid.append(svg);
+ }
+ rounds.forEach(([,ids],col)=>ids.forEach((id,i)=>{const m=chartMatches.find(x=>x.id===id);if(!m)return;
+ const node=el('article','','tennis-bracket-match');node.style.gridColumn=String(col+1);if(columns>1)node.style.gridRow=(ids.length===4?1+i*2:ids.length===2?2+i*4:4)+' / span 2';
+ node.append(el('small',n===7&&id==='QF4'?'TS1 exemptée de quart':id==='F'?'🏆 Finale':id==='P3'?'🥉 3e place':id==='P5'?'5e place':id==='P7'?'7e place':id));
+ for(const [team,side] of [[m.a,0],[m.b,1]]){const row=el('div','','tennis-bracket-team');if(m.result?.winner===team)row.classList.add('bracket-winner');row.append(teamLabel(team));const scores=m.result?.score;if(scores)row.append(el('b',scores.sets.map(set=>set[side]).join(' · ')+(scores.super?' ('+scores.super[side]+')':'')));node.append(row);}if(m.result)node.append(el('small','✓ Terminé','bracket-result'));grid.append(node);
+ }));
+ wrap.append(heads,grid);scroll.append(wrap);return scroll;
+ }
+ host.append(chart(rounds,consolation?'Tableau des places 5 à '+n:'Tableau de tennis final'));
+ if(consolation&&n===7&&current()?.standings_c?.length)host.append(table(current().standings_c,'Classement des places 5–7',4));
+ const placement=!drawing&&chartMatches.find(m=>m.id===(consolation?'P7':'P3'));
+ if(placement){const box=el('section','','bracket-placement');box.append(chart([[consolation?'Match pour la 7e place':'🥉 Match pour la 3e place',[placement.id]]],matchStage(placement)));host.append(box);}
+}
 
 function drawKey(d){return [data.simulation,division,d.draw_started_at||d.drawn_at||'pending'].join(':');}
 function drawRoulette(d){
