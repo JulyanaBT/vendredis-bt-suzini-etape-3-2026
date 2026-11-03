@@ -235,6 +235,7 @@ function confirmEarlyStart(m,check){
 function matchStage(m){if(m.id==='P3')return 'Match pour la 3e place';if(m.id==='P5')return 'Match pour la 5e place';if(m.id==='P7')return 'Match pour la 7e place';if(m.id==='F')return 'Finale';return m.phase==='poules'&&current()?.count<=5?'Poule unique':m.stage;}
 function launchCard(m){
  const card=el('section','','launch-card '+COURTS[m.court||division].className),readiness=launchReadiness(m,fixtures(true));
+ const badge=el('span',m.division,'chrono-division-pill launch-division-pill '+(m.division==='DD'?'division-dd':'division-dm'));badge.setAttribute('aria-label',m.division==='DD'?'Double dames':'Double messieurs');card.append(badge);
  card.append(el('small','PROCHAIN MATCH','launch-kicker'),el('strong',matchStage(m),'launch-stage'),el('h2',name(m.a)+' contre '+name(m.b)),el('p',courtName(m.court||division),'launch-court'));
  const b=el('button','▶ Lancer le match'),status=el('p');b.type='button';b.className='signup-submit';status.setAttribute('role','status');
  b.disabled=(!readiness.allowed&&!readiness.canConfirm)||(!data.simulation&&!data.registration_closed);
