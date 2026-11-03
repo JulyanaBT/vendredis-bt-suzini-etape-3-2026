@@ -1,5 +1,5 @@
 import {rpc as publicRpc} from './supabase-site.js?v=94';
-import {readRankingPdf} from './ranking-pdf.js?v=94';
+import {readRankingPdf} from './ranking-pdf.js?v=130';
 import {hasRankingConflict,rankingCounts,createRankingDetails} from './ranking-info.js?v=94';
 import {createTeamCard,rankTeams,displayPlayerName} from './team-cards.js?v=94';
 if(location.hash.startsWith('#compte'))location.replace(new URL('compte.html',location.href));

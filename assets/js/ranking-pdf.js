@@ -11,13 +11,21 @@ export function extractFftRows(items,page,division){
  }
  return rows;
 }
+// The legacy build includes the compatibility APIs needed by Safari/iOS.
+let pdfLibraryPromise=null;
+async function loadPdfLibrary(){
+ if(!pdfLibraryPromise)pdfLibraryPromise=import('https://cdn.jsdelivr.net/npm/pdfjs-dist@5.6.205/legacy/build/pdf.min.mjs').then(pdfjs=>{
+ pdfjs.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@5.6.205/legacy/build/pdf.worker.min.mjs';return pdfjs;
+ }).catch(()=>{pdfLibraryPromise=null;throw Error('Le lecteur PDF n’a pas pu se charger. Vérifiez la connexion puis relancez l’analyse.');});
+ return pdfLibraryPromise;
+}
 export async function readRankingPdf(file,division,month,onProgress=()=>{}){
  if(!file||!file.name.toLowerCase().endsWith('.pdf')||file.size>20*1024*1024)throw Error('Choisissez un PDF de moins de 20 Mo.');
  if(!/^\d{4}-\d{2}$/.test(month))throw Error('Choisissez le mois du classement.');
  const name=file.name.toLowerCase();if(division==='DD'&&/messieurs|hommes/.test(name)||division==='DM'&&/dames|femmes/.test(name))throw Error('Ce fichier semble correspondre à l’autre tableau.');
  const bytes=new Uint8Array(await file.arrayBuffer());if(new TextDecoder().decode(bytes.slice(0,5))!=='%PDF-')throw Error('Le fichier choisi n’est pas un PDF.');
  const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))).map(x=>x.toString(16).padStart(2,'0')).join('');
- const pdfjs=await import('https://cdn.jsdelivr.net/npm/pdfjs-dist@5.6.205/build/pdf.min.mjs');pdfjs.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@5.6.205/build/pdf.worker.min.mjs';
+ const pdfjs=await loadPdfLibrary();
  const doc=await pdfjs.getDocument({data:bytes,isEvalSupported:false}).promise;
  try{
  if(doc.numPages>100)throw Error('Ce PDF dépasse 100 pages.');
