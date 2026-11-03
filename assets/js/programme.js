@@ -136,22 +136,30 @@ function drawInfo(d){
  box.append(list);return box;
 }
 function chronoBoard(){
- const full=chrono(true),all=full.filter(m=>chronoFilter==='both'||m.division===chronoFilter),courts=chronoFilter==='both'?['DM','DD']:['DM','DD'].filter(c=>all.some(m=>(m.court||m.division)===c)),editable=isClub&&clubReady,board=el('section','','rose-chrono'+(editable?' chrono-editable':'')),head=el('div','','rose-chrono-head');
+ const full=chrono(true),all=full.filter(m=>chronoFilter==='both'||m.division===chronoFilter),courts=chronoFilter==='both'?['DM','DD']:['DM','DD'].filter(c=>all.some(m=>(m.court||m.division)===c)),editable=isClub&&clubReady,board=el('section','','rose-chrono hourly-timeline'+(editable?' chrono-editable':'')),head=el('div','','rose-chrono-head');
  if(!courts.length)courts.push(chronoFilter==='DD'?'DD':'DM');
  if(courts.length===1)board.classList.add('chrono-single-court');
- head.append(el('span','Tour'));courts.forEach((court,i)=>{if(i&&editable)head.append(el('span','','exchange-spacer'));head.append(el('strong',courtName(court,true),COURTS[court].className));});board.append(head);
- const slots=[...new Set(all.map(m=>m.slot))].sort((a,b)=>a-b);
+ head.append(el('span','Heure'));courts.forEach((court,i)=>{if(i&&editable)head.append(el('span','','exchange-spacer'));head.append(el('strong',courtName(court,true),COURTS[court].className));});board.append(head);
+ const matchTime=m=>m.started_at?Date.parse(m.started_at):Number(m.live??m.planned);
+ const slots=[...new Set(all.map(m=>Math.floor(matchTime(m)/60000)*60000))].sort((a,b)=>a-b);
+ const milestone=(time,title,detail,kind)=>{
+  const row=el('section','','timeline-milestone '+kind),stamp=el('time',typeof time==='number'?clock(time):time,'timeline-stamp');
+  if(typeof time==='number')stamp.dateTime=new Date(time).toISOString();
+  const text=el('div','','timeline-event');text.append(el('strong',title));if(detail)text.append(el('small',detail));
+  row.append(stamp,text);return row;
+ };
+ board.append(milestone(Date.parse('2026-11-06T20:45:00Z'),'👋 Accueil des joueurs','Contrôle des licences · heure de Guyane','timeline-welcome'));
  for(let si=0;si<slots.length;si++){
- const slot=slots[si],ms=all.filter(m=>m.slot===slot),row=el('section','','rose-chrono-row'),tour=el('div','','rose-tour');
+ const slot=slots[si],ms=all.filter(m=>Math.floor(matchTime(m)/60000)*60000===slot),row=el('section','','rose-chrono-row'),tour=el('div','','rose-tour');
  const left=ms.find(m=>(m.court||m.division)==='DM'),right=ms.find(m=>(m.court||m.division)==='DD');
- tour.append(el('b',String(slot+1)),el('small',ms.every(m=>m.result)?'Terminé':ms.some(m=>m.started_at&&!m.result)?'En cours':'À venir'));row.append(tour);
+ const stamp=el('time',clock(slot));stamp.dateTime=new Date(slot).toISOString();tour.append(stamp);row.append(tour);
  for(const court of courts){
  if(court===courts[1]&&editable)row.append(exchangeButton(left||right,'court',null,left?right:null));
  const m=court==='DM'?left:right,cell=el('article','','rose-match '+COURTS[court].className);
- if(!m){cell.append(el('small',full.some(x=>x.slot===slot&&(x.court||x.division)===court)?'Autre épreuve masquée':'Terrain disponible','rose-empty'));row.append(cell);continue;}
+ if(!m){cell.append(el('small',full.some(x=>Math.floor(matchTime(x)/60000)*60000===slot&&(x.court||x.division)===court)?'Autre épreuve masquée':all.some(x=>(x.court||x.division)===court&&matchTime(x)<slot&&Number(x.end)>slot)?'Match précédent en cours':'—','rose-empty'));row.append(cell);continue;}
  const badge=el('span',m.division,'chrono-division-pill '+(m.division==='DD'?'division-dd':'division-dm'));badge.title=m.division==='DD'?'Double dames':'Double messieurs';badge.setAttribute('aria-label',badge.title);cell.append(badge);
  if(!(m.phase==='poules'&&data.divisions.find(d=>d.division===m.division)?.count<=5))cell.append(el('small',m.stage,'rose-stage'));
- cell.append(el('b',clock(m.started_at||(m.result?m.result.validated_at:m.live||m.planned)),'rose-hour'));
+
  const a=el('div','','rose-team'),b=el('div','','rose-team');
  for(const [id,target] of [[m.a,a],[m.b,b]]){target.append(el('span',name(id)));if(m.result?.winner===id)target.classList.add('rose-winner');}
  const versus=el('div','','rose-versus'),partial=!m.result&&m.progress?.sets?.length?m.progress.sets.map(s=>s.a+'–'+s.b).join(' / '):null;
@@ -162,16 +170,22 @@ function chronoBoard(){
  if(editable)cell.append(planningControls(m));row.append(cell);
  }
  board.append(row);
- if(editable&&si<slots.length-1){
- const next=slots[si+1],separator=el('div','','chrono-between');separator.append(el('span',''));
+ if(editable){
+ const separator=el('div','','chrono-between');separator.append(el('span',''));let hasNext=false;
  for(const court of courts){
  if(court===courts[1])separator.append(el('span',''));
- const top=all.find(m=>m.slot===slot&&(m.court||m.division)===court),bottom=all.find(m=>m.slot===next&&(m.court||m.division)===court);
- separator.append(exchangeButton(top||bottom,top?'down':'up',top?next:slot,top?bottom:null));
- }board.append(separator);
+ const top=ms.find(m=>(m.court||m.division)===court);
+ const bottom=top&&all.filter(m=>(m.court||m.division)===court&&m.slot>top.slot).sort((a,b)=>a.slot-b.slot)[0];
+ if(top&&bottom){hasNext=true;separator.append(exchangeButton(top,'down',bottom.slot,bottom));}
+ else separator.append(el('span',''));
+ }if(hasNext)board.append(separator);
  }
  }
- if(!slots.length)board.append(note('Programme à venir','Les rencontres de '+(chronoFilter==='DM'?'double messieurs':chronoFilter==='DD'?'double dames':'chaque épreuve')+' apparaîtront à la fin de la diffusion de leur tirage.'));return board;
+ if(!slots.length)board.append(note('Programme à venir','Les rencontres de '+(chronoFilter==='DM'?'double messieurs':chronoFilter==='DD'?'double dames':'chaque épreuve')+' apparaîtront à la fin de la diffusion de leur tirage.'));
+ const finish=full.length?Math.max(...full.map(m=>Number(m.end))):null;
+ const final=full.length>0&&full.every(m=>m.result)&&data.divisions.every(d=>d.count<6||d.draw_public_complete!==false&&!!d.drawn_at);
+ board.append(milestone(finish===null?'À suivre':finish,'🏆 Remise des prix',finish===null?'Après le dernier match':final?'Tous les matchs sont terminés':'Horaire estimé · après le dernier match','timeline-prizes'));
+ return board;
 }
 
 function card(m,index){
