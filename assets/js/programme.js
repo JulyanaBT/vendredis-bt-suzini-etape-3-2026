@@ -12,6 +12,9 @@ try{division=localStorage.getItem('suzini_etape3_public_epreuve')||'DM';}catch{}
 if(!COURTS[division])division='DM';
 const params=new URLSearchParams(location.search);
 const preview=params.get('simulation')==='1';
+let chronoFilter=params.get('chronofilter');try{chronoFilter=chronoFilter||sessionStorage.getItem('suzini_e3_chrono_filter');}catch{}if(!['DM','DD','both'].includes(chronoFilter))chronoFilter='both';
+function syncChronoFilter(){document.querySelectorAll('[data-public-epreuve]').forEach(b=>b.setAttribute('aria-pressed',String(selected==='chrono'?(chronoFilter==='both'||chronoFilter===b.dataset.publicEpreuve):division===b.dataset.publicEpreuve)));}
+document.addEventListener('click',e=>{const button=e.target.closest('[data-public-epreuve]');if(!button||selected!=='chrono')return;e.preventDefault();e.stopImmediatePropagation();const value=button.dataset.publicEpreuve;chronoFilter=chronoFilter===value?'both':value;division=value;try{sessionStorage.setItem('suzini_e3_chrono_filter',chronoFilter);localStorage.setItem('suzini_etape3_public_epreuve',division);const url=new URL(location.href);url.searchParams.set('chronofilter',chronoFilter);history.replaceState(null,'',url);}catch{}render();},true);
 function courtName(id,compact=false){
  const emoji=id==='DM'?'🐝':'🌶️',label=id==='DM'?'Manon Queen Bee':'Lisa de los pimentos',icons=emoji.repeat(compact?1:3);
  return icons+' '+label+' '+icons;
@@ -132,18 +135,20 @@ function drawInfo(d){
  box.append(list);return box;
 }
 function chronoBoard(){
- const all=chrono(true),editable=isClub&&clubReady,board=el('section','','rose-chrono'+(editable?' chrono-editable':'')),head=el('div','','rose-chrono-head');
- head.append(el('span','Tour'),el('strong',courtName('DM',true),COURTS.DM.className));
- if(editable)head.append(el('span','','exchange-spacer'));head.append(el('strong',courtName('DD',true),COURTS.DD.className));board.append(head);
+ const full=chrono(true),all=full.filter(m=>chronoFilter==='both'||m.division===chronoFilter),courts=chronoFilter==='both'?['DM','DD']:['DM','DD'].filter(c=>all.some(m=>(m.court||m.division)===c)),editable=isClub&&clubReady,board=el('section','','rose-chrono'+(editable?' chrono-editable':'')),head=el('div','','rose-chrono-head');
+ if(!courts.length)courts.push(chronoFilter==='DD'?'DD':'DM');
+ if(courts.length===1)board.classList.add('chrono-single-court');
+ head.append(el('span','Tour'));courts.forEach((court,i)=>{if(i&&editable)head.append(el('span','','exchange-spacer'));head.append(el('strong',courtName(court,true),COURTS[court].className));});board.append(head);
  const slots=[...new Set(all.map(m=>m.slot))].sort((a,b)=>a-b);
  for(let si=0;si<slots.length;si++){
  const slot=slots[si],ms=all.filter(m=>m.slot===slot),row=el('section','','rose-chrono-row'),tour=el('div','','rose-tour');
  const left=ms.find(m=>(m.court||m.division)==='DM'),right=ms.find(m=>(m.court||m.division)==='DD');
  tour.append(el('b',String(slot+1)),el('small',ms.every(m=>m.result)?'Terminé':ms.some(m=>m.started_at&&!m.result)?'En cours':'À venir'));row.append(tour);
- for(const court of ['DM','DD']){
- if(court==='DD'&&editable)row.append(exchangeButton(left||right,'court',null,left?right:null));
+ for(const court of courts){
+ if(court===courts[1]&&editable)row.append(exchangeButton(left||right,'court',null,left?right:null));
  const m=court==='DM'?left:right,cell=el('article','','rose-match '+COURTS[court].className);
- if(!m){cell.append(el('small','Terrain disponible','rose-empty'));row.append(cell);continue;}
+ if(!m){cell.append(el('small',full.some(x=>x.slot===slot&&(x.court||x.division)===court)?'Autre épreuve masquée':'Terrain disponible','rose-empty'));row.append(cell);continue;}
+ const badge=el('span',m.division,'chrono-division-pill '+(m.division==='DD'?'division-dd':'division-dm'));badge.title=m.division==='DD'?'Double dames':'Double messieurs';badge.setAttribute('aria-label',badge.title);cell.append(badge);
  if(!(m.phase==='poules'&&data.divisions.find(d=>d.division===m.division)?.count<=5))cell.append(el('small',m.stage,'rose-stage'));
  cell.append(el('b',clock(m.started_at||(m.result?m.result.validated_at:m.live||m.planned)),'rose-hour'));
  const a=el('div','','rose-team'),b=el('div','','rose-team');
@@ -158,14 +163,14 @@ function chronoBoard(){
  board.append(row);
  if(editable&&si<slots.length-1){
  const next=slots[si+1],separator=el('div','','chrono-between');separator.append(el('span',''));
- for(const court of ['DM','DD']){
- if(court==='DD')separator.append(el('span',''));
+ for(const court of courts){
+ if(court===courts[1])separator.append(el('span',''));
  const top=all.find(m=>m.slot===slot&&(m.court||m.division)===court),bottom=all.find(m=>m.slot===next&&(m.court||m.division)===court);
  separator.append(exchangeButton(top||bottom,top?'down':'up',top?next:slot,top?bottom:null));
  }board.append(separator);
  }
  }
- if(!slots.length)board.append(note('Programme à venir','Les rencontres apparaîtront une fois les tableaux préparés.'));return board;
+ if(!slots.length)board.append(note('Programme à venir','Les rencontres de '+(chronoFilter==='DM'?'double messieurs':chronoFilter==='DD'?'double dames':'chaque épreuve')+' apparaîtront après leur tirage.'));return board;
 }
 
 function card(m,index){
@@ -322,7 +327,7 @@ function resultForm(m,index){
  editor(finished?null:saved.length);section.append(form);return section;
 }
 function render(){
- panel.replaceChildren();document.body.dataset.matchView=selected;const d=current();
+ panel.replaceChildren();document.body.dataset.matchView=selected;syncChronoFilter();const d=current();
  if(error){panel.append(note('Chargement impossible',error));return;}if(!d){panel.append(el('p','Chargement des matchs…'));return;}
  document.body.dataset.matchSimulation=String(!!data.simulation);
  if(!['tirage','chrono','poules','finales','classement'].includes(selected)){const focus=chrono().find(m=>m.started_at&&!m.result)||chrono().find(m=>!m.result),court=focus?.court||division;panel.append(el('div',courtName(court),'programme-court '+COURTS[court].className));}
@@ -334,7 +339,7 @@ function render(){
  }
  if(!formatFor(d.count)){panel.append(note('Tableau en préparation',d.count+' équipe(s) inscrite(s). Il faut au moins 4 équipes pour maintenir ce tableau.'));return;}
  if(selected==='poules'&&d.count>=7){panel.append(note('🐔 Les poules sont au repos !','À 7 ou 8 équipes, on entre directement dans le tableau. Direction « Finales » pour les rencontres et les matchs de classement ! 🎾'));return;}
- if(d.count>=6&&!d.drawn_at){panel.append(note('🎲 Tirage à effectuer','Aucune poule ni programmation avant le tirage. Rendez-vous dans Tirage'+(isClub?' pour répartir les équipes.':' : les rencontres seront ensuite publiées.')));return;}
+ if(selected!=='chrono'&&d.count>=6&&!d.drawn_at){panel.append(note('🎲 Tirage à effectuer','Aucune poule ni programmation avant le tirage. Rendez-vous dans Tirage'+(isClub?' pour répartir les équipes.':' : les rencontres seront ensuite publiées.')));return;}
  if(selected==='chrono'){panel.append(chronoBoard());return; }
  if(selected==='resultats'){
  if(!isClub||!clubReady){panel.append(note('Résultats','Consultez les scores validés dans Chrono, Poules et Finales.'));return;}
@@ -492,7 +497,7 @@ if(isClub){
  }
  }catch{}
 }
-document.querySelector('.club-switch')?.addEventListener('click',event=>{const a=event.currentTarget,u=new URL(a.href);if(data?.simulation)u.searchParams.set('simulation','1');else u.searchParams.delete('simulation');a.href=u.href;});
+document.querySelector('.club-switch')?.addEventListener('click',event=>{const a=event.currentTarget,u=new URL(a.href);if(data?.simulation)u.searchParams.set('simulation','1');else u.searchParams.delete('simulation');if(selected==='chrono')u.searchParams.set('chronofilter',chronoFilter);a.href=u.href;});
 let rememberedTab='';try{rememberedTab=sessionStorage.getItem('suzini_e3_match_tab_'+document.body.dataset.space)||'';}catch{}
 const requested=tabs.find(t=>t.dataset.programme===(params.has('matchtab')?params.get('matchtab'):rememberedTab));select(requested||tabs[0]);
 await load();
