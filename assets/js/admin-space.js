@@ -1,3 +1,4 @@
+import {adminDrawTools} from './admin-draw-tools.js?v=1';
 import {client,access,signIn,clearSession} from './private-client.js?v=94';
 import {accessManager} from './admin-managers.js?v=97';
 const main=document.querySelector('main');let generation=0;
@@ -39,5 +40,6 @@ async function maintenance(isCurrent){
  main.innerHTML='<section class="admin-card"><span class="admin-eyebrow">VISIBILITÉ DU SITE</span><h1>Maintenance</h1><p>Choisissez les rubriques à masquer au public. Votre compte administrateur garde l’accès.</p><form id="maintenanceForm"><fieldset class="maintenance-grid"><legend>Rubriques publiques</legend>'+pages.map(([id,label,help])=>'<label class="maintenance-tile"><input type="checkbox" name="page" value="'+id+'" '+(data.pages.includes(id)?'checked':'')+'><span><strong>'+label+'</strong><small>'+help+'</small></span><span class="maintenance-light" aria-hidden="true"></span></label>').join('')+'</fieldset><label class="maintenance-tile maintenance-club"><input type="checkbox" name="club" '+(data.club_blocked?'checked':'')+'><span><strong>Suspendre l’espace Club</strong><small>Les gestionnaires gardent accès à Mon compte. Les invitations restent disponibles dans l’administration.</small></span></label><button class="signup-submit">Enregistrer la maintenance</button><p role="status"></p></form></section><div class="organizer-logout"><button id="admin-logout">Se déconnecter</button></div>';
  main.querySelector('#admin-logout').onclick=logout;
  main.querySelector('form').onsubmit=async e=>{e.preventDefault();const b=e.submitter;b.disabled=true;const f=new FormData(e.target),status=main.querySelector('[role="status"]');status.textContent='Enregistrement…';const {error}=await client.rpc('suzini_e3_settings',{p_data:{pages:f.getAll('page'),club_blocked:f.has('club')}});status.textContent=error?error.message:'Maintenance enregistrée. Les pages ouvertes se mettent à jour sous 15 secondes.';b.disabled=false;};
+ await adminDrawTools(main,isCurrent);
 }
 window.addEventListener('hashchange',render);render();

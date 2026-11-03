@@ -26,7 +26,7 @@ const clock=(value,seconds=false)=>new Intl.DateTimeFormat('fr-FR',{timeZone:'Am
 function scoreText(r){return r?r.score.sets.map(s=>s.join('–')).join(' / ')+(r.score.super?' · STB '+r.score.super.join('–'):''):'';}
 function fixtures(all=false){
  if(!data)return [];
- const slots=scheduleDraws(data.divisions.filter(d=>d.count<=5||d.drawn_at)).map(m=>({...m,...(data.planning||[]).find(p=>p.id===m.id&&p.division===m.division)})).sort((a,b)=>a.slot-b.slot);
+ const slots=scheduleDraws(data.divisions.filter(d=>d.count<=5||(d.drawn_at&&d.draw_public_complete!==false))).map(m=>({...m,...(data.planning||[]).find(p=>p.id===m.id&&p.division===m.division)})).sort((a,b)=>a.slot-b.slot);
  return slots.map(base=>{const m=data.matches.find(m=>m.division===base.division&&m.id===base.id);return m?{...base,...m}:null;}).filter(Boolean).filter(m=>all||m.division===division);
 }
 function chrono(all=false){return buildTimeline(fixtures(true)).filter(m=>all||m.division===division);}
@@ -171,7 +171,7 @@ function chronoBoard(){
  }board.append(separator);
  }
  }
- if(!slots.length)board.append(note('Programme à venir','Les rencontres de '+(chronoFilter==='DM'?'double messieurs':chronoFilter==='DD'?'double dames':'chaque épreuve')+' apparaîtront après leur tirage.'));return board;
+ if(!slots.length)board.append(note('Programme à venir','Les rencontres de '+(chronoFilter==='DM'?'double messieurs':chronoFilter==='DD'?'double dames':'chaque épreuve')+' apparaîtront à la fin de la diffusion de leur tirage.'));return board;
 }
 
 function card(m,index){
@@ -193,13 +193,15 @@ function table(rows,title='Classement de la poule',offset=0){
 }
 function drawControls(d){
  if(!isClub||!clubReady)return;
- const box=el('section','','programme-club'),status=el('p');status.setAttribute('role','status');
- const validate=el('button',d.validated_at?'Format validé':'Valider le format');
- validate.type='button';validate.disabled=!!d.validated_at||!formatFor(d.count)||(!data.simulation&&!data.registration_closed);
- async function act(action,b){b.disabled=true;status.textContent='Enregistrement…';try{const {error}=await client.rpc(data.simulation?'suzini_e3_match_simulation':'suzini_e3_programme_manage',{p_action:action,p_division:division});if(error)throw error;await load();}catch(e){status.textContent=e.message;b.disabled=false;}}
- validate.onclick=()=>act('validate',validate);
- if(!d.no_draw){const draw=el('button',d.draw_started_at&&!d.draw_complete?'Tirage en direct…':d.drawn_at?'Tirage effectué':'Lancer le tirage en direct');draw.type='button';draw.disabled=!d.validated_at||!!d.draw_started_at||!!d.drawn_at||(!data.simulation&&Date.now()<Date.parse(data.draw_at));draw.onclick=()=>act('draw',draw);box.append(draw);}
- box.append(status);panel.append(box);
+ const box=el('section','','programme-club draw-management'),status=el('p');status.setAttribute('role','status');
+ box.append(el('h2','Gestion du tirage'),el('p',d.draw_published_at?(d.draw_public_complete?'Diffusion terminée · les rencontres sont publiées.':'Diffusion publique en cours · les rencontres restent masquées jusqu’à la fin.'):d.draw_prepared?'Tirage préparé en privé. Le public attend la diffusion.':'Préparez le tirage, puis lancez sa diffusion publique.','draw-management-status'));
+ async function act(action,b){
+ if(action==='publish'&&!confirm('Diffuser ce tirage en public maintenant ? Une équipe sera révélée chaque minute. Les autres onglets seront ouverts à la fin.'))return;
+ b.disabled=true;status.textContent=action==='prepare'?'Préparation privée…':'Lancement de la diffusion…';
+ try{const r=await withDeadline(client.rpc('suzini_e3_draw_manage',{p_action:action,p_division:division,p_simulation:!!data.simulation}));if(r.error)throw r.error;data=r.data;render();}catch(e){status.textContent=e.message;b.disabled=false;}
+ }
+ const actions=el('div','','draw-management-actions'),prepare=el('button',d.draw_prepared?'✓ Tirage préparé':'1 · Préparer le tirage'),publish=el('button',d.draw_published_at?'✓ Diffusion lancée':'2 · Diffuser le tirage');
+ prepare.type=publish.type='button';prepare.disabled=!!d.draw_prepared||(!data.simulation&&!data.registration_closed);publish.disabled=!d.draw_prepared||!!d.draw_published_at||(!data.simulation&&Date.now()<Date.parse(data.draw_at));prepare.onclick=()=>act('prepare',prepare);publish.onclick=()=>act('publish',publish);actions.append(prepare,publish);box.append(actions,status);panel.append(box);
 }
 function expectedScore(score,format){
  const target=format===4?6:4;
@@ -338,11 +340,11 @@ function render(){
  const matches=chrono(),count=matches.filter(m=>m.result).length;
  if(selected==='tirage'){
  if(d.no_draw){panel.append(drawInfo(d));return;}
- drawRoulette(d);drawControls(d);return;
+ drawControls(d);drawRoulette(d);return;
  }
  if(!formatFor(d.count)){panel.append(note('Tableau en préparation',d.count+' équipe(s) inscrite(s). Il faut au moins 4 équipes pour maintenir ce tableau.'));return;}
  if(selected==='poules'&&d.count>=7){panel.append(note('🐔 Les poules sont au repos !','À 7 ou 8 équipes, on entre directement dans le tableau. Direction « Finales » pour les rencontres et les matchs de classement ! 🎾'));return;}
- if(selected!=='chrono'&&d.count>=6&&!d.drawn_at){panel.append(note('🎲 Tirage à effectuer','Aucune poule ni programmation avant le tirage. Rendez-vous dans Tirage'+(isClub?' pour répartir les équipes.':' : les rencontres seront ensuite publiées.')));return;}
+ if(selected!=='chrono'&&d.count>=6&&(!d.drawn_at||d.draw_public_complete===false)){panel.append(note(d.draw_published_at?'🎡 Tirage en cours':'🎲 Tirage à venir','Les équipes et les rencontres seront affichées à la fin de la diffusion du tirage. Consultez « Tirage » pour suivre les révélations.'));return;}
  if(selected==='chrono'){panel.append(chronoBoard());return; }
  if(selected==='resultats'){
  if(!isClub||!clubReady){panel.append(note('Résultats','Consultez les scores validés dans Chrono, Poules et Finales.'));return;}
@@ -416,8 +418,8 @@ function drawKey(d){return [data.simulation,division,d.draw_started_at||d.drawn_
 function drawRoulette(d){
  const box=el('section','','draw-roulette-card'),started=!!d.draw_started_at,complete=!!d.draw_complete||!!d.drawn_at;
  const key=drawKey(d),replaying=drawReplay?.key===key,steps=d.draw_reveals||[],shown=replaying?steps.slice(0,drawReplay.index):steps;
- box.append(el('h2',replaying?'⏪ Replay du tirage':started&&!complete?'🔴 Tirage en direct':'🎡 Tirage au sort'));
- box.append(el('p',replaying?'Même tirage, sans l’attente d’une minute.':!started?(data.simulation?'Le gestionnaire peut lancer ce tirage de test depuis l’espace Club.':'Lancement prévu le 5 novembre à 14 h, heure de Guyane.'):isClub?'Tirage immédiat en gestion Club · diffusion publique à une équipe par minute.':'Une équipe révélée par minute · heure de Guyane.','draw-roulette-caption'));
+ box.append(el('h2',replaying?'⏪ Replay du tirage':isClub&&d.draw_prepared&&!d.draw_published_at?'🔒 Tirage préparé en privé':started&&!complete?'🔴 Tirage en direct':'🎡 Tirage au sort'));
+ box.append(el('p',replaying?'Même tirage, sans l’attente d’une minute.':!started?(data.simulation?'Le gestionnaire peut lancer ce tirage de test depuis l’espace Club.':'Lancement prévu le 5 novembre à 14 h, heure de Guyane.'):isClub?(d.draw_published_at?'Résultat visible en Club · diffusion publique à une équipe par minute.':'Le résultat reste privé jusqu’au clic sur « Diffuser le tirage ».'):'Une équipe révélée par minute · heure de Guyane.','draw-roulette-caption'));
 
  if(d.count===6){
  const seedIds=d.seeds?.length?d.seeds:data.teams.filter(t=>t.division===division).sort((a,b)=>(a.p1_rank+a.p2_rank)-(b.p1_rank+b.p2_rank)).slice(0,2).map(t=>t.id);
@@ -499,7 +501,7 @@ function updateRoulette(){
  const count=replaying?drawReplay.index:d.draw_reveal_count||0;
  const displayed=document.querySelector('[data-roulette-name]'),status=document.querySelector('[data-roulette-countdown]');
  if(!status)return;
- if(!d.draw_started_at){status.textContent='Le lancement est réservé à la gestion Club.';return;}
+ if(!d.draw_started_at){status.textContent='En attente de la diffusion publique du tirage.';return;}
  if(!spinning){status.textContent=total+' équipes tirées · '+(replaying?'replay terminé':'tirage terminé');return;}
  const revealed=(d.draw_reveals||[]).slice(0,count).map(x=>x.team_id),candidates=data.teams.filter(t=>t.division===division&&!(d.seeds||[]).includes(t.id)&&!revealed.includes(t.id));
  if(displayed&&candidates.length&&!drawFlight)displayed.textContent=candidates[Math.floor(Date.now()/140)%candidates.length].team_name;
