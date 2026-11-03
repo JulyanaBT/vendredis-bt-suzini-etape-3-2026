@@ -6,6 +6,7 @@ const panel=document.getElementById('programme-panel'),tabs=[...document.querySe
 const el=(tag,text='',cls='')=>{const e=document.createElement(tag);e.textContent=text;if(cls)e.className=cls;return e;};
 let scoreHistoryExpanded=false,upcomingExpanded=false;
 let drawReplay=null,serverOffset=0,drawRefreshBusy=false;
+const drawRevealSeen=new Map();let drawFlight=null,drawFlightToken=0;
 let bracketView='final';try{bracketView=sessionStorage.getItem('suzini_e3_bracket')||'final';}catch{}
 let division='DM',selected='chrono',data=null,error='',clubReady=false,mode='real',generation=0;
 try{division=localStorage.getItem('suzini_etape3_public_epreuve')||'DM';}catch{}
@@ -401,7 +402,7 @@ function tennisBracket(matches,{host=panel,drawing=false}={}){
  rounds.forEach(([,ids],col)=>ids.forEach((id,i)=>{const m=chartMatches.find(x=>x.id===id);if(!m)return;
  const node=el('article','','tennis-bracket-match');node.style.gridColumn=String(col+1);if(columns>1)node.style.gridRow=(ids.length===4?1+i*2:ids.length===2?2+i*4:4)+' / span 2';
  node.append(el('small',n===7&&id==='QF4'?'TS1 exemptée de quart':id==='F'?'🏆 Finale':id==='P3'?'🥉 3e place':id==='P5'?'5e place':id==='P7'?'7e place':id));
- for(const [team,side] of [[m.a,0],[m.b,1]]){const row=el('div','','tennis-bracket-team');if(m.result?.winner===team)row.classList.add('bracket-winner');row.append(teamLabel(team));const scores=m.result?.score;if(scores)row.append(el('b',scores.sets.map(set=>set[side]).join(' · ')+(scores.super?' ('+scores.super[side]+')':'')));node.append(row);}if(m.result)node.append(el('small','✓ Terminé','bracket-result'));grid.append(node);
+ for(const [team,side] of [[m.a,0],[m.b,1]]){const row=el('div','','tennis-bracket-team');if(drawing&&team)row.dataset.drawTeam=team;if(m.result?.winner===team)row.classList.add('bracket-winner');row.append(teamLabel(team));const scores=m.result?.score;if(scores)row.append(el('b',scores.sets.map(set=>set[side]).join(' · ')+(scores.super?' ('+scores.super[side]+')':'')));node.append(row);}if(m.result)node.append(el('small','✓ Terminé','bracket-result'));grid.append(node);
  }));
  wrap.append(heads,grid);scroll.append(wrap);return scroll;
  }
@@ -424,7 +425,7 @@ function drawRoulette(d){
  for(const [pool,seedIndex] of [['A',1],['B',0]]){
  const card=el('section','','roulette-pool'),heading=el('h3','Poule '+pool),list=el('ol');card.append(heading);
  const first=el('li','','roulette-pool-seed');first.append(el('small','TS'+(seedIndex+1)),el('strong',seedIds[seedIndex]?name(seedIds[seedIndex]):'Tête de série'));list.append(first);
- for(let slot=0;slot<2;slot++){const index=slot*2+(pool==='A'?0:1),step=shown[index],row=el('li','',step?'is-revealed':'is-pending');row.append(el('small','Tirage '+(index+1)),el('strong',step?name(step.team_id):'Équipe à révéler'));list.append(row);}
+ for(let slot=0;slot<2;slot++){const index=slot*2+(pool==='A'?0:1),step=shown[index],row=el('li','',step?'is-revealed':'is-pending');if(step)row.dataset.drawTeam=step.team_id;row.append(el('small','Tirage '+(index+1)),el('strong',step?name(step.team_id):'Équipe à révéler'));list.append(row);}
  card.append(list);pools.append(card);
  }box.append(pools);
  }else{
@@ -457,7 +458,38 @@ function drawRoulette(d){
 
  if(started&&!complete)box.append(el('p','La programmation sera disponible à la dernière révélation.','draw-roulette-caption'));
  panel.append(box);updateRoulette();
+ const revealKey=key+(replaying?':replay:'+drawReplay.started:':live'),previous=drawRevealSeen.get(revealKey);drawRevealSeen.set(revealKey,shown.length);
+ if(previous!==undefined&&shown.length>previous)requestAnimationFrame(()=>flyDrawPlaque(box,shown.at(-1),key));
 }
+
+async function flyDrawPlaque(box,step,key){
+ if(!step||!box.isConnected)return;
+ const target=[...box.querySelectorAll('[data-draw-team]')].find(row=>row.dataset.drawTeam===step.team_id),stage=box.querySelector('.roulette-stage'),display=box.querySelector('.roulette-display');
+ if(!target||!stage||!display)return;
+ const token=++drawFlightToken;if(drawFlight){drawFlight.plaque?.remove();drawFlight.target?.classList.remove('draw-awaiting');}
+ const title=display.querySelector('small'),label=display.querySelector('strong'),previousTitle=title?.textContent;
+ if(title)title.textContent='🎉 Équipe tirée !';if(label)label.textContent=name(step.team_id);
+ if(matchMedia('(prefers-reduced-motion: reduce)').matches){target.classList.add('draw-landed');return;}
+ const plaque=el('div','','draw-flying-plaque '+(division==='DD'?'flying-dd':'flying-dm'));plaque.setAttribute('aria-hidden','true');plaque.append(el('small','🎾 '+step.label),el('strong',name(step.team_id)));
+ drawFlight={token,plaque,target,key};target.classList.add('draw-awaiting');stage.classList.add('is-announcing');
+ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+ const valid=()=>drawFlightToken===token&&box.isConnected&&selected==='tirage';
+ try{
+ stage.scrollIntoView({behavior:'smooth',block:'nearest'});await pause(260);if(!valid())return;
+ const start=display.getBoundingClientRect(),width=Math.min(260,innerWidth-36),x=Math.max(width/2+12,Math.min(innerWidth-width/2-12,start.left+start.width/2)),y=start.top+start.height/2;
+ Object.assign(plaque.style,{width:width+'px',left:x+'px',top:y+'px'});document.body.append(plaque);
+ await plaque.animate([{opacity:0,transform:'translate(-50%,-50%) scale(.82) rotate(-4deg)'},{opacity:1,transform:'translate(-50%,-50%) scale(1.03) rotate(1deg)'},{opacity:1,transform:'translate(-50%,-50%) scale(1) rotate(0deg)'}],{duration:280,fill:'forwards',easing:'ease-out'}).finished;
+ if(!valid())return;
+ target.scrollIntoView({behavior:'smooth',block:'nearest',inline:'nearest'});await pause(300);if(!valid())return;
+ const end=target.getBoundingClientRect(),endX=end.left+end.width/2,endY=end.top+end.height/2;
+ await plaque.animate([{left:x+'px',top:y+'px',opacity:1,transform:'translate(-50%,-50%) scale(1) rotate(0deg)'},{left:(x+(endX-x)*.48)+'px',top:(Math.min(y,endY)-42)+'px',opacity:1,transform:'translate(-50%,-50%) scale(1.04) rotate(-3deg)',offset:.48},{left:endX+'px',top:endY+'px',opacity:.15,transform:'translate(-50%,-50%) scale('+Math.min(1,end.width/width)+') rotate(0deg)'}],{duration:800,fill:'forwards',easing:'cubic-bezier(.35,0,.2,1)'}).finished;
+ if(valid()){target.classList.remove('draw-awaiting');target.classList.add('draw-landed');}
+ }catch{}finally{
+ plaque.remove();target.classList.remove('draw-awaiting');stage.classList.remove('is-announcing');
+ if(drawFlight?.token===token){drawFlight=null;if(title&&title.isConnected)title.textContent=previousTitle;}
+ }
+}
+
 function updateRoulette(){
  if(selected!=='tirage'||!data)return;
  const d=current();if(!d||d.no_draw)return;
@@ -470,7 +502,7 @@ function updateRoulette(){
  if(!d.draw_started_at){status.textContent='Le lancement est réservé à la gestion Club.';return;}
  if(!spinning){status.textContent=total+' équipes tirées · '+(replaying?'replay terminé':'tirage terminé');return;}
  const revealed=(d.draw_reveals||[]).slice(0,count).map(x=>x.team_id),candidates=data.teams.filter(t=>t.division===division&&!(d.seeds||[]).includes(t.id)&&!revealed.includes(t.id));
- if(displayed&&candidates.length)displayed.textContent=candidates[Math.floor(Date.now()/140)%candidates.length].team_name;
+ if(displayed&&candidates.length&&!drawFlight)displayed.textContent=candidates[Math.floor(Date.now()/140)%candidates.length].team_name;
  if(replaying){status.textContent='Replay rapide · '+count+' / '+total+' équipes révélées';return;}
  const now=Date.now()+serverOffset,next=Date.parse(d.draw_started_at)+(count+1)*60000,seconds=Math.max(0,Math.ceil((next-now)/1000));
  status.textContent=count+' / '+total+' équipes révélées · prochaine dans '+Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');
