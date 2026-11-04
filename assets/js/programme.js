@@ -24,9 +24,10 @@ function current(){return data?.divisions.find(d=>d.division===division);}
 function name(id){return data?.teams.find(t=>t.id===id)?.team_name||id||'À déterminer';}
 const clock=(value,seconds=false)=>new Intl.DateTimeFormat('fr-FR',{timeZone:'America/Cayenne',hour:'2-digit',minute:'2-digit',...(seconds?{second:'2-digit'}:{})}).format(new Date(value));
 function scoreText(r){return r?r.score.sets.map(s=>s.join('–')).join(' / ')+(r.score.super?' · STB '+r.score.super.join('–'):''):'';}
+function matchesPublished(d){return !!data?.registration_closed&&(d.matches_ready===true||(d.matches_ready===undefined&&(d.count===4||d.count===5||!!d.drawn_at&&d.draw_public_complete===true)));}
 function fixtures(all=false){
  if(!data)return [];
- const slots=scheduleDraws(data.divisions.filter(d=>d.count<=5||(d.drawn_at&&d.draw_public_complete!==false))).map(m=>({...m,...(data.planning||[]).find(p=>p.id===m.id&&p.division===m.division)})).sort((a,b)=>a.slot-b.slot);
+ const slots=scheduleDraws(data.divisions.filter(matchesPublished)).map(m=>({...m,...(data.planning||[]).find(p=>p.id===m.id&&p.division===m.division)})).sort((a,b)=>a.slot-b.slot);
  return slots.map(base=>{const m=data.matches.find(m=>m.division===base.division&&m.id===base.id);return m?{...base,...m}:null;}).filter(Boolean).filter(m=>all||m.division===division);
 }
 function chrono(all=false){return buildTimeline(fixtures(true)).filter(m=>all||m.division===division);}
@@ -349,6 +350,12 @@ function render(){
  panel.replaceChildren();document.body.dataset.matchView=selected;syncChronoFilter();const d=current();
  if(error){panel.append(note('Chargement impossible',error));return;}if(!d){panel.append(el('p','Chargement des matchs…'));return;}
  document.body.dataset.matchSimulation=String(!!data.simulation);
+ if(!data.simulation&&!data.registration_closed){
+ const suspended=data.registration_state==='suspended';
+ panel.append(note(suspended?'⏸️ Inscriptions suspendues':'📝 Inscriptions en cours',
+ 'Le format sera fixé à la clôture définitive des inscriptions. '+(suspended?'La suspension ne déclenche ni les poules ni la programmation. ':'')+'Les rencontres seront publiées après la diffusion du tirage ; à 4 ou 5 équipes, la poule unique sera établie à la clôture, sans tirage.'));
+ return;
+ }
  if(!['tirage','chrono','poules','finales','classement'].includes(selected)){const focus=chrono().find(m=>m.started_at&&!m.result)||chrono().find(m=>!m.result),court=focus?.court||division;panel.append(el('div',courtName(court),'programme-court '+COURTS[court].className));}
 
  const matches=chrono(),count=matches.filter(m=>m.result).length;
@@ -357,8 +364,8 @@ function render(){
  drawControls(d);drawRoulette(d);return;
  }
  if(!formatFor(d.count)){panel.append(note('Tableau en préparation',d.count+' équipe(s) inscrite(s). Il faut au moins 4 équipes pour maintenir ce tableau.'));return;}
+ if(selected!=='chrono'&&!matchesPublished(d)){panel.append(note(d.draw_published_at?'🎡 Tirage en cours':'🎲 Tirage à venir','Les équipes et les rencontres seront affichées à la fin de la diffusion du tirage. Consultez « Tirage » pour suivre les révélations.'));return;}
  if(selected==='poules'&&d.count>=7){panel.append(note('🐔 Les poules sont au repos !','À 7 ou 8 équipes, on entre directement dans le tableau. Direction « Finales » pour les rencontres et les matchs de classement ! 🎾'));return;}
- if(selected!=='chrono'&&d.count>=6&&(!d.drawn_at||d.draw_public_complete===false)){panel.append(note(d.draw_published_at?'🎡 Tirage en cours':'🎲 Tirage à venir','Les équipes et les rencontres seront affichées à la fin de la diffusion du tirage. Consultez « Tirage » pour suivre les révélations.'));return;}
  if(selected==='chrono'){panel.append(chronoBoard());return; }
  if(selected==='resultats'){
  if(!isClub||!clubReady){panel.append(note('Résultats','Consultez les scores validés dans Chrono, Poules et Finales.'));return;}
