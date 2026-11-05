@@ -3,6 +3,7 @@ import {client,withDeadline} from './private-client.js?v=94';
 import {COURTS,formatFor,scheduleDraws} from './tournament-format.js?v=140';
 import {buildTimeline,launchReadiness} from './match-timing.js?v=140';
 import {courtTimeline} from './court-timeline.js?v=139';
+import {exchangeMatchSlots} from './match-plan-edit.js?v=141';
 const panel=document.getElementById('programme-panel'),tabs=[...document.querySelectorAll('[data-programme]')],isClub=document.body.dataset.space==='club';
 const el=(tag,text='',cls='')=>{const e=document.createElement(tag);e.textContent=text;if(cls)e.className=cls;return e;};
 let scoreHistoryExpanded=false,upcomingExpanded=false;
@@ -23,6 +24,10 @@ function courtName(id,compact=false){
 }
 function current(){return data?.divisions.find(d=>d.division===division);}
 function name(id){return data?.teams.find(t=>t.id===id)?.team_name||id||'À déterminer';}
+function chronoName(id){
+ const team=data?.teams.find(t=>t.id===id),names=team?[team.p1_first_name||team.player1,team.p2_first_name||team.player2].map(s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z]/gi,'').toLowerCase()):[];
+ return names.includes('jeandavid')&&names.includes('pierreolivier')?'Jenda / Pierre-O':name(id);
+}
 const clock=(value,seconds=false)=>new Intl.DateTimeFormat('fr-FR',{timeZone:'America/Cayenne',hour:'2-digit',minute:'2-digit',...(seconds?{second:'2-digit'}:{})}).format(new Date(value));
 function scoreText(r){return r?r.score.sets.map(s=>s.join('–')).join(' / ')+(r.score.super?' · STB '+r.score.super.join('–'):''):'';}
 function matchesPublished(d){return !!data?.registration_closed&&(d.matches_ready===true||(d.matches_ready===undefined&&(d.count===4||d.count===5||!!d.drawn_at&&d.draw_public_complete===true)));}
@@ -55,6 +60,16 @@ async function savePlan(plan){
  const {data:next,error}=await withDeadline(client.rpc('suzini_e3_save_planning',{p_simulation:!!data.simulation,p_plan:plan,p_revision:data.planning_revision||0}));
  if(error)throw error;data=next;render();
 }
+function openMatchExchange(m){
+ const choices=chrono(true).filter(x=>x.division===m.division&&x.id!==m.id&&x.id!=='TS-FINAL'&&!x.result&&!x.started_at).sort((a,b)=>a.slot-b.slot);
+ const dialog=el('dialog','','match-exchange-dialog'),form=el('form');form.method='dialog';
+ const label=el('label','Échanger le créneau avec'),select=el('select'),status=el('p');status.setAttribute('role','status');
+ for(const other of choices){const option=el('option',clock(other.live??other.planned)+' · '+chronoName(other.a)+' vs '+chronoName(other.b));option.value=other.id;select.append(option);}
+ label.append(select);const apply=el('button','Inverser les matchs'),cancel=el('button','Annuler');apply.type='submit';cancel.type='button';cancel.onclick=()=>dialog.close();apply.disabled=!choices.length;
+ form.append(el('h2','Inverser un match'),el('p',chronoName(m.a)+' vs '+chronoName(m.b)),label,el('small','Les créneaux sont échangés et les récupérations recalculées. Le dernier match TS1 / TS2 reste à sa place.'),status,apply,cancel);
+ form.onsubmit=async e=>{e.preventDefault();apply.disabled=true;try{const target=choices.find(x=>x.id===select.value);if(!target)throw Error('Choisissez un match.');await savePlan(exchangeMatchSlots(planRows(),m,target,fixtures(true)));dialog.close();}catch(error){status.textContent=error.message;apply.disabled=false;}};
+ dialog.append(form);document.body.append(dialog);dialog.addEventListener('close',()=>dialog.remove(),{once:true});dialog.showModal();
+}
 function planningControls(m){
  const box=el('div','','match-plan-controls');
  const label='Match '+name(m.a)+' contre '+name(m.b);
@@ -72,7 +87,8 @@ function planningControls(m){
  form.onsubmit=e=>{e.preventDefault();persist(new Date(date+'T'+hour.value+':'+minute.value+':00-03:00').toISOString());};reset.onclick=()=>persist(null);
  form.append(el('h2','Heure du match'),lab,wheels,el('small','Les matchs suivants du terrain seront décalés à partir de cette heure.'),status,save,reset,cancel);dialog.append(form);document.body.append(dialog);dialog.addEventListener('close',()=>dialog.remove(),{once:true});dialog.showModal();requestAnimationFrame(()=>{for(const select of [hour,minute])select.scrollTop=Math.max(0,(select.selectedIndex+.5)*(select.scrollHeight/select.options.length)-select.clientHeight/2);});
  };
- box.append(time);return box;
+ const exchange=el('button','⇅ Inverser','match-exchange-button');exchange.type='button';exchange.disabled=!!m.result||!!m.started_at||m.id==='TS-FINAL';exchange.title=m.id==='TS-FINAL'?'Dernier match réservé à TS1 contre TS2':'Choisir le match à inverser';exchange.onclick=()=>openMatchExchange(m);
+ box.append(time,exchange);return box;
 }
 
 function teamLabel(id){
@@ -147,10 +163,10 @@ function timelineMilestone(time,title,detail,kind){
  const text=el('div','','timeline-event');text.append(el('strong',title));if(detail)text.append(el('small',detail));row.append(stamp,text);return row;
 }
 function publicChronoBoard(){
- const full=chrono(true),wanted=m=>chronoFilter==='both'||m.division===chronoFilter,shown=full.filter(wanted),board=el('section','','public-court-timeline');
+ const full=chrono(true),wanted=m=>chronoFilter==='both'||m.division===chronoFilter,shown=full.filter(wanted),editable=isClub&&clubReady,board=el('section','','public-court-timeline'+(editable?' club-court-timeline':''));
  board.append(timelineMilestone(Date.parse('2026-11-06T20:45:00Z'),'👋 Accueil des joueurs','Contrôle des licences · heure de Guyane','timeline-welcome'));
  if(!shown.length){board.append(note('Programme à venir','Les rencontres apparaîtront à la fin de la diffusion du tirage.'));return board;}
- const layout=courtTimeline(full),events=layout.events.filter(e=>wanted(e.match||e.before)),courts=['DM','DD'].filter(c=>shown.some(m=>(m.court||m.division)===c)),head=el('div','','court-timeline-head');
+ const layout=courtTimeline(full,{minMatchHeight:editable?178:140}),events=layout.events.filter(e=>wanted(e.match||e.before)),courts=['DM','DD'].filter(c=>shown.some(m=>(m.court||m.division)===c)),head=el('div','','court-timeline-head');
  head.append(el('span','Heure'));
  for(const c of courts)head.append(el('strong',courtName(c,true),COURTS[c].className));
  head.style.setProperty('--court-count',courts.length);board.append(head);
@@ -175,11 +191,12 @@ function publicChronoBoard(){
  if(!(m.phase==='poules'&&data.divisions.find(d=>d.division===m.division)?.count<=5))cell.append(el('small',m.stage,'court-match-stage'));
  const matchup=el('div','','court-match-matchup');
  for(const [index,id] of [m.a,m.b].entries()){
- const team=el('strong',name(id),'court-match-team'+(m.result?.winner===id?' is-winner':''));team.title=name(id);matchup.append(team);
+ const team=el('strong',chronoName(id),'court-match-team'+(m.result?.winner===id?' is-winner':''));team.title=name(id);matchup.append(team);
  if(index===0)matchup.append(el(m.result?'b':'span',m.result?scoreText(m.result):'vs',m.result?'court-match-score':'court-match-vs'));
  }
  cell.append(matchup);
- cell.setAttribute('aria-label',status+' · Début '+clock(event.start)+(!m.started_at&&!m.result?' prévisionnel':'')+' · '+name(m.a)+' contre '+name(m.b));
+ if(editable)cell.append(planningControls(m));
+ cell.setAttribute('aria-label',status+' · Début '+clock(event.start)+(!m.started_at&&!m.result?' prévisionnel':'')+' · '+chronoName(m.a)+' contre '+chronoName(m.b));
  }else{
  const title=event.kind==='changeover'?'🛠️ Reconfiguration':event.kind==='recovery'?'🍺 Récupération':event.kind==='waiting'?'⏳ Attente des équipes':'Pause';
  cell.title=title+' · '+clock(event.start)+' – '+clock(event.end);
@@ -201,59 +218,7 @@ function publicChronoBoard(){
  return board;
 }
 
-function chronoBoard(){
- if(!isClub)return publicChronoBoard();
- const full=chrono(true),all=full.filter(m=>chronoFilter==='both'||m.division===chronoFilter),courts=chronoFilter==='both'?['DM','DD']:['DM','DD'].filter(c=>all.some(m=>(m.court||m.division)===c)),editable=isClub&&clubReady,board=el('section','','rose-chrono hourly-timeline'+(editable?' chrono-editable':'')),head=el('div','','rose-chrono-head');
- if(!courts.length)courts.push(chronoFilter==='DD'?'DD':'DM');
- if(courts.length===1)board.classList.add('chrono-single-court');
- head.append(el('span','Heure'));courts.forEach((court,i)=>{if(i&&editable)head.append(el('span','','exchange-spacer'));head.append(el('strong',courtName(court,true),COURTS[court].className));});board.append(head);
- const matchTime=m=>m.started_at?Date.parse(m.started_at):Number(m.live??m.planned);
- const slots=[...new Set(all.map(m=>Math.floor(matchTime(m)/60000)*60000))].sort((a,b)=>a-b);
- const milestone=(time,title,detail,kind)=>{
-  const row=el('section','','timeline-milestone '+kind),stamp=el('time',typeof time==='number'?clock(time):time,'timeline-stamp');
-  if(typeof time==='number')stamp.dateTime=new Date(time).toISOString();
-  const text=el('div','','timeline-event');text.append(el('strong',title));if(detail)text.append(el('small',detail));
-  row.append(stamp,text);return row;
- };
- board.append(milestone(Date.parse('2026-11-06T20:45:00Z'),'👋 Accueil des joueurs','Contrôle des licences · heure de Guyane','timeline-welcome'));
- for(let si=0;si<slots.length;si++){
- const slot=slots[si],ms=all.filter(m=>Math.floor(matchTime(m)/60000)*60000===slot),row=el('section','','rose-chrono-row'),tour=el('div','','rose-tour');
- const left=ms.find(m=>(m.court||m.division)==='DM'),right=ms.find(m=>(m.court||m.division)==='DD');
- const stamp=el('time',clock(slot));stamp.dateTime=new Date(slot).toISOString();tour.append(stamp);row.append(tour);
- for(const court of courts){
- if(court===courts[1]&&editable)row.append(exchangeButton(left||right,'court',null,left?right:null));
- const m=court==='DM'?left:right,cell=el('article','','rose-match '+COURTS[court].className);
- if(!m){cell.append(el('small',full.some(x=>Math.floor(matchTime(x)/60000)*60000===slot&&(x.court||x.division)===court)?'Autre épreuve masquée':all.some(x=>(x.court||x.division)===court&&matchTime(x)<slot&&Number(x.end)>slot)?'Match précédent en cours':'—','rose-empty'));row.append(cell);continue;}
- const badge=el('span',m.division,'chrono-division-pill '+(m.division==='DD'?'division-dd':'division-dm'));badge.title=m.division==='DD'?'Double dames':'Double messieurs';badge.setAttribute('aria-label',badge.title);cell.append(badge);
- if(!(m.phase==='poules'&&data.divisions.find(d=>d.division===m.division)?.count<=5))cell.append(el('small',m.stage,'rose-stage'));
-
- const a=el('div','','rose-team'),b=el('div','','rose-team');
- for(const [id,target] of [[m.a,a],[m.b,b]]){target.append(el('span',name(id)));if(m.result?.winner===id)target.classList.add('rose-winner');}
- const versus=el('div','','rose-versus'),partial=!m.result&&m.progress?.sets?.length?m.progress.sets.map(s=>s.a+'–'+s.b).join(' / '):null;
- versus.append(el(m.result||partial?'strong':'small',m.result?scoreText(m.result):partial||'vs'));cell.append(a,versus,b);
- if(m.result)cell.append(el('small','✓ Terminé à '+clock(m.result.validated_at),'rose-status'));
- else if(m.started_at)cell.append(el('small','● En cours · lancé à '+clock(m.started_at),'rose-status'));
- else if(m.restUntil)cell.append(el('small','Pause équipe · 30 min','rose-rest'));
- if(editable)cell.append(planningControls(m));row.append(cell);
- }
- board.append(row);
- if(editable){
- const separator=el('div','','chrono-between');separator.append(el('span',''));let hasNext=false;
- for(const court of courts){
- if(court===courts[1])separator.append(el('span',''));
- const top=ms.find(m=>(m.court||m.division)===court);
- const bottom=top&&all.filter(m=>(m.court||m.division)===court&&m.slot>top.slot).sort((a,b)=>a.slot-b.slot)[0];
- if(top&&bottom){hasNext=true;separator.append(exchangeButton(top,'down',bottom.slot,bottom));}
- else separator.append(el('span',''));
- }if(hasNext)board.append(separator);
- }
- }
- if(!slots.length)board.append(note('Programme à venir','Les rencontres de '+(chronoFilter==='DM'?'double messieurs':chronoFilter==='DD'?'double dames':'chaque épreuve')+' apparaîtront à la fin de la diffusion de leur tirage.'));
- const finish=full.length?Math.max(...full.map(m=>Number(m.end))):null;
- const final=full.length>0&&full.every(m=>m.result)&&data.divisions.every(d=>d.count<6||d.draw_public_complete!==false&&!!d.drawn_at);
- board.append(milestone(finish===null?'À suivre':finish,'🏆 Remise des prix',finish===null?'Après le dernier match':final?'Tous les matchs sont terminés':'Horaire estimé · après le dernier match','timeline-prizes'));
- return board;
-}
+function chronoBoard(){return publicChronoBoard();}
 
 function card(m,index){
  const c=el('article','','programme-match '+COURTS[m.court||division].className);

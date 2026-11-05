@@ -179,3 +179,16 @@ body[data-space=club] .rose-chrono-head{top:45px}
 .court-match-hours{display:flex;align-items:baseline;justify-content:center;gap:5px;flex-wrap:wrap}
 .court-start-estimate{font-size:8px;font-weight:400;line-height:1.2;color:#71817f;letter-spacing:0}
 .court-time-break.break-waiting{background:#f4f4f0aa;border-color:#cfd5cd;color:#68766f}
+
+/* Club chrono shares the public duration scale and adds compact planning actions. */
+.club-court-timeline .court-time-match>.match-plan-controls{display:flex;justify-content:flex-end;gap:5px;flex:none;position:static;margin:2px 0 0;padding:0}
+.club-court-timeline .match-plan-controls button{min-height:28px;min-width:28px;padding:3px 6px;font-size:13px;line-height:1.15;border:1px solid #9db9bc;border-radius:7px;background:#fffdf8;color:#082d45;touch-action:manipulation}
+.club-court-timeline .match-plan-controls .match-exchange-button{font-size:10px;font-weight:750}
+.club-court-timeline .match-plan-controls button:disabled{opacity:.4;cursor:default}
+body[data-space=club] .court-timeline-head{top:45px}
+.match-exchange-dialog{width:min(94vw,460px);max-height:85dvh;border:1px solid #b6c9c6;border-radius:16px;padding:18px;background:#fffdf8;color:#082d45}
+.match-exchange-dialog::backdrop{background:#082d4570}
+.match-exchange-dialog form{display:flex;flex-direction:column;gap:12px}.match-exchange-dialog h2,.match-exchange-dialog p{margin:0}
+.match-exchange-dialog label{display:flex;flex-direction:column;gap:6px;font-weight:700}.match-exchange-dialog select{max-width:100%;min-height:44px;width:100%;font-size:14px;padding:8px}
+.match-exchange-dialog button{min-height:42px;border-radius:10px;padding:8px;background:#087f90;color:#fff;border:0;font-weight:750}
+.match-exchange-dialog button[type=button]{background:#e7efec;color:#082d45}
