@@ -4,29 +4,51 @@ const MINUTE=60000,BASE=Date.parse('2026-11-06T21:00:00Z');
 const same=(a,b)=>a.division===b.division&&[a.a,a.b].some(id=>id&&[b.a,b.b].includes(id));
 const depends=(a,b)=>a.division===b.division&&(a.deps||[]).includes(b.id)&&[a.a,a.b].some(v=>v===('Vainqueur '+b.id)||v===('Perdant '+b.id));
 export function buildTimeline(matches,{now=Date.now(),start=BASE}={}){
- const courtEnd={},courtLast={},divisionLast={},ends={},rows=[],teamLast={};
- for(const m of [...matches].sort((a,b)=>a.slot-b.slot)){
- const court=m.court||m.division,duration=MATCH_DURATION[m.division]||25,key=m.division+':'+m.id;
- const prior=divisionLast[m.division],courtPrior=courtLast[court],restMatch=prior&&(same(m,prior)||depends(m,prior))?prior:courtPrior&&(same(m,courtPrior)||depends(m,courtPrior))?courtPrior:null;
- const courtChanged=!!courtPrior&&courtPrior.division!==m.division,transition=courtChanged?COURT_CHANGE_MINUTES:GAP_MINUTES;
- let earliest=courtEnd[court]===undefined?start:courtEnd[court]+transition*MINUTE;
- for(const dep of m.deps||[])if(ends[m.division+':'+dep]!==undefined)earliest=Math.max(earliest,ends[m.division+':'+dep]+GAP_MINUTES*MINUTE);
- let restUntil=null;
- if(restMatch){restUntil=ends[restMatch.division+':'+restMatch.id]+CONSECUTIVE_REST_MINUTES*MINUTE;earliest=Math.max(earliest,restUntil);}
- for(const id of [m.a,m.b])if(teamLast[id])earliest=Math.max(earliest,teamLast[id].end+CONSECUTIVE_REST_MINUTES*MINUTE);
+ const courtEnd={},courtLast={},ends={},rows=[],teamLast={},remaining={DM:0,DD:0},totals={DM:0,DD:0};
+ const ordered=[...matches].sort((a,b)=>a.slot-b.slot);
+ for(const m of ordered){remaining[m.division]++;totals[m.division]++;}
+ for(const m of ordered){
+ const duration=MATCH_DURATION[m.division]||25,key=m.division+':'+m.id,primary=m.division,secondary=primary==='DM'?'DD':'DM';
+ function forecast(court){
+ const prior=courtLast[court],courtChanged=!!prior&&prior.division!==m.division;
+ let earliest=courtEnd[court]===undefined?start:courtEnd[court]+(courtChanged?COURT_CHANGE_MINUTES:GAP_MINUTES)*MINUTE,restUntil=null;
+ for(const dep of m.deps||[])if(ends[m.division+':'+dep]!==undefined){
+ const end=ends[m.division+':'+dep];earliest=Math.max(earliest,end+GAP_MINUTES*MINUTE);
+ const parent=rows.find(r=>r.division===m.division&&r.id===dep);
+ if(parent&&depends(m,parent))restUntil=Math.max(restUntil||0,end+CONSECUTIVE_REST_MINUTES*MINUTE);
+ }
+ for(const id of [m.a,m.b])if(teamLast[id])restUntil=Math.max(restUntil||0,teamLast[id].end+CONSECUTIVE_REST_MINUTES*MINUTE);
+ if(restUntil)earliest=Math.max(earliest,restUntil);
  if(m.forced_at)earliest=Math.max(earliest,Date.parse(m.forced_at));
- const actualStart=m.started_at?Date.parse(m.started_at):null;
- const began=actualStart??earliest;
+ return {earliest,restUntil,courtChanged,changeoverStart:courtChanged?courtEnd[court]:null,changeoverEnd:courtChanged?courtEnd[court]+COURT_CHANGE_MINUTES*MINUTE:null};
+ }
+ let court=primary,timing=forecast(primary);
+ if(m.started_at||m.result){court=m.court||primary;timing=forecast(court);}
+ else if(totals[secondary]>0&&remaining[secondary]===0){
+ const principal=courtLast[primary],borrow=forecast(secondary);
+ // The freed court helps only if it really overlaps a same-draw match
+ // on the principal court, after the other draw's final estimated finish.
+ if(principal&&principal.division===primary&&!principal.result&&!same(m,principal)){
+ const proposed=Math.max(borrow.earliest,principal.live);
+ if(proposed<principal.end&&proposed<timing.earliest){court=secondary;timing={...borrow,earliest:proposed};}
+ }
+ }
+ const actualStart=m.started_at?Date.parse(m.started_at):null,began=actualStart??timing.earliest;
  const actualEnd=m.result?Date.parse(m.result.validated_at):null;
  const end=actualEnd??(actualStart!==null?Math.max(began+duration*MINUTE,now):began+duration*MINUTE);
- const row={...m,court,duration,planned:earliest,live:began,end,restUntil,courtChanged,changeoverStart:courtChanged?courtEnd[court]:null,changeoverEnd:courtChanged?courtEnd[court]+COURT_CHANGE_MINUTES*MINUTE:null,adjusted:!!m.forced_at||actualStart!==null,running:actualStart!==null&&!m.result};
- rows.push(row);ends[key]=end;courtEnd[court]=end;courtLast[court]=row;divisionLast[m.division]=row;
+ const row={...m,court,duration,planned:timing.earliest,live:began,end,restUntil:timing.restUntil,courtChanged:timing.courtChanged,changeoverStart:timing.changeoverStart,changeoverEnd:timing.changeoverEnd,adjusted:!!m.forced_at||actualStart!==null,running:actualStart!==null&&!m.result};
+ rows.push(row);ends[key]=end;courtEnd[court]=end;courtLast[court]=row;remaining[m.division]--;
  for(const id of [m.a,m.b])teamLast[id]={end,match:row};
  }
  return rows;
 }
 export function launchReadiness(match,matches,{now=Date.now()}={}){
  const court=match.court||match.division;
+ if(court!==match.division){
+ const other=matches.filter(m=>m.division!==match.division);
+ if(!other.length||other.some(m=>!m.result))return {allowed:false,reason:'Le second terrain est utilisable seulement après la fin complète de l’autre épreuve.'};
+ if(!matches.some(m=>m.division===match.division&&(m.court||m.division)===match.division&&m.started_at&&!m.result))return {allowed:false,reason:'Le second terrain sert uniquement à jouer en parallèle d’un match sur le terrain principal.'};
+ }
  const active=matches.find(m=>m.started_at&&!m.result&&((m.court||m.division)===court||same(m,match)));
  if(active)return {allowed:false,reason:'Un match est déjà en cours sur ce terrain ou pour cette équipe.'};
  if(!/^[0-9a-f-]{36}$/i.test(match.a)||!/^[0-9a-f-]{36}$/i.test(match.b))return {allowed:false,reason:'Les équipes ne sont pas encore déterminées.'};

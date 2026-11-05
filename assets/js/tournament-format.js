@@ -59,9 +59,7 @@ export function scheduleDraws(divisions){
    const other=v==='DM'?'DD':'DM';if(!remaining[v].length)continue;
    const ready=remaining[v].filter(m=>m.deps.every(id=>done[v].has(id)));
    let selected=ready.slice(0,1);
-   if(plans[other].length&&!remaining[other].length){
-    outer:for(let i=0;i<ready.length;i++)for(let j=i+1;j<ready.length;j++)if(![ready[i].a,ready[i].b].some(t=>[ready[j].a,ready[j].b].includes(t))){selected=[ready[i],ready[j]];break outer;}
-   }
+
    selected.forEach((m,i)=>batch.push({...m,division:v,slot,court:i===0?v:other}));
   }
   if(!batch.length)throw Error('Programme incohérent');

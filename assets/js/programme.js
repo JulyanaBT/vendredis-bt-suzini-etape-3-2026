@@ -1,7 +1,7 @@
 import {rpc} from './supabase-site.js?v=94';
 import {client,withDeadline} from './private-client.js?v=94';
-import {COURTS,formatFor,scheduleDraws} from './tournament-format.js?v=102';
-import {buildTimeline,launchReadiness} from './match-timing.js?v=137';
+import {COURTS,formatFor,scheduleDraws} from './tournament-format.js?v=140';
+import {buildTimeline,launchReadiness} from './match-timing.js?v=140';
 import {courtTimeline} from './court-timeline.js?v=139';
 const panel=document.getElementById('programme-panel'),tabs=[...document.querySelectorAll('[data-programme]')],isClub=document.body.dataset.space==='club';
 const el=(tag,text='',cls='')=>{const e=document.createElement(tag);e.textContent=text;if(cls)e.className=cls;return e;};
@@ -45,6 +45,10 @@ async function moveMatch(m,direction,targetSlot){
 }
 function exchangeButton(m,dir,targetSlot,other){
  const b=el('button',dir==='court'?'⇄':'⇅','chrono-exchange');b.type='button';b.title=dir==='court'?'Échanger les terrains':'Échanger les horaires';b.setAttribute('aria-label',b.title+(m?' · '+name(m.a)+' contre '+name(m.b):''));b.disabled=!m||!!m.result||!!m.started_at||!!other?.result||!!other?.started_at;
+ if(dir==='court'&&m&&(m.court==='DM'?'DD':'DM')!==m.division){
+ const otherMatches=fixtures(true).filter(x=>x.division!==m.division);
+ if(!otherMatches.length||otherMatches.some(x=>!x.result)){b.disabled=true;b.title='Le second terrain reste réservé à son épreuve jusqu’à sa fin complète.';}
+ }
  b.onclick=async()=>{b.disabled=true;try{await moveMatch(m,dir,targetSlot);}catch(e){alert(e.message);b.disabled=false;}};return b;
 }
 async function savePlan(plan){
@@ -328,13 +332,13 @@ function launchCard(m){
  let agreedUntil=0;
  for(let attempt=0;attempt<4;attempt++){
  const fresh=await withDeadline(client.rpc('suzini_e3_match_manager_state',{p_simulation:!!data.simulation}));if(fresh.error)throw fresh.error;data=fresh.data;
- const current=fixtures(true).find(x=>x.id===m.id&&x.division===m.division);if(!current||current.result||current.started_at)throw Error('Ce match a déjà changé. Actualisez la page.');
+ const current=chrono(true).find(x=>x.id===m.id&&x.division===m.division);if(!current||current.result||current.started_at)throw Error('Ce match a déjà changé. Actualisez la page.');
  const check=launchReadiness(current,fixtures(true));if(!check.allowed&&!check.canConfirm)throw Error(check.reason);
  if(check.canConfirm&&check.until>agreedUntil){
  if(!await confirmEarlyStart(current,check)){status.textContent='Lancement annulé : le délai de récupération est conservé.';return;}
  agreedUntil=check.until;continue;
  }
- const plan=planRows(),entry=plan.find(x=>x.id===m.id&&x.division===m.division);entry.started_at=data.server_now||new Date().toISOString();
+ const plan=planRows(),entry=plan.find(x=>x.id===m.id&&x.division===m.division);entry.court=current.court;entry.started_at=data.server_now||new Date().toISOString();
  if(agreedUntil)entry.recovery_agreement={confirmed_at:entry.started_at,scheduled_not_before:new Date(agreedUntil).toISOString(),both_teams_agreed:true};
  await savePlan(plan);return;
  }
@@ -431,14 +435,14 @@ function render(){
  if(selected==='chrono'){panel.append(chronoBoard());return; }
  if(selected==='resultats'){
  if(!isClub||!clubReady){panel.append(note('Résultats','Consultez les scores validés dans Chrono, Poules et Finales.'));return;}
- const running=matches.filter(m=>m.started_at&&!m.result);
- if(running.length){panel.append(el('h2','Match en cours'));for(const m of running){panel.append(el('p','Lancé à '+clock(m.started_at),'live-match-status'),resultForm(m,matches.findIndex(x=>x.id===m.id)));}}
+ const running=matches.filter(m=>m.started_at&&!m.result);let launching=null;
+ if(running.length){panel.append(el('h2','Match en cours'));for(const m of running){panel.append(el('p','Lancé à '+clock(m.started_at),'live-match-status'),resultForm(m,matches.findIndex(x=>x.id===m.id)));}launching=matches.find(m=>!m.result&&!m.started_at&&m.court!==m.division&&(()=>{const r=launchReadiness(m,fixtures(true));return r.allowed||r.canConfirm;})());if(launching)panel.append(launchCard(launching));}
  else{
  const next=matches.find(m=>!m.result);
- if(next)panel.append(launchCard(next));
+ if(next){launching=next;panel.append(launchCard(next));}
  else panel.append(note(matches.length?'Tableau terminé 🏆':'Rencontres en attente',matches.length?'Tous les résultats sont validés.':'Les rencontres apparaîtront une fois les tableaux préparés.'));
  }
- const upcoming=matches.filter(m=>!m.result&&!m.started_at).slice(running.length?0:1);
+ const upcoming=matches.filter(m=>!m.result&&!m.started_at&&m!==launching);
  const details=el('details','','score-history upcoming-history'),summary=el('summary','Matchs à venir · '+upcoming.length);
  details.open=upcomingExpanded;summary.onclick=()=>{upcomingExpanded=!details.open;};details.append(summary);
  for(const m of upcoming){const item=el('article','','upcoming-match '+COURTS[m.court||division].className);item.append(el('small',clock(m.live??m.planned)+' · '+courtName(m.court||division,true)),el('strong',name(m.a)+' contre '+name(m.b)));details.append(item);}
