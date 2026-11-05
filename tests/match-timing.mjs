@@ -34,3 +34,13 @@ assert(!recoveryGate.allowed&&recoveryGate.canConfirm===true,'Short recovery per
 sample[0].started_at=iso(base);sample[0].result=null;
 recoveryGate=launchReadiness(sample[1],sample,{now:base+40*min});
 assert(!recoveryGate.allowed&&!recoveryGate.canConfirm,'Occupied court cannot be bypassed');
+
+const switchCourt=[job('SW1',ids[0],ids[1],0),{...job('SW2',ids[4],ids[5],1,'DD'),court:'DM'}];
+switchCourt[0].started_at=iso(base);switchCourt[0].result={validated_at:iso(base+25*min)};
+const changed=buildTimeline(switchCourt,{now:base+25*min});
+assert(changed[1].live===base+35*min,'Division change reserves ten minutes rather than five');
+assert(changed[1].courtChanged&&changed[1].changeoverEnd===base+35*min,'Changeover metadata');
+const switchGate=launchReadiness(switchCourt[1],switchCourt,{now:base+34*min});
+assert(!switchGate.allowed&&switchGate.until===base+35*min&&switchGate.reason.includes('Reconfiguration'),'Early launch warns about court reconfiguration');
+assert(launchReadiness(switchCourt[1],switchCourt,{now:base+35*min}).allowed,'Reconfigured court can launch');
+console.log('PASS: ten-minute DM/DD court transition');

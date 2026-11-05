@@ -1,7 +1,8 @@
 import {rpc} from './supabase-site.js?v=94';
 import {client,withDeadline} from './private-client.js?v=94';
 import {COURTS,formatFor,scheduleDraws} from './tournament-format.js?v=102';
-import {buildTimeline,launchReadiness} from './match-timing.js?v=115';
+import {buildTimeline,launchReadiness} from './match-timing.js?v=137';
+import {courtTimeline} from './court-timeline.js?v=137';
 const panel=document.getElementById('programme-panel'),tabs=[...document.querySelectorAll('[data-programme]')],isClub=document.body.dataset.space==='club';
 const el=(tag,text='',cls='')=>{const e=document.createElement(tag);e.textContent=text;if(cls)e.className=cls;return e;};
 let scoreHistoryExpanded=false,upcomingExpanded=false;
@@ -136,7 +137,65 @@ function drawInfo(d){
  ]){const li=el('li'),symbol=el('span',icon),copy=el('div');symbol.setAttribute('aria-hidden','true');copy.append(el('strong',title),el('small',detail));li.append(symbol,copy);list.append(li);}
  box.append(list);return box;
 }
+function timelineMilestone(time,title,detail,kind){
+ const row=el('section','','timeline-milestone '+kind),stamp=el('time',time==null?'À suivre':clock(time),'timeline-stamp');
+ if(time!=null)stamp.dateTime=new Date(time).toISOString();
+ const text=el('div','','timeline-event');text.append(el('strong',title));if(detail)text.append(el('small',detail));row.append(stamp,text);return row;
+}
+function publicChronoBoard(){
+ const full=chrono(true),wanted=m=>chronoFilter==='both'||m.division===chronoFilter,shown=full.filter(wanted),board=el('section','','public-court-timeline');
+ board.append(timelineMilestone(Date.parse('2026-11-06T20:45:00Z'),'👋 Accueil des joueurs','Contrôle des licences · heure de Guyane','timeline-welcome'));
+ if(!shown.length){board.append(note('Programme à venir','Les rencontres apparaîtront à la fin de la diffusion du tirage.'));return board;}
+ const layout=courtTimeline(full),events=layout.events.filter(e=>wanted(e.match||e.before)),courts=['DM','DD'].filter(c=>shown.some(m=>(m.court||m.division)===c)),head=el('div','','court-timeline-head');
+ head.append(el('span','Heure'));
+ for(const c of courts)head.append(el('strong',courtName(c,true),COURTS[c].className));
+ head.style.setProperty('--court-count',courts.length);board.append(head);
+ const grid=el('div','','court-time-grid');grid.style.setProperty('--court-count',courts.length);
+ const finish=Math.max(...events.map(e=>e.end)),height=layout.position(finish);grid.style.height=(height+12)+'px';
+ const ruler=el('div','','court-time-ruler');grid.append(ruler);
+ for(const tick of layout.ticks.filter(t=>t.time<=finish)){
+ const line=el('div','','court-time-rule'),stamp=el('time',clock(tick.time));stamp.dateTime=new Date(tick.time).toISOString();line.style.top=tick.top+'px';line.append(stamp);grid.append(line);
+ }
+ for(const court of courts){
+ const track=el('div','','court-time-track '+COURTS[court].className);track.setAttribute('aria-label',courtName(court));
+ for(const event of events.filter(e=>e.court===court)){
+ const cell=el('article','','court-time-event '+(event.kind==='match'?'court-time-match':'court-time-break break-'+event.kind)+' '+COURTS[court].className);
+ cell.style.top=event.top+'px';cell.style.height=Math.max(1,event.height-3)+'px';
+ if(event.kind==='match'){
+ const m=event.match,status=m.result?'Terminé':m.started_at?'En cours':'À venir',top=el('div','','court-match-top');
+ cell.classList.add(m.result?'is-finished':m.started_at?'is-live':'is-upcoming');
+ const badge=el('span',m.division,'chrono-division-pill '+(m.division==='DD'?'division-dd':'division-dm'));
+ badge.title=m.division==='DD'?'Double dames':'Double messieurs';
+ top.append(badge,el('small',(m.started_at&&!m.result?'● ':'')+status));cell.append(top);
+ const hour=el('time',clock(event.start)+' – '+clock(event.end),'court-match-hours');hour.dateTime=new Date(event.start).toISOString();cell.append(hour);
+ if(!(m.phase==='poules'&&data.divisions.find(d=>d.division===m.division)?.count<=5))cell.append(el('small',m.stage,'court-match-stage'));
+ for(const id of [m.a,m.b]){const team=el('strong',name(id),'court-match-team'+(m.result?.winner===id?' is-winner':''));team.title=name(id);cell.append(team);}
+ const partial=!m.result&&m.progress?.sets?.length?m.progress.sets.map(s=>s.a+'–'+s.b).join(' / '):null;
+ if(m.result||partial)cell.append(el('b',m.result?scoreText(m.result):partial,'court-match-score'));
+ cell.setAttribute('aria-label',status+' · '+clock(event.start)+' à '+clock(event.end)+' · '+name(m.a)+' contre '+name(m.b));
+ }else{
+ const title=event.kind==='changeover'?'🛠️ Reconfiguration':event.kind==='recovery'?'☕ Récupération':'Pause';
+ cell.title=title+' · '+clock(event.start)+' – '+clock(event.end);
+ cell.append(el('strong',title));
+ if(event.height>=42)cell.append(el('small',event.kind==='changeover'?event.from+' → '+event.to+' · '+Math.round(event.minutes)+' min':clock(event.start)+' – '+clock(event.end)));
+ cell.setAttribute('aria-label',cell.title);
+ }
+ track.append(cell);
+ }
+ grid.append(track);
+ }
+ const now=Date.now()+serverOffset;
+ if(full.some(m=>m.started_at&&!m.result)&&now>=layout.start&&now<finish){
+ const line=el('div','','court-time-now');line.style.top=layout.position(now)+'px';line.append(el('span','Maintenant'));grid.append(line);
+ }
+ board.append(grid);
+ const end=full.length?Math.max(...full.map(m=>Number(m.end))):null,done=full.length&&full.every(m=>m.result);
+ board.append(timelineMilestone(end,'🏆 Remise des prix',done?'Tous les matchs sont terminés':'Horaire estimé · après le dernier match','timeline-prizes'));
+ return board;
+}
+
 function chronoBoard(){
+ if(!isClub)return publicChronoBoard();
  const full=chrono(true),all=full.filter(m=>chronoFilter==='both'||m.division===chronoFilter),courts=chronoFilter==='both'?['DM','DD']:['DM','DD'].filter(c=>all.some(m=>(m.court||m.division)===c)),editable=isClub&&clubReady,board=el('section','','rose-chrono hourly-timeline'+(editable?' chrono-editable':'')),head=el('div','','rose-chrono-head');
  if(!courts.length)courts.push(chronoFilter==='DD'?'DD':'DM');
  if(courts.length===1)board.classList.add('chrono-single-court');
