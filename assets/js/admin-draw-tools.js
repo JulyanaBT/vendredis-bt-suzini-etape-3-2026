@@ -3,9 +3,7 @@ export async function adminDrawTools(main,isCurrent){
  const style=document.createElement('link');style.rel='stylesheet';style.href=new URL('../draw-admin.css?v=1',import.meta.url).href;if(!document.querySelector('link[href="'+style.href+'"]'))document.head.append(style);
  const el=(tag,text='',cls='')=>{const e=document.createElement(tag);e.textContent=text;if(cls)e.className=cls;return e;};
  const box=el('section','','admin-card admin-draw-tools');box.append(el('span','ADMINISTRATION DES TIRAGES','admin-eyebrow'),el('h2','Réinitialiser un tirage'),el('p','Efface le tirage, les scores et les horaires de l’épreuve sélectionnée. Les inscriptions et les paiements sont conservés.'));
- const label=el('label','Données à gérer'),mode=el('select');mode.setAttribute('aria-label','Tournoi réel ou simulation');
- for(const [v,t] of [['real','Tournoi réel'],['simulation','Simulation privée']]){const o=el('option',t);o.value=v;mode.append(o);}try{mode.value=localStorage.getItem('suzini_e3_match_mode')==='simulation'?'simulation':'real';}catch{}
- label.append(mode);const rows=el('div','','admin-draw-rows'),status=el('p');status.setAttribute('role','status');box.append(label,rows,status);
+ const mode={value:'real'},rows=el('div','','admin-draw-rows'),status=el('p');status.setAttribute('role','status');box.append(rows,status);
  const footer=main.querySelector('.organizer-logout');if(footer)footer.before(box);else main.append(box);
  async function refresh(){
  rows.replaceChildren();status.textContent='Chargement des tirages…';const chosen=mode.value;
@@ -19,5 +17,5 @@ export async function adminDrawTools(main,isCurrent){
  };row.append(info,button);rows.append(row);}
  }catch(e){if(isCurrent())status.textContent=e.message;}
  }
- mode.onchange=refresh;await refresh();
+ await refresh();
 }

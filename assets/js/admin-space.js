@@ -1,4 +1,4 @@
-import {adminDrawTools} from './admin-draw-tools.js?v=1';
+import {adminDrawTools} from './admin-draw-tools.js?v=2';
 import {client,access,signIn,clearSession} from './private-client.js?v=94';
 import {accessManager} from './admin-managers.js?v=97';
 const main=document.querySelector('main');let generation=0;

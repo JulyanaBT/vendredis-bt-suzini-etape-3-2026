@@ -12,7 +12,7 @@ let division='DM',selected='chrono',data=null,error='',clubReady=false,mode='rea
 try{division=localStorage.getItem('suzini_etape3_public_epreuve')||'DM';}catch{}
 if(!COURTS[division])division='DM';
 const params=new URLSearchParams(location.search);
-const preview=params.get('simulation')==='1';
+try{localStorage.setItem('suzini_e3_match_mode','real');const clean=new URL(location.href);clean.searchParams.delete('simulation');history.replaceState(null,'',clean);}catch{}
 let chronoFilter=params.get('chronofilter');try{chronoFilter=chronoFilter||sessionStorage.getItem('suzini_e3_chrono_filter');}catch{}if(!['DM','DD','both'].includes(chronoFilter))chronoFilter='both';
 function syncChronoFilter(){document.querySelectorAll('[data-public-epreuve]').forEach(b=>b.setAttribute('aria-pressed',String(selected==='chrono'?(chronoFilter==='both'||chronoFilter===b.dataset.publicEpreuve):division===b.dataset.publicEpreuve)));}
 document.addEventListener('click',e=>{const button=e.target.closest('[data-public-epreuve]');if(!button||selected!=='chrono')return;e.preventDefault();e.stopImmediatePropagation();const value=button.dataset.publicEpreuve;chronoFilter=chronoFilter===value?'both':value;division=value;try{sessionStorage.setItem('suzini_e3_chrono_filter',chronoFilter);localStorage.setItem('suzini_etape3_public_epreuve',division);const url=new URL(location.href);url.searchParams.set('chronofilter',chronoFilter);history.replaceState(null,'',url);}catch{}render();},true);
@@ -536,39 +536,21 @@ setInterval(updateRoulette,160);
 function select(tab){selected=tab.dataset.programme;try{const url=new URL(location.href);url.searchParams.set('matchtab',selected);history.replaceState(null,'',url);sessionStorage.setItem('suzini_e3_match_tab_'+document.body.dataset.space,selected);}catch{}tabs.forEach(b=>{const active=b===tab;b.setAttribute('aria-selected',String(active));b.tabIndex=active?0:-1;});panel.setAttribute('aria-labelledby',tab.id);render();}
 tabs.forEach((tab,i)=>{tab.onclick=()=>select(tab);tab.onkeydown=e=>{let n;if(e.key==='ArrowRight')n=(i+1)%tabs.length;else if(e.key==='ArrowLeft')n=(i+tabs.length-1)%tabs.length;else if(e.key==='Home')n=0;else if(e.key==='End')n=tabs.length-1;else return;e.preventDefault();select(tabs[n]);tabs[n].focus();};});
 document.addEventListener('publicZoneChange',e=>{division=e.detail.epreuve;render();});
-function toolbar(){
- if(document.getElementById('match-data-mode'))return;
- const box=el('section','','match-data-mode');box.id='match-data-mode';
- const buttons=el('div','','match-mode-buttons');
- for(const [value,label] of [['real','Données réelles'],['simulation','Simulation privée']]){const b=el('button',label);b.type='button';b.dataset.matchMode=value;b.onclick=()=>{mode=value;try{localStorage.setItem('suzini_e3_match_mode',mode);}catch{}sync();load();};buttons.append(b);}
- const reset=el('button','Réinitialiser les essais');reset.type='button';reset.dataset.resetSimulation='';reset.onclick=async()=>{if(!confirm('Effacer uniquement les résultats et tirages fictifs ? Les équipes et résultats réels restent inchangés.'))return;reset.disabled=true;try{const {error}=await client.rpc('suzini_e3_match_simulation',{p_action:'reset'});if(error)throw error;await load();}catch(e){error=e.message;render();}finally{reset.disabled=false;}};
- box.append(buttons);if(isClub)box.append(reset);document.querySelector('main').prepend(box);sync();
-}
-function sync(){document.querySelectorAll('[data-match-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.matchMode===mode)));const reset=document.querySelector('[data-reset-simulation]');if(reset)reset.hidden=mode!=='simulation';}
 async function load(){
  const version=++generation,wanted=mode;
  try{
  let next;
- if(wanted==='simulation'){const r=await withDeadline(client.rpc(isClub?'suzini_e3_match_manager_state':'suzini_e3_match_state',{p_simulation:true}));if(r.error)throw r.error;next=r.data;}
- else if(isClub){const r=await withDeadline(client.rpc('suzini_e3_match_manager_state',{p_simulation:false}));if(r.error)throw r.error;next=r.data;}
+ if(isClub){const r=await withDeadline(client.rpc('suzini_e3_match_manager_state',{p_simulation:false}));if(r.error)throw r.error;next=r.data;}
  else next=await rpc('suzini_e3_match_state',{p_simulation:false});
  if(version!==generation||wanted!==mode)return;data=next;serverOffset=Date.parse(next.server_now||new Date().toISOString())-Date.now();error='';render();
- }catch(e){if(version!==generation)return;if(!isClub&&wanted==='simulation'){mode='real';sync();await load();return;}error=e.message||'Vérifiez votre connexion.';render();}
+ }catch(e){if(version!==generation)return;error=e.message||'Vérifiez votre connexion.';render();}
 }
 if(isClub){
- async function ready(){const r=await client.rpc('suzini_e3_club');clubReady=!r.error;if(clubReady){try{mode=localStorage.getItem('suzini_e3_match_mode')||'simulation';}catch{mode='simulation';}await load();}}
+ async function ready(){const r=await client.rpc('suzini_e3_club');clubReady=!r.error;if(clubReady){mode='real';await load();}}
  document.addEventListener('club:ready',ready);ready();
-}else{
- try{
- const access=await withDeadline(client.rpc('suzini_e3_preview_role'));
- if(!access.error&&(access.data?.admin||access.data?.manager)){
-   if(preview)mode='simulation';
-   else try{mode=localStorage.getItem('suzini_e3_match_mode')||'simulation';}catch{mode='simulation';}
-
- }
- }catch{}
 }
-document.querySelector('.club-switch')?.addEventListener('click',event=>{const a=event.currentTarget,u=new URL(a.href);if(data?.simulation)u.searchParams.set('simulation','1');else u.searchParams.delete('simulation');if(selected==='chrono')u.searchParams.set('chronofilter',chronoFilter);a.href=u.href;});
+
+document.querySelector('.club-switch')?.addEventListener('click',event=>{const a=event.currentTarget,u=new URL(a.href);u.searchParams.delete('simulation');if(selected==='chrono')u.searchParams.set('chronofilter',chronoFilter);a.href=u.href;});
 let rememberedTab='';try{rememberedTab=sessionStorage.getItem('suzini_e3_match_tab_'+document.body.dataset.space)||'';}catch{}
 const requested=tabs.find(t=>t.dataset.programme===(params.has('matchtab')?params.get('matchtab'):rememberedTab));select(requested||tabs[0]);
 await load();
