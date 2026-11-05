@@ -166,12 +166,15 @@ function publicChronoBoard(){
  cell.classList.add(m.result?'is-finished':m.started_at?'is-live':'is-upcoming');
  const badge=el('span',m.division,'chrono-division-pill '+(m.division==='DD'?'division-dd':'division-dm'));
  badge.title=m.division==='DD'?'Double dames':'Double messieurs';
- top.append(badge,el('small',(m.started_at&&!m.result?'● ':'')+status));cell.append(top);
+ top.append(el('small',(m.started_at&&!m.result?'● ':'')+status),badge);cell.append(top);
  const hour=el('time',clock(event.start)+' – '+clock(event.end),'court-match-hours');hour.dateTime=new Date(event.start).toISOString();cell.append(hour);
  if(!(m.phase==='poules'&&data.divisions.find(d=>d.division===m.division)?.count<=5))cell.append(el('small',m.stage,'court-match-stage'));
- for(const id of [m.a,m.b]){const team=el('strong',name(id),'court-match-team'+(m.result?.winner===id?' is-winner':''));team.title=name(id);cell.append(team);}
- const partial=!m.result&&m.progress?.sets?.length?m.progress.sets.map(s=>s.a+'–'+s.b).join(' / '):null;
- if(m.result||partial)cell.append(el('b',m.result?scoreText(m.result):partial,'court-match-score'));
+ const matchup=el('div','','court-match-matchup');
+ for(const [index,id] of [m.a,m.b].entries()){
+ const team=el('strong',name(id),'court-match-team'+(m.result?.winner===id?' is-winner':''));team.title=name(id);matchup.append(team);
+ if(index===0)matchup.append(el(m.result?'b':'span',m.result?scoreText(m.result):'vs',m.result?'court-match-score':'court-match-vs'));
+ }
+ cell.append(matchup);
  cell.setAttribute('aria-label',status+' · '+clock(event.start)+' à '+clock(event.end)+' · '+name(m.a)+' contre '+name(m.b));
  }else{
  const title=event.kind==='changeover'?'🛠️ Reconfiguration':event.kind==='recovery'?'☕ Récupération':'Pause';

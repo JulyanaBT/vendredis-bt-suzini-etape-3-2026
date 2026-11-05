@@ -167,3 +167,11 @@ body[data-space=club] .rose-chrono-head{top:45px}
 .court-time-now span{position:absolute;left:0;top:-15px;background:#087e8a;border-radius:5px;padding:2px 4px;color:white;font-size:9px;font-weight:800}
 .public-court-timeline>.timeline-prizes{margin-top:18px}
 @media(max-width:370px){.public-court-timeline{--time-rail:38px;--lane-gap:5px}.court-time-match{padding:8px 5px;gap:4px}.court-timeline-head>strong{font-size:10px}.court-match-top>small{font-size:8px}.court-match-hours{font-size:10px}}
+
+/* Chrono matchup: team / versus or final score / team. */
+.court-match-top .chrono-division-pill{margin-left:auto;flex-shrink:0}
+.court-match-matchup{display:flex;flex:1;min-height:0;flex-direction:column;align-items:stretch;justify-content:center;gap:4px;text-align:center}
+.court-match-matchup .court-match-team{flex-shrink:0}
+.court-match-vs{font-size:10px;line-height:1.2;font-weight:600;color:#647878}
+.court-match-matchup .court-match-score{font-size:13px;line-height:1.25;font-weight:850}
+.court-time-match{gap:4px}
