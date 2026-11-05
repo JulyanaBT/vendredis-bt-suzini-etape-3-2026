@@ -1,5 +1,5 @@
 export const COURTS={DM:{name:'🐝 Manon Queen Bee',className:'court-manon'},DD:{name:'🌶️ Lisa de los pimentos',className:'court-lisa'}};
-export const MATCH_MINUTES=25, TRANSITION_MINUTES=5;
+export const MATCH_MINUTES=30, TRANSITION_MINUTES=5;
 export function formatFor(count){
  if(!Number.isInteger(count)||count<4||count>8)return null;
  const sizes=count<=5?[count]:count===6?[3,3]:[];

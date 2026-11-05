@@ -5,9 +5,9 @@ const ids=Array.from({length:8},(_,i)=>'00000000-0000-4000-8000-'+String(i+1).pa
 const job=(id,a,b,slot,division='DM')=>({id,a,b,slot,division,court:division,deps:[]});
 let ms=[job('A',ids[0],ids[1],0),job('B',ids[2],ids[3],1),job('C',ids[0],ids[2],2),job('D',ids[4],ids[5],0,'DD'),job('E',ids[6],ids[7],1,'DD')];
 let r=buildTimeline(ms,{now:base});
-assert(r.find(x=>x.id==='B').live===base+30*min,'Men: 25+5');
+assert(r.find(x=>x.id==='B').live===base+35*min,'Men: 30+5');
 assert(r.find(x=>x.id==='E').live===base+45*min,'Women: 40+5');
-assert(r.find(x=>x.id==='C').live===base+85*min,'Consecutive team: 30 minutes after previous end');
+assert(r.find(x=>x.id==='C').live===base+95*min,'Consecutive team: 30 minutes after previous end');
 ms=[job('A',ids[0],ids[1],0),job('B',ids[0],ids[2],1)];
 ms[0].started_at=iso(base);ms[0].result={validated_at:iso(base+35*min)};
 r=buildTimeline(ms,{now:base+35*min});
