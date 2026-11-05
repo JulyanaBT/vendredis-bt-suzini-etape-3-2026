@@ -1,0 +1,21 @@
+
+.food-tabs-page{height:100%;min-height:0;overflow:hidden;display:grid;grid-template-rows:auto minmax(0,1fr);gap:7px;padding:8px 12px!important}
+.food-subtabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;padding:3px;border-radius:11px;background:#e8f0ec;border:1px solid #c9d9d2}
+.food-subtabs button{min-height:34px;border:0;border-radius:8px;background:transparent;color:#16434d;font-size:12px;font-weight:800;padding:5px 4px;touch-action:manipulation}
+.food-subtabs button[aria-selected=true]{background:#082d45;color:#ffda25;box-shadow:0 1px 3px #082d4520}
+.food-panel{min-height:0;overflow:hidden;margin:0!important;padding:10px!important;display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:8px;background:#fffdf8;border:1px solid #dddcc6;border-radius:16px}
+.food-panel[hidden]{display:none!important}
+.food-intro{text-align:center;border-radius:10px;padding:7px 8px;background:#fff0f5;border:1px solid #edc2d1;color:#082d45}
+.food-intro h1{font-size:15px;line-height:1.2;margin:0 0 4px}.food-intro p{font-size:12px;line-height:1.35;margin:3px 0 0}
+.food-intro .food-hours{font-size:11px;font-weight:800;color:#b70048}
+.food-image{min-height:0;min-width:0;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.food-image img{display:block;max-width:100%;max-height:100%;width:100%;height:100%;object-fit:contain;border-radius:9px}
+.food-footer{display:flex;flex-direction:column;gap:6px;text-align:center}
+.food-footer p{font-size:11px;line-height:1.35;margin:0}
+.food-links{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.food-links a{display:flex;align-items:center;justify-content:center;text-decoration:none;min-height:42px;padding:8px 5px;border-radius:10px;background:#087f90;color:white;font-size:12px;font-weight:800;text-align:center;line-height:1.2}
+.food-links a.food-secondary{background:#082d45;color:#ffda25}
+.food-phone{font-size:12px;color:#087986;text-decoration:underline;text-underline-offset:3px}
+.food-daily .food-intro{background:#eaf5ee;border-color:#bfd6c9}.food-daily .food-hours{color:#08766d}
+.food-psk .food-intro{background:#fff3cd;border-color:#ead28a}
+@media(max-height:650px){.food-tabs-page{gap:5px;padding:5px 10px!important}.food-panel{padding:7px!important;gap:5px}.food-intro{padding:5px 6px}.food-intro h1{font-size:13px}.food-intro p{font-size:11px}.food-subtabs button{min-height:30px;font-size:11px}.food-links a{min-height:40px;font-size:11px}}
