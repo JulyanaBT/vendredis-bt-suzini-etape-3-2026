@@ -19,3 +19,13 @@ assert(courtTimeline([]).height===0,'Empty schedule');
 const recovery=courtTimeline([{division:'DM',court:'DM',live:base,end:base+25*min},{division:'DM',court:'DM',live:base+55*min,end:base+80*min,restUntil:base+55*min}]);
 assert(recovery.events.some(e=>e.kind==='recovery'&&e.minutes===30),'Recovery shown explicitly');
 console.log('PASS: duration scale, aligned lanes, pause/changeover/recovery, no overlap, short results and empty programme');
+
+const longWait=courtTimeline([
+{division:'DM',court:'DM',live:base,end:base+25*min},
+{division:'DM',court:'DM',live:base+225*min,end:base+250*min,restUntil:base+225*min}
+]);
+const breaks=longWait.events.filter(e=>e.kind!=='match');
+assert(breaks.length===2&&breaks[0].kind==='waiting'&&breaks[0].minutes===170,'Wait for other court is not recovery');
+assert(breaks[1].kind==='recovery'&&breaks[1].minutes===30,'Recovery capped at exactly thirty minutes');
+assert(longWait.events.filter(e=>e.kind==='recovery').every(e=>e.minutes<=30),'No recovery longer than thirty minutes');
+console.log('PASS: long cross-court wait split from 30-minute recovery');

@@ -2,7 +2,7 @@ import {rpc} from './supabase-site.js?v=94';
 import {client,withDeadline} from './private-client.js?v=94';
 import {COURTS,formatFor,scheduleDraws} from './tournament-format.js?v=102';
 import {buildTimeline,launchReadiness} from './match-timing.js?v=137';
-import {courtTimeline} from './court-timeline.js?v=137';
+import {courtTimeline} from './court-timeline.js?v=139';
 const panel=document.getElementById('programme-panel'),tabs=[...document.querySelectorAll('[data-programme]')],isClub=document.body.dataset.space==='club';
 const el=(tag,text='',cls='')=>{const e=document.createElement(tag);e.textContent=text;if(cls)e.className=cls;return e;};
 let scoreHistoryExpanded=false,upcomingExpanded=false;
@@ -167,7 +167,7 @@ function publicChronoBoard(){
  const badge=el('span',m.division,'chrono-division-pill '+(m.division==='DD'?'division-dd':'division-dm'));
  badge.title=m.division==='DD'?'Double dames':'Double messieurs';
  top.append(el('small',(m.started_at&&!m.result?'● ':'')+status),badge);cell.append(top);
- const hour=el('time',clock(event.start)+' – '+clock(event.end),'court-match-hours');hour.dateTime=new Date(event.start).toISOString();cell.append(hour);
+ const hour=el('time',clock(event.start),'court-match-hours');hour.dateTime=new Date(event.start).toISOString();if(!m.started_at&&!m.result)hour.append(el('small','prévisionnelle','court-start-estimate'));cell.append(hour);
  if(!(m.phase==='poules'&&data.divisions.find(d=>d.division===m.division)?.count<=5))cell.append(el('small',m.stage,'court-match-stage'));
  const matchup=el('div','','court-match-matchup');
  for(const [index,id] of [m.a,m.b].entries()){
@@ -175,9 +175,9 @@ function publicChronoBoard(){
  if(index===0)matchup.append(el(m.result?'b':'span',m.result?scoreText(m.result):'vs',m.result?'court-match-score':'court-match-vs'));
  }
  cell.append(matchup);
- cell.setAttribute('aria-label',status+' · '+clock(event.start)+' à '+clock(event.end)+' · '+name(m.a)+' contre '+name(m.b));
+ cell.setAttribute('aria-label',status+' · Début '+clock(event.start)+(!m.started_at&&!m.result?' prévisionnel':'')+' · '+name(m.a)+' contre '+name(m.b));
  }else{
- const title=event.kind==='changeover'?'🛠️ Reconfiguration':event.kind==='recovery'?'☕ Récupération':'Pause';
+ const title=event.kind==='changeover'?'🛠️ Reconfiguration':event.kind==='recovery'?'🍺 Récupération':event.kind==='waiting'?'⏳ Attente des équipes':'Pause';
  cell.title=title+' · '+clock(event.start)+' – '+clock(event.end);
  cell.append(el('strong',title));
  if(event.height>=42)cell.append(el('small',event.kind==='changeover'?event.from+' → '+event.to+' · '+Math.round(event.minutes)+' min':clock(event.start)+' – '+clock(event.end)));

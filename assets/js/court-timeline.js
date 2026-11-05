@@ -15,7 +15,16 @@ export function courtTimeline(matches,{pixelsPerMinute=5,minMatchHeight=140}={})
  const changeEnd=Math.min(m.start,previousEnd+10*MINUTE);
  events.push({kind:'changeover',court,start:previousEnd,end:changeEnd,from:previous.division,to:m.division,before:m,minutes:(changeEnd-previousEnd)/MINUTE});gapStart=changeEnd;
  }
- if(m.start>gapStart)events.push({kind:m.restUntil&&m.restUntil>gapStart?'recovery':'pause',court,start:gapStart,end:m.start,before:m,minutes:(m.start-gapStart)/MINUTE});
+ const addGap=(kind,a,b)=>{if(b>a)events.push({kind,court,start:a,end:b,before:m,minutes:(b-a)/MINUTE});};
+ // Recovery belongs to the team's last match, possibly on the other court.
+ // Waiting for that match or a forced start is not extra recovery.
+ const restEnd=m.restUntil?Math.min(m.start,Number(m.restUntil)):null;
+ const restStart=restEnd===null?null:Math.max(gapStart,Number(m.restUntil)-30*MINUTE);
+ if(restEnd!==null&&restEnd>restStart){
+ addGap(restStart-gapStart>5*MINUTE?'waiting':'pause',gapStart,restStart);
+ addGap('recovery',restStart,restEnd);
+ addGap(m.start-restEnd>5*MINUTE?'waiting':'pause',restEnd,m.start);
+ }else addGap(m.start-gapStart>5*MINUTE?'waiting':'pause',gapStart,m.start);
  }
  events.push({kind:'match',court,start:m.start,end:Math.max(m.start+MINUTE,m.finish),match:m});
  previous=m;

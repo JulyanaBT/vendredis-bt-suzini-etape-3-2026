@@ -175,3 +175,7 @@ body[data-space=club] .rose-chrono-head{top:45px}
 .court-match-vs{font-size:10px;line-height:1.2;font-weight:600;color:#647878}
 .court-match-matchup .court-match-score{font-size:13px;line-height:1.25;font-weight:850}
 .court-time-match{gap:4px}
+
+.court-match-hours{display:flex;align-items:baseline;justify-content:center;gap:5px;flex-wrap:wrap}
+.court-start-estimate{font-size:8px;font-weight:400;line-height:1.2;color:#71817f;letter-spacing:0}
+.court-time-break.break-waiting{background:#f4f4f0aa;border-color:#cfd5cd;color:#68766f}
