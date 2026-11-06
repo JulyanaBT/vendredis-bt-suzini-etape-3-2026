@@ -250,14 +250,21 @@ function publicChronoBoard(){
 function chronoBoard(){return publicChronoBoard();}
 
 function card(m,index){
- const c=el('article','','programme-match '+COURTS[m.court||division].className);
- if(m.result)c.classList.add('match-finished');
- c.append(el('small',(index+1)+'. '+m.stage),el('strong',name(m.a)+' / '+name(m.b)));
- if(!m.result&&m.progress?.sets?.length)c.append(el('b',m.progress.sets.map(s=>s.a+'–'+s.b).join(' / ')+' · en cours','match-score'));
- if(m.result)c.append(el('b',scoreText(m.result),'match-score'),el('small','Validé à '+clock(m.result.validated_at,true)+' · Guyane'));
- else c.append(el('span',(m.adjusted?'Horaire actualisé : ':'Horaire initial : ')+clock(m.live??m.planned),'match-time'));
- if(selected!=='poules')c.append(el('small',courtName(m.court||division)));
- return c;
+ const status=m.result?'Terminé':m.started_at?'En cours':'À venir';
+ const c=el('article','','programme-match pool-match-card '+COURTS[m.court||m.division||division].className+' '+(m.result?'is-finished':m.started_at?'is-live':'is-upcoming'));
+ const top=el('div','','court-match-top'),badge=el('span',m.division,'chrono-division-pill '+(m.division==='DD'?'division-dd':'division-dm'));
+ badge.title=m.division==='DD'?'Double dames':'Double messieurs';
+ top.append(el('small','Match '+(index+1)+' · '+status),badge);c.append(top);
+ const value=m.started_at||(m.live??m.planned),hour=el('time',clock(value),'court-match-hours');hour.dateTime=new Date(value).toISOString();
+ if(!m.started_at&&!m.result)hour.append(el('small','prévisionnelle','court-start-estimate'));c.append(hour);
+ const matchup=el('div','','court-match-matchup');
+ for(const [i,id] of [m.a,m.b].entries()){
+ const team=el('strong',name(id),'court-match-team'+(m.result?.winner===id?' is-winner':''));matchup.append(team);
+ if(i===0)matchup.append(el(m.result?'b':'span',m.result?scoreText(m.result):'vs',m.result?'court-match-score':'court-match-vs'));
+ }
+ c.append(matchup);
+ if(!m.result&&m.progress?.sets?.length)c.append(el('small',m.progress.sets.map(s=>s.a+'–'+s.b).join(' / ')+' · sets validés','pool-match-progress'));
+ c.setAttribute('aria-label',status+' · '+name(m.a)+' contre '+name(m.b));return c;
 }
 function note(title,text){const b=el('section','','match-info-card');b.append(el('h2',title),el('p',text));return b;}
 function table(rows,title='Classement de la poule',offset=0){
