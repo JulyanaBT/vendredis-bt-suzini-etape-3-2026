@@ -14,7 +14,36 @@ let division='DM',selected='chrono',data=null,error='',clubReady=false,mode='rea
 try{division=localStorage.getItem('suzini_etape3_public_epreuve')||'DM';}catch{}
 if(!COURTS[division])division='DM';
 const params=new URLSearchParams(location.search);
-try{localStorage.setItem('suzini_e3_match_mode','real');const clean=new URL(location.href);clean.searchParams.delete('simulation');history.replaceState(null,'',clean);}catch{}
+try{if(isClub&&sessionStorage.getItem('suzini_e3_club_demo')==='true')mode='demo';}catch{}
+// Demo is entered explicitly in Club; a public URL always uses the real tournament.
+let demoButton=null,demoReset=null,matchWritePending=0;
+async function matchWrite(method,args){matchWritePending++;try{return await withDeadline(client.rpc(method,args));}finally{matchWritePending--;}}
+function syncDemoUI(){
+ const active=isClub&&mode==='demo';document.body.dataset.matchDemo=String(active);
+ if(isClub)try{sessionStorage.setItem('suzini_e3_club_demo',String(active));}catch{}
+ if(demoButton){demoButton.textContent=active?'✓ Démo · revenir au réel':'Démo';demoButton.setAttribute('aria-pressed',String(active));}
+ if(demoReset)demoReset.hidden=!active;
+ document.querySelectorAll('[data-demo-only]').forEach(t=>t.hidden=!active);
+}
+if(isClub){
+ const bar=el('div','','match-demo-bar');demoButton=el('button','Démo');demoButton.type='button';demoButton.setAttribute('aria-pressed','false');demoReset=el('button','Recommencer la démo');demoReset.type='button';demoReset.hidden=true;
+ const status=el('span');status.setAttribute('role','status');bar.append(demoButton,demoReset,status);document.querySelector('.programme-tabs')?.before(bar);
+ async function switchDemo(reset=false){
+ if(!clubReady)return;
+ if(matchWritePending){status.textContent='Attendez la fin de l’enregistrement avant de changer de mode.';return;}
+ if(document.querySelector('[data-result-form][data-dirty=true]')&&!confirm('Quitter la saisie du set non validé ?'))return;
+ if(reset&&!confirm('Effacer uniquement les essais de la démo et repartir de la programmation réelle ?'))return;
+ const previous=mode;demoButton.disabled=demoReset.disabled=true;generation++;error='';status.textContent='Chargement…';
+ try{
+ if(mode==='demo'&&!reset){mode='real';data=null;syncDemoUI();if(!['chrono','resultats','tirage'].includes(selected))select(tabs.find(t=>t.dataset.programme==='chrono'));await load();if(error)throw Error(error);}
+ else{const r=await withDeadline(client.rpc('suzini_e3_demo',{p_action:reset?'reset':'start'}));if(r.error)throw r.error;mode='demo';data=r.data;serverOffset=Date.parse(data.server_now)-Date.now();syncDemoUI();render();}
+ scoreHistoryExpanded=upcomingExpanded=false;status.textContent=mode==='demo'?'Essais privés · aucun effet sur le tournoi':'';
+ }catch(e){mode=previous;syncDemoUI();status.textContent=e.message;}
+ finally{demoButton.disabled=demoReset.disabled=false;}
+ }
+ demoButton.onclick=()=>switchDemo();demoReset.onclick=()=>switchDemo(true);
+}
+syncDemoUI();
 let chronoFilter=params.get('chronofilter');try{chronoFilter=chronoFilter||sessionStorage.getItem('suzini_e3_chrono_filter');}catch{}if(!['DM','DD','both'].includes(chronoFilter))chronoFilter='both';
 function syncChronoFilter(){document.querySelectorAll('[data-public-epreuve]').forEach(b=>b.setAttribute('aria-pressed',String(selected==='chrono'?(chronoFilter==='both'||chronoFilter===b.dataset.publicEpreuve):division===b.dataset.publicEpreuve)));}
 document.addEventListener('click',e=>{const button=e.target.closest('[data-public-epreuve]');if(!button||selected!=='chrono')return;e.preventDefault();e.stopImmediatePropagation();const value=button.dataset.publicEpreuve;chronoFilter=chronoFilter===value?'both':value;division=value;try{sessionStorage.setItem('suzini_e3_chrono_filter',chronoFilter);localStorage.setItem('suzini_etape3_public_epreuve',division);const url=new URL(location.href);url.searchParams.set('chronofilter',chronoFilter);history.replaceState(null,'',url);}catch{}render();},true);
@@ -57,7 +86,7 @@ function exchangeButton(m,dir,targetSlot,other){
  b.onclick=async()=>{b.disabled=true;try{await moveMatch(m,dir,targetSlot);}catch(e){alert(e.message);b.disabled=false;}};return b;
 }
 async function savePlan(plan){
- const {data:next,error}=await withDeadline(client.rpc('suzini_e3_save_planning',{p_simulation:!!data.simulation,p_plan:plan,p_revision:data.planning_revision||0}));
+ const {data:next,error}=await matchWrite('suzini_e3_save_planning',{p_simulation:!!data.simulation,p_plan:plan,p_revision:data.planning_revision||0});
  if(error)throw error;data=next;render();
 }
 function openMatchExchange(m){
@@ -244,7 +273,7 @@ function drawControls(d){
  async function act(action,b){
  if(action==='publish'&&!confirm('Diffuser ce tirage en public maintenant ? Une équipe sera révélée chaque minute. Les autres onglets seront ouverts à la fin.'))return;
  b.disabled=true;status.textContent=action==='prepare'?'Préparation privée…':'Lancement de la diffusion…';
- try{const r=await withDeadline(client.rpc('suzini_e3_draw_manage',{p_action:action,p_division:division,p_simulation:!!data.simulation}));if(r.error)throw r.error;data=r.data;render();}catch(e){status.textContent=e.message;b.disabled=false;}
+ try{const r=await matchWrite('suzini_e3_draw_manage',{p_action:action,p_division:division,p_simulation:!!data.simulation});if(r.error)throw r.error;data=r.data;render();}catch(e){status.textContent=e.message;b.disabled=false;}
  }
  const actions=el('div','','draw-management-actions'),prepare=el('button',d.draw_prepared?'✓ Tirage préparé':'1 · Préparer le tirage'),publish=el('button',d.draw_published_at?'✓ Diffusion lancée':'2 · Diffuser le tirage');
  prepare.type=publish.type='button';prepare.disabled=!!d.draw_prepared||(!data.simulation&&!data.registration_closed);publish.disabled=!d.draw_prepared||!!d.draw_published_at||(!data.simulation&&Date.now()<Date.parse(data.draw_at));prepare.onclick=()=>act('prepare',prepare);publish.onclick=()=>act('publish',publish);actions.append(prepare,publish);box.append(actions,status);panel.append(box);
@@ -333,7 +362,7 @@ function resultForm(m,index){
  if(!confirmed&&!await confirmMatchResult(m,sets))return null;
  const score={sets:sets.slice(0,2).map(s=>[s.a,s.b])};if(sets.length===3)score.super=[sets[2].a,sets[2].b];
  if(sets.some(s=>s.override)){score.override=true;score.winner=sets.filter(s=>s.winner==='a').length>sets.filter(s=>s.winner==='b').length?'a':'b';}
- const r=await withDeadline(client.rpc('suzini_e3_validate_result',{p_simulation:!!data.simulation,p_division:division,p_match:m.id,p_score:score,p_revision:m.result?.revision||0}));if(r.error)throw r.error;return r.data;
+ const r=await matchWrite('suzini_e3_validate_result',{p_simulation:!!data.simulation,p_division:division,p_match:m.id,p_score:score,p_revision:m.result?.revision||0});if(r.error)throw r.error;return r.data;
  }
  function editor(active){
  form.replaceChildren();
@@ -369,7 +398,7 @@ function resultForm(m,index){
  if(Math.max(...totals)>=2&&!await confirmMatchResult(m,sets)){button.disabled=false;status.textContent='Tu peux corriger le score avant de valider.';return;}
  const plan=planRows(),entry=plan.find(x=>x.id===m.id&&x.division===m.division);
  entry.progress={sets,result_revision:m.result?.revision||0};
- const r=await withDeadline(client.rpc('suzini_e3_save_planning',{p_simulation:!!data.simulation,p_plan:plan,p_revision:data.planning_revision||0}));if(r.error)throw r.error;data=r.data;
+ const r=await matchWrite('suzini_e3_save_planning',{p_simulation:!!data.simulation,p_plan:plan,p_revision:data.planning_revision||0});if(r.error)throw r.error;data=r.data;
  if(Math.max(...totals)>=2)data=await finalize(sets,true);
  document.dispatchEvent(new CustomEvent('suzini:form-saved',{detail:{form}}));render();
  }catch(e){status.textContent=e.message;button.disabled=false;}finally{delete form.dataset.submitting;}
@@ -380,7 +409,7 @@ function resultForm(m,index){
 function render(){
  panel.replaceChildren();document.body.dataset.matchView=selected;syncChronoFilter();const d=current();
  if(error){panel.append(note('Chargement impossible',error));return;}if(!d){panel.append(el('p','Chargement des matchs…'));return;}
- document.body.dataset.matchSimulation=String(!!data.simulation);
+ document.body.dataset.matchSimulation=String(!!data.simulation);syncDemoUI();
  if(!data.simulation&&!data.registration_closed){
  const suspended=data.registration_state==='suspended';
  panel.append(note(suspended?'⏸️ Inscriptions suspendues':'📝 Inscriptions en cours',
@@ -565,24 +594,24 @@ function updateRoulette(){
 setInterval(updateRoulette,160);
 
 function select(tab){selected=tab.dataset.programme;try{const url=new URL(location.href);url.searchParams.set('matchtab',selected);history.replaceState(null,'',url);sessionStorage.setItem('suzini_e3_match_tab_'+document.body.dataset.space,selected);}catch{}tabs.forEach(b=>{const active=b===tab;b.setAttribute('aria-selected',String(active));b.tabIndex=active?0:-1;});panel.setAttribute('aria-labelledby',tab.id);render();}
-tabs.forEach((tab,i)=>{tab.onclick=()=>select(tab);tab.onkeydown=e=>{let n;if(e.key==='ArrowRight')n=(i+1)%tabs.length;else if(e.key==='ArrowLeft')n=(i+tabs.length-1)%tabs.length;else if(e.key==='Home')n=0;else if(e.key==='End')n=tabs.length-1;else return;e.preventDefault();select(tabs[n]);tabs[n].focus();};});
+tabs.forEach((tab,i)=>{tab.onclick=()=>select(tab);tab.onkeydown=e=>{const visible=tabs.filter(t=>!t.hidden),index=visible.indexOf(tab);let n;if(e.key==='ArrowRight')n=(index+1)%visible.length;else if(e.key==='ArrowLeft')n=(index+visible.length-1)%visible.length;else if(e.key==='Home')n=0;else if(e.key==='End')n=visible.length-1;else return;e.preventDefault();select(visible[n]);visible[n].focus();};});
 document.addEventListener('publicZoneChange',e=>{division=e.detail.epreuve;render();});
 async function load(){
  const version=++generation,wanted=mode;
  try{
  let next;
- if(isClub){const r=await withDeadline(client.rpc('suzini_e3_match_manager_state',{p_simulation:false}));if(r.error)throw r.error;next=r.data;}
+ if(isClub){const r=await withDeadline(client.rpc('suzini_e3_match_manager_state',{p_simulation:mode==='demo'}));if(r.error)throw r.error;next=r.data;}
  else next=await rpc('suzini_e3_match_state',{p_simulation:false});
- if(version!==generation||wanted!==mode)return;data=next;serverOffset=Date.parse(next.server_now||new Date().toISOString())-Date.now();error='';render();
+ if(version!==generation||wanted!==mode)return;if(!!next.simulation!==(mode==='demo'))throw Error('Mode de tournoi incohérent. Revenez au réel puis relancez la démo.');data=next;serverOffset=Date.parse(next.server_now||new Date().toISOString())-Date.now();error='';render();
  }catch(e){if(version!==generation)return;error=e.message||'Vérifiez votre connexion.';render();}
 }
 if(isClub){
- async function ready(){const r=await client.rpc('suzini_e3_club');clubReady=!r.error;if(clubReady){mode='real';await load();}}
+ async function ready(){const r=await client.rpc('suzini_e3_club');clubReady=!r.error;if(clubReady){await load();}}
  document.addEventListener('club:ready',ready);ready();
 }
 
 document.querySelector('.club-switch')?.addEventListener('click',event=>{const a=event.currentTarget,u=new URL(a.href);u.searchParams.delete('simulation');if(selected==='chrono')u.searchParams.set('chronofilter',chronoFilter);a.href=u.href;});
 let rememberedTab='';try{rememberedTab=sessionStorage.getItem('suzini_e3_match_tab_'+document.body.dataset.space)||'';}catch{}
-const requested=tabs.find(t=>t.dataset.programme===(params.has('matchtab')?params.get('matchtab'):rememberedTab));select(requested||tabs[0]);
+const requested=tabs.filter(t=>!t.hidden).find(t=>t.dataset.programme===(params.has('matchtab')?params.get('matchtab'):rememberedTab));select(requested||tabs[0]);
 await load();
 setInterval(()=>{if(document.visibilityState==='visible'&&!document.querySelector('dialog[open]')&&!document.querySelector('[data-result-form][data-dirty=true],[data-result-form][data-submitting=true]'))load();},10000);
