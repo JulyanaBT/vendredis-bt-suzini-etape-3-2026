@@ -54,3 +54,15 @@ assert(!launchReadiness(candidate,[done,{...principal,result:{validated_at:iso(b
 const preserved={...candidate,started_at:iso(base+35*min)};
 assert(buildTimeline([done,principal,preserved],{now:base+40*min}).find(m=>m.id==='EXTRA').court==='DD','Never move a match already launched');
 console.log('PASS: freed court only, genuine parallel use, ten-minute setup, launch enforcement and preserved active matches');
+
+const consentPair=[job('CONSENT-A',ids[0],ids[1],0,'DD'),job('CONSENT-B',ids[0],ids[2],1,'DD')];
+consentPair[1].recovery_agreement={kind:'preapproved',both_teams_agreed:true,previous_match_id:'CONSENT-A',team_ids:[ids[0]]};
+let consentTimeline=buildTimeline(consentPair,{now:base});
+assert(consentTimeline[1].live===consentTimeline[0].end,'Preapproved consecutive matches have zero rest and zero gap');
+consentPair[0].started_at=iso(base);consentPair[0].result={validated_at:iso(base+30*min)};
+assert(launchReadiness(consentPair[1],consentPair,{now:base+30*min}).allowed,'Recorded consent allows immediate launch after actual end');
+const unrelated={...consentPair[1],recovery_agreement:{...consentPair[1].recovery_agreement,previous_match_id:'OTHER'}};
+assert(launchReadiness(unrelated,consentPair,{now:base+30*min}).canConfirm,'Consent cannot apply to another match');
+consentPair[0].result=null;
+assert(!launchReadiness(consentPair[1],consentPair,{now:base+30*min}).allowed,'Consent cannot bypass an active match');
+console.log('PASS: scoped preapproved recovery, immediate launch and active match safety');

@@ -1,9 +1,9 @@
 import {rpc} from './supabase-site.js?v=94';
 import {client,withDeadline} from './private-client.js?v=94';
 import {COURTS,formatFor,scheduleDraws} from './tournament-format.js?v=142';
-import {buildTimeline,launchReadiness} from './match-timing.js?v=148';
+import {buildTimeline,launchReadiness,recoveryPreapproved} from './match-timing.js?v=150';
 import {courtTimeline} from './court-timeline.js?v=139';
-import {exchangeMatchSlots} from './match-plan-edit.js?v=141';
+import {exchangeMatchSlots} from './match-plan-edit.js?v=150';
 const panel=document.getElementById('programme-panel'),tabs=[...document.querySelectorAll('[data-programme]')],isClub=document.body.dataset.space==='club';
 const el=(tag,text='',cls='')=>{const e=document.createElement(tag);e.textContent=text;if(cls)e.className=cls;return e;};
 let scoreHistoryExpanded=false,upcomingExpanded=false;
@@ -66,6 +66,7 @@ function fixtures(all=false){
  return slots.map(base=>{const m=data.matches.find(m=>m.division===base.division&&m.id===base.id);return m?{...base,...m}:null;}).filter(Boolean).filter(m=>all||m.division===division);
 }
 function chrono(all=false){return buildTimeline(fixtures(true)).filter(m=>all||m.division===division);}
+function hasPreapprovedRecovery(m){const previous=fixtures(true).filter(x=>x.division===m.division&&x.slot<m.slot).sort((a,b)=>a.slot-b.slot).at(-1);return recoveryPreapproved(m,previous);}
 
 function planRows(){return fixtures(true).map(x=>({id:x.id,division:x.division,slot:x.slot,court:x.court||x.division,...(x.forced_at?{forced_at:x.forced_at}:{}),...(x.progress?{progress:x.progress}:{}),...(x.started_at?{started_at:x.started_at}:{}),...(x.recovery_agreement?{recovery_agreement:x.recovery_agreement}:{})}));}
 async function moveMatch(m,direction,targetSlot){
@@ -89,14 +90,24 @@ async function savePlan(plan){
  const {data:next,error}=await matchWrite('suzini_e3_save_planning',{p_simulation:!!data.simulation,p_plan:plan,p_revision:data.planning_revision||0});
  if(error)throw error;data=next;render();
 }
+function exchangeBlockedReason(m){
+ return m.result?'Ce match est terminé : son créneau ne peut plus être inversé.':m.started_at?'Ce match est déjà lancé : son créneau ne peut plus être inversé.':m.id==='TS-FINAL'?'Le dernier match est réservé à TS1 contre TS2 et doit rester en dernier.':'';
+}
 function openMatchExchange(m){
+ const blocked=exchangeBlockedReason(m);if(blocked){alert(blocked);return;}
  const choices=chrono(true).filter(x=>x.division===m.division&&x.id!==m.id&&x.id!=='TS-FINAL'&&!x.result&&!x.started_at).sort((a,b)=>a.slot-b.slot);
  const dialog=el('dialog','','match-exchange-dialog'),form=el('form');form.method='dialog';
  const label=el('label','Échanger le créneau avec'),select=el('select'),status=el('p');status.setAttribute('role','status');
  for(const other of choices){const option=el('option',clock(other.live??other.planned)+' · '+chronoName(other.a)+' vs '+chronoName(other.b));option.value=other.id;select.append(option);}
- label.append(select);const apply=el('button','Inverser les matchs'),cancel=el('button','Annuler');apply.type='submit';cancel.type='button';cancel.onclick=()=>dialog.close();apply.disabled=!choices.length;
+ label.append(select);const apply=el('button','Inverser les matchs'),cancel=el('button','Annuler');apply.type='submit';cancel.type='button';cancel.onclick=()=>dialog.close();apply.disabled=!choices.length;if(!choices.length)status.textContent='Aucun autre match échangeable : les autres rencontres sont déjà lancées, terminées ou réservées à TS1 / TS2.';
  form.append(el('h2','Inverser un match'),el('p',chronoName(m.a)+' vs '+chronoName(m.b)),label,el('small','Les créneaux sont échangés et les récupérations recalculées. Le dernier match TS1 / TS2 reste à sa place.'),status,apply,cancel);
- form.onsubmit=async e=>{e.preventDefault();apply.disabled=true;try{const target=choices.find(x=>x.id===select.value);if(!target)throw Error('Choisissez un match.');await savePlan(exchangeMatchSlots(planRows(),m,target,fixtures(true)));dialog.close();}catch(error){status.textContent=error.message;apply.disabled=false;}};
+ form.onsubmit=async e=>{e.preventDefault();apply.disabled=true;try{const target=choices.find(x=>x.id===select.value);if(!target)throw Error('Choisissez un match.');
+if(matchWritePending)throw Error('Un enregistrement est en cours. Patientez puis réessayez.');
+const before=!!data.simulation,fresh=await withDeadline(client.rpc('suzini_e3_match_manager_state',{p_simulation:before}));if(fresh.error)throw fresh.error;
+if(before!==!!fresh.data.simulation)throw Error('Le mode du tournoi a changé. Fermez cette fenêtre et actualisez.');
+data=fresh.data;
+const next=exchangeMatchSlots(planRows(),m,target,fixtures(true));await savePlan(next);dialog.close();
+const notice=el('p','✓ Créneaux inversés. Les heures sont recalculées avec les récupérations et les éventuelles heures forcées.','match-exchange-feedback');notice.setAttribute('role','status');panel.prepend(notice);}catch(error){status.textContent=error.code==='42501'?'Votre accès Club a expiré ou a été retiré. Reconnectez-vous avant d’inverser un match.':error.message||'Inversion impossible : vérifiez la connexion et actualisez le programme.';apply.disabled=false;}};
  dialog.append(form);document.body.append(dialog);dialog.addEventListener('close',()=>dialog.remove(),{once:true});dialog.showModal();
 }
 function planningControls(m){
@@ -116,7 +127,7 @@ function planningControls(m){
  form.onsubmit=e=>{e.preventDefault();persist(new Date(date+'T'+hour.value+':'+minute.value+':00-03:00').toISOString());};reset.onclick=()=>persist(null);
  form.append(el('h2','Heure du match'),lab,wheels,el('small','Les matchs suivants du terrain seront décalés à partir de cette heure.'),status,save,reset,cancel);dialog.append(form);document.body.append(dialog);dialog.addEventListener('close',()=>dialog.remove(),{once:true});dialog.showModal();requestAnimationFrame(()=>{for(const select of [hour,minute])select.scrollTop=Math.max(0,(select.selectedIndex+.5)*(select.scrollHeight/select.options.length)-select.clientHeight/2);});
  };
- const exchange=el('button','⇅ Inverser','match-exchange-button');exchange.type='button';exchange.disabled=!!m.result||!!m.started_at||m.id==='TS-FINAL';exchange.title=m.id==='TS-FINAL'?'Dernier match réservé à TS1 contre TS2':'Choisir le match à inverser';exchange.onclick=()=>openMatchExchange(m);
+ const exchange=el('button','⇅ Inverser','match-exchange-button');exchange.type='button';exchange.setAttribute('aria-disabled',String(!!exchangeBlockedReason(m)));exchange.title=exchangeBlockedReason(m)||'Choisir le match à inverser';exchange.onclick=()=>openMatchExchange(m);
  box.append(time,exchange);return box;
 }
 
@@ -224,6 +235,7 @@ function publicChronoBoard(){
  if(index===0)matchup.append(el(m.result?'b':'span',m.result?scoreText(m.result):'vs',m.result?'court-match-score':'court-match-vs'));
  }
  cell.append(matchup);
+ if(hasPreapprovedRecovery(m))cell.append(el('small','Accord de l’équipe déjà obtenu · sans pause','recovery-preapproved-note'));
  if(editable)cell.append(planningControls(m));
  cell.setAttribute('aria-label',status+' · Début '+clock(event.start)+(!m.started_at&&!m.result?' prévisionnel':'')+' · '+chronoName(m.a)+' contre '+chronoName(m.b));
  }else{
@@ -324,7 +336,8 @@ function launchCard(m){
  card.append(el('small','PROCHAIN MATCH','launch-kicker'),el('strong',matchStage(m),'launch-stage'),el('h2',name(m.a)+' contre '+name(m.b)),el('p',courtName(m.court||division),'launch-court'));
  const b=el('button','▶ Lancer le match'),status=el('p');b.type='button';b.className='signup-submit';status.setAttribute('role','status');
  b.disabled=(!readiness.allowed&&!readiness.canConfirm)||(!data.simulation&&!data.registration_closed);
- if(readiness.recoveryUntil)status.textContent='Heure réglementaire : '+clock(readiness.recoveryUntil)+', heure de Guyane. Tout lancement avant cette heure nécessite le consentement des deux équipes.';
+ if(hasPreapprovedRecovery(m)&&readiness.allowed)status.textContent='Accord de l’équipe déjà obtenu · enchaînement sans pause après le match précédent.';
+ else if(readiness.recoveryUntil)status.textContent='Heure réglementaire : '+clock(readiness.recoveryUntil)+', heure de Guyane. Tout lancement avant cette heure nécessite le consentement des deux équipes.';
  else if(!readiness.allowed&&!readiness.canConfirm)status.textContent=readiness.reason;
  else if(!data.simulation&&!data.registration_closed)status.textContent='Clôturez les inscriptions avant de lancer les matchs réels.';
  b.onclick=async()=>{

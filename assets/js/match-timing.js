@@ -3,6 +3,10 @@ export const GAP_MINUTES=5,COURT_CHANGE_MINUTES=10,CONSECUTIVE_REST_MINUTES=30;
 const MINUTE=60000,BASE=Date.parse('2026-11-06T21:00:00Z');
 const same=(a,b)=>a.division===b.division&&[a.a,a.b].some(id=>id&&[b.a,b.b].includes(id));
 const depends=(a,b)=>a.division===b.division&&(a.deps||[]).includes(b.id)&&[a.a,a.b].some(v=>v===('Vainqueur '+b.id)||v===('Perdant '+b.id));
+export function recoveryPreapproved(match,previous){
+ const a=match.recovery_agreement,shared=previous&&[match.a,match.b].filter(id=>[previous.a,previous.b].includes(id));
+ return !!(a?.kind==='preapproved'&&a.both_teams_agreed===true&&previous?.division===match.division&&a.previous_match_id===previous.id&&shared.length&&shared.every(id=>(a.team_ids||[]).includes(id)));
+}
 export function buildTimeline(matches,{now=Date.now(),start=BASE}={}){
  const courtEnd={},courtLast={},ends={},rows=[],teamLast={},remaining={DM:0,DD:0},totals={DM:0,DD:0};
  const ordered=[...matches].sort((a,b)=>a.slot-b.slot);
@@ -11,13 +15,13 @@ export function buildTimeline(matches,{now=Date.now(),start=BASE}={}){
  const duration=MATCH_DURATION[m.division]||25,key=m.division+':'+m.id,primary=m.division,secondary=primary==='DM'?'DD':'DM';
  function forecast(court){
  const prior=courtLast[court],courtChanged=!!prior&&prior.division!==m.division;
- let earliest=courtEnd[court]===undefined?start:courtEnd[court]+(courtChanged?COURT_CHANGE_MINUTES:GAP_MINUTES)*MINUTE,restUntil=null;
+ let earliest=courtEnd[court]===undefined?start:courtEnd[court]+(courtChanged?COURT_CHANGE_MINUTES:recoveryPreapproved(m,prior)?0:GAP_MINUTES)*MINUTE,restUntil=null;
  for(const dep of m.deps||[])if(ends[m.division+':'+dep]!==undefined){
  const end=ends[m.division+':'+dep];earliest=Math.max(earliest,end+GAP_MINUTES*MINUTE);
  const parent=rows.find(r=>r.division===m.division&&r.id===dep);
- if(parent&&depends(m,parent))restUntil=Math.max(restUntil||0,end+CONSECUTIVE_REST_MINUTES*MINUTE);
+ if(parent&&depends(m,parent)&&!recoveryPreapproved(m,parent))restUntil=Math.max(restUntil||0,end+CONSECUTIVE_REST_MINUTES*MINUTE);
  }
- for(const id of [m.a,m.b])if(teamLast[id])restUntil=Math.max(restUntil||0,teamLast[id].end+CONSECUTIVE_REST_MINUTES*MINUTE);
+ for(const id of [m.a,m.b])if(teamLast[id]&&!recoveryPreapproved(m,teamLast[id].match))restUntil=Math.max(restUntil||0,teamLast[id].end+CONSECUTIVE_REST_MINUTES*MINUTE);
  if(restUntil)earliest=Math.max(earliest,restUntil);
  if(m.forced_at)earliest=Math.max(earliest,Date.parse(m.forced_at));
  return {earliest,restUntil,courtChanged,changeoverStart:courtChanged?courtEnd[court]:null,changeoverEnd:courtChanged?courtEnd[court]+COURT_CHANGE_MINUTES*MINUTE:null};
@@ -59,11 +63,11 @@ export function launchReadiness(match,matches,{now=Date.now()}={}){
  const courtPrior=[...before].reverse().find(m=>(m.court||m.division)===court);
  let until=0,recoveryUntil=0;
  const courtChanged=!!courtPrior&&courtPrior.division!==match.division;
- if(courtPrior?.result)until=Date.parse(courtPrior.result.validated_at)+(courtChanged?COURT_CHANGE_MINUTES:GAP_MINUTES)*MINUTE;
+ if(courtPrior?.result)until=Date.parse(courtPrior.result.validated_at)+(courtChanged?COURT_CHANGE_MINUTES:recoveryPreapproved(match,courtPrior)?0:GAP_MINUTES)*MINUTE;
  const rest=prior&&(same(prior,match)||depends(match,prior))?prior:courtPrior&&(same(courtPrior,match)||depends(match,courtPrior))?courtPrior:null;
- if(rest?.result)until=Math.max(until,Date.parse(rest.result.validated_at)+CONSECUTIVE_REST_MINUTES*MINUTE);
- for(const previous of matches.filter(m=>m.result&&same(m,match)))recoveryUntil=Math.max(recoveryUntil,Date.parse(previous.result.validated_at)+CONSECUTIVE_REST_MINUTES*MINUTE);
+ if(rest?.result&&!recoveryPreapproved(match,rest))until=Math.max(until,Date.parse(rest.result.validated_at)+CONSECUTIVE_REST_MINUTES*MINUTE);
+ for(const previous of matches.filter(m=>m.result&&same(m,match)&&!recoveryPreapproved(match,m)))recoveryUntil=Math.max(recoveryUntil,Date.parse(previous.result.validated_at)+CONSECUTIVE_REST_MINUTES*MINUTE);
  until=Math.max(until,recoveryUntil);
  if(until>now)return {allowed:false,canConfirm:true,until,recoveryUntil:recoveryUntil||null,reason:matches.some(m=>m.result&&same(m,match)&&Date.parse(m.result.validated_at)+CONSECUTIVE_REST_MINUTES*MINUTE>now)?'Pause de trente minutes pour l’équipe qui enchaîne.':courtChanged?'Reconfiguration du terrain : dix minutes pour passer de '+courtPrior.division+' à '+match.division+'.':'Battement de cinq minutes entre les matchs.'};
- return {allowed:true,recoveryUntil:recoveryUntil||null};
+ return {allowed:true,recoveryUntil:recoveryUntil||null,recoveryPreapproved:recoveryPreapproved(match,courtPrior)};
 }

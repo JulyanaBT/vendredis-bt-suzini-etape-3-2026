@@ -13,5 +13,10 @@ export function exchangeMatchSlots(plan,source,target,matches){
  for(const [match,position] of [[a,pb],[b,pa]]){
  match.slot=position.slot;match.court=position.court;delete match.forced_at;if(position.forced_at)match.forced_at=position.forced_at;
  }
+ for(const entry of next){
+ const match=matches.find(m=>m.id===entry.id&&m.division===entry.division);
+ for(const dep of match?.deps||[]){const parent=next.find(p=>p.id===dep&&p.division===entry.division);if(parent&&parent.slot>=entry.slot)throw Error('Inversion impossible : '+entry.id+' doit rester après son match préalable '+dep+'.');}
+ if(next.some(other=>other!==entry&&other.slot===entry.slot&&other.court===entry.court))throw Error('Inversion impossible : deux matchs occuperaient le même terrain au même créneau.');
+ }
  return next;
 }
