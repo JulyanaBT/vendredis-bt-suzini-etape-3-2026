@@ -1,7 +1,7 @@
 import {rpc} from './supabase-site.js?v=94';
 import {client,withDeadline} from './private-client.js?v=94';
 import {COURTS,formatFor,scheduleDraws} from './tournament-format.js?v=142';
-import {buildTimeline,launchReadiness,recoveryPreapproved} from './match-timing.js?v=150';
+import {buildTimeline,launchReadiness,recoveryPreapproved} from './match-timing.js?v=151';
 import {courtTimeline} from './court-timeline.js?v=139';
 import {exchangeMatchSlots} from './match-plan-edit.js?v=150';
 const panel=document.getElementById('programme-panel'),tabs=[...document.querySelectorAll('[data-programme]')],isClub=document.body.dataset.space==='club';
@@ -235,7 +235,7 @@ function publicChronoBoard(){
  if(index===0)matchup.append(el(m.result?'b':'span',m.result?scoreText(m.result):'vs',m.result?'court-match-score':'court-match-vs'));
  }
  cell.append(matchup);
- if(hasPreapprovedRecovery(m))cell.append(el('small','Accord de l’équipe déjà obtenu · sans pause','recovery-preapproved-note'));
+ if(hasPreapprovedRecovery(m))cell.append(el('small','Accord des équipes déjà obtenu · battement 5 min','recovery-preapproved-note'));
  if(editable)cell.append(planningControls(m));
  cell.setAttribute('aria-label',status+' · Début '+clock(event.start)+(!m.started_at&&!m.result?' prévisionnel':'')+' · '+chronoName(m.a)+' contre '+chronoName(m.b));
  }else{
@@ -336,7 +336,7 @@ function launchCard(m){
  card.append(el('small','PROCHAIN MATCH','launch-kicker'),el('strong',matchStage(m),'launch-stage'),el('h2',name(m.a)+' contre '+name(m.b)),el('p',courtName(m.court||division),'launch-court'));
  const b=el('button','▶ Lancer le match'),status=el('p');b.type='button';b.className='signup-submit';status.setAttribute('role','status');
  b.disabled=(!readiness.allowed&&!readiness.canConfirm)||(!data.simulation&&!data.registration_closed);
- if(hasPreapprovedRecovery(m)&&readiness.allowed)status.textContent='Accord de l’équipe déjà obtenu · enchaînement sans pause après le match précédent.';
+ if(hasPreapprovedRecovery(m)&&readiness.allowed)status.textContent='Accord des équipes déjà obtenu : récupération de 30 min supprimée, battement de 5 min conservé.';
  else if(readiness.recoveryUntil)status.textContent='Heure réglementaire : '+clock(readiness.recoveryUntil)+', heure de Guyane. Tout lancement avant cette heure nécessite le consentement des deux équipes.';
  else if(!readiness.allowed&&!readiness.canConfirm)status.textContent=readiness.reason;
  else if(!data.simulation&&!data.registration_closed)status.textContent='Clôturez les inscriptions avant de lancer les matchs réels.';

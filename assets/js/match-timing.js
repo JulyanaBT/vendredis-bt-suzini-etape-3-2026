@@ -15,7 +15,7 @@ export function buildTimeline(matches,{now=Date.now(),start=BASE}={}){
  const duration=MATCH_DURATION[m.division]||25,key=m.division+':'+m.id,primary=m.division,secondary=primary==='DM'?'DD':'DM';
  function forecast(court){
  const prior=courtLast[court],courtChanged=!!prior&&prior.division!==m.division;
- let earliest=courtEnd[court]===undefined?start:courtEnd[court]+(courtChanged?COURT_CHANGE_MINUTES:recoveryPreapproved(m,prior)?0:GAP_MINUTES)*MINUTE,restUntil=null;
+ let earliest=courtEnd[court]===undefined?start:courtEnd[court]+(courtChanged?COURT_CHANGE_MINUTES:GAP_MINUTES)*MINUTE,restUntil=null;
  for(const dep of m.deps||[])if(ends[m.division+':'+dep]!==undefined){
  const end=ends[m.division+':'+dep];earliest=Math.max(earliest,end+GAP_MINUTES*MINUTE);
  const parent=rows.find(r=>r.division===m.division&&r.id===dep);
@@ -63,7 +63,7 @@ export function launchReadiness(match,matches,{now=Date.now()}={}){
  const courtPrior=[...before].reverse().find(m=>(m.court||m.division)===court);
  let until=0,recoveryUntil=0;
  const courtChanged=!!courtPrior&&courtPrior.division!==match.division;
- if(courtPrior?.result)until=Date.parse(courtPrior.result.validated_at)+(courtChanged?COURT_CHANGE_MINUTES:recoveryPreapproved(match,courtPrior)?0:GAP_MINUTES)*MINUTE;
+ if(courtPrior?.result)until=Date.parse(courtPrior.result.validated_at)+(courtChanged?COURT_CHANGE_MINUTES:GAP_MINUTES)*MINUTE;
  const rest=prior&&(same(prior,match)||depends(match,prior))?prior:courtPrior&&(same(courtPrior,match)||depends(match,courtPrior))?courtPrior:null;
  if(rest?.result&&!recoveryPreapproved(match,rest))until=Math.max(until,Date.parse(rest.result.validated_at)+CONSECUTIVE_REST_MINUTES*MINUTE);
  for(const previous of matches.filter(m=>m.result&&same(m,match)&&!recoveryPreapproved(match,m)))recoveryUntil=Math.max(recoveryUntil,Date.parse(previous.result.validated_at)+CONSECUTIVE_REST_MINUTES*MINUTE);
