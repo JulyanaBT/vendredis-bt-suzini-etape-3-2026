@@ -14,6 +14,7 @@ export function exchangeMatchSlots(plan,source,target,matches){
  match.slot=position.slot;match.court=position.court;delete match.forced_at;if(position.forced_at)match.forced_at=position.forced_at;
  }
  for(const entry of next){
+ if(Number.isInteger(entry.not_before_slot)&&entry.slot<entry.not_before_slot)throw Error('Inversion impossible : cette équipe ne peut pas jouer avant le créneau '+(entry.not_before_slot+1)+'.');
  const match=matches.find(m=>m.id===entry.id&&m.division===entry.division);
  for(const dep of match?.deps||[]){const parent=next.find(p=>p.id===dep&&p.division===entry.division);if(parent&&parent.slot>=entry.slot)throw Error('Inversion impossible : '+entry.id+' doit rester après son match préalable '+dep+'.');}
  if(next.some(other=>other!==entry&&other.slot===entry.slot&&other.court===entry.court))throw Error('Inversion impossible : deux matchs occuperaient le même terrain au même créneau.');

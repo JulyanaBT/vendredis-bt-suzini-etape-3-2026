@@ -3,7 +3,7 @@ import {client,withDeadline} from './private-client.js?v=94';
 import {COURTS,formatFor,scheduleDraws} from './tournament-format.js?v=142';
 import {buildTimeline,launchReadiness,recoveryPreapproved} from './match-timing.js?v=152';
 import {courtTimeline} from './court-timeline.js?v=139';
-import {exchangeMatchSlots} from './match-plan-edit.js?v=150';
+import {exchangeMatchSlots} from './match-plan-edit.js?v=153';
 const panel=document.getElementById('programme-panel'),tabs=[...document.querySelectorAll('[data-programme]')],isClub=document.body.dataset.space==='club';
 const el=(tag,text='',cls='')=>{const e=document.createElement(tag);e.textContent=text;if(cls)e.className=cls;return e;};
 let scoreHistoryExpanded=false,upcomingExpanded=false;
@@ -68,7 +68,7 @@ function fixtures(all=false){
 function chrono(all=false){return buildTimeline(fixtures(true)).filter(m=>all||m.division===division);}
 function hasPreapprovedRecovery(m){const previous=fixtures(true).filter(x=>x.division===m.division&&x.slot<m.slot).sort((a,b)=>a.slot-b.slot).at(-1);return recoveryPreapproved(m,previous);}
 
-function planRows(){return fixtures(true).map(x=>({id:x.id,division:x.division,slot:x.slot,court:x.court||x.division,...(x.forced_at?{forced_at:x.forced_at}:{}),...(x.progress?{progress:x.progress}:{}),...(x.started_at?{started_at:x.started_at}:{}),...(x.recovery_agreement?{recovery_agreement:x.recovery_agreement}:{})}));}
+function planRows(){return fixtures(true).map(x=>({id:x.id,division:x.division,slot:x.slot,court:x.court||x.division,...(Number.isInteger(x.not_before_slot)?{not_before_slot:x.not_before_slot}:{}),...(x.forced_at?{forced_at:x.forced_at}:{}),...(x.progress?{progress:x.progress}:{}),...(x.started_at?{started_at:x.started_at}:{}),...(x.recovery_agreement?{recovery_agreement:x.recovery_agreement}:{})}));}
 async function moveMatch(m,direction,targetSlot){
  const plan=planRows(),item=plan.find(x=>x.id===m.id&&x.division===m.division),old={slot:item.slot,court:item.court};
  if(direction==='up'||direction==='down')item.slot=targetSlot??item.slot+(direction==='up'?-1:1);

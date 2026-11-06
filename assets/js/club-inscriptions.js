@@ -1,3 +1,4 @@
+import {createReception} from './club-reception.js?v=153';
 import {rpc as publicRpc} from './supabase-site.js?v=94';
 import {readRankingPdf} from './ranking-pdf.js?v=132';
 import {hasRankingConflict,rankingCounts,createRankingDetails} from './ranking-info.js?v=94';
@@ -12,7 +13,8 @@ const teamsPage=location.pathname.endsWith('/equipes.html');if(teamsPage){try{$(
 const el=(tag,text,className)=>{const n=document.createElement(tag);n.textContent=text;if(className)n.className=className;return n;};
 
 const isRegistrationPage=location.pathname.endsWith('/inscriptions.html');
-let registrationTab=new URLSearchParams(location.search).get('tab')||'inscription';if(!['inscription','paiement','partenaire'].includes(registrationTab))registrationTab='inscription';
+let receptionController=null,receptionButton=null;
+let registrationTab=new URLSearchParams(location.search).get('tab')||'accueil';if(!['accueil','inscription','paiement','partenaire'].includes(registrationTab))registrationTab='accueil';
 if(isRegistrationPage){
  const tabs=el('nav','','signup-tabs');tabs.setAttribute('aria-label','Gestion des inscriptions');
  const panel=el('div','','club-registration-panel');panel.id='club-registration-panel';
@@ -20,7 +22,8 @@ if(isRegistrationPage){
  const paymentPanel=el('section','');paymentPanel.id='club-payment-panel';paymentPanel.hidden=true;
  const partnerPanel=el('section','');partnerPanel.id='club-partner-panel';partnerPanel.hidden=true;
  for(const [value,label] of [['inscription','Inscription'],['paiement','Paiement'],['partenaire','Solo']]){const b=el('button',label);b.type='button';b.dataset.clubRegistrationTab=value;b.setAttribute('aria-pressed',String(value===registrationTab));b.onclick=()=>selectRegistrationTab(value);tabs.append(b);}
- content.append(tabs,panel,paymentPanel,partnerPanel);
+ receptionController=createReception();receptionButton=el('button','Accueil','club-reception-toggle');receptionButton.type='button';receptionButton.setAttribute('aria-pressed',String(registrationTab==='accueil'));receptionButton.onclick=()=>selectRegistrationTab('accueil');
+ content.append(receptionButton,tabs,receptionController.element,panel,paymentPanel,partnerPanel);
  $('reload').hidden=true;$('logout').hidden=true;
  paymentPanel.append($('adminCounts'));
  const filters=content.querySelector('.club-filters');if(filters){paymentPanel.append(filters);$('rankState').closest('label').hidden=true;$('division').closest('label').hidden=true;$('paid').closest('label').hidden=true;$('division').value='';$('paid').value='';}
@@ -30,10 +33,13 @@ if(isRegistrationPage){
 }
 function selectRegistrationTab(value){
  registrationTab=value;content.dataset.registrationTab=value;
+ receptionButton?.setAttribute('aria-pressed',String(value==='accueil'));if(receptionController)receptionController.element.hidden=value!=='accueil';
+ try{const url=new URL(location.href);url.searchParams.set('tab',value);history.replaceState(null,'',url);}catch{}
  for(const b of content.querySelectorAll('[data-club-registration-tab]'))b.setAttribute('aria-pressed',String(b.dataset.clubRegistrationTab===value));
  for(const [id,v] of [['club-registration-panel','inscription'],['club-payment-panel','paiement'],['club-partner-panel','partenaire']])$(id).hidden=value!==v;
  const list=$('adminTeams');list.hidden=value!=='paiement';if(value==='paiement')$('club-payment-panel').append(list);else $('club-registration-panel').append(list);
  if(value==='partenaire')document.dispatchEvent(new CustomEvent('suzini:partners-tab'));
+ if(value==='accueil')receptionController?.refresh(true);
  render();
 }
 let openingBox=null;
@@ -114,7 +120,7 @@ function askClubConfirmation(title,text,label){return new Promise(resolve=>{
 });}
 
 async function request(action='list',id=null,body={}){const {data:result,error}=await client.rpc('suzini_e3_club',{p_action:action,p_id:id,p_data:body});if(error)throw error;data=result;if(isRegistrationPage)selectRegistrationTab(registrationTab);else render();document.dispatchEvent(new CustomEvent('suzini:club-updated'));}
-function render(){if(teamsPage){$('reload').hidden=true;$('logout').hidden=true;$('rankSummary').hidden=true;renderRankingSync();renderLicenceSync();}if(isRegistrationPage){$('adminTeams').hidden=registrationTab!=='paiement';$('rankSummary').hidden=true;$('quick-add-team').disabled=false;$('quick-add-team').title=data.open?'Inscrire une équipe':'Ajout Club autorisé · Matchs passera en maintenance';}content.hidden=false;login.hidden=true;$('opening').textContent=data.open?'Fermer les inscriptions':'Ouvrir les inscriptions';$('opening').hidden=true;if(openingBox){openingBox.hidden=!data.is_admin;const state=data.registration_state||(!data.open?'suspended':'open');$('registrations-open').setAttribute('aria-pressed',String(data.open));$('registrations-close').setAttribute('aria-pressed',String(!data.open));$('registration-state-label').textContent=({open:'Inscriptions ouvertes',suspended:'Inscriptions suspendues',closed:'Inscriptions clôturées'})[state];}const counts=rankingCounts(data.teams);$('rankSummary').textContent=`${counts.matched} classement(s) reconnu(s) · ${counts.unlisted} absent(s) des fichiers · ${counts.conflict} incohérence(s) · ${counts.manual} manuel(s)`;$('rankSummary').classList.toggle('has-conflicts',counts.conflict>0);const paid=data.teams.reduce((n,t)=>n+Number(t.p1_paid)+Number(t.p2_paid),0);$('adminCounts').textContent=`${data.teams.length} équipe(s) · ${paid} joueur(s) payé(s) · ${paid*10} € reçus`;
+function render(){if(isRegistrationPage&&registrationTab==='accueil')receptionController?.refresh();if(teamsPage){$('reload').hidden=true;$('logout').hidden=true;$('rankSummary').hidden=true;renderRankingSync();renderLicenceSync();}if(isRegistrationPage){$('adminTeams').hidden=registrationTab!=='paiement';$('rankSummary').hidden=true;$('quick-add-team').disabled=false;$('quick-add-team').title=data.open?'Inscrire une équipe':'Ajout Club autorisé · Matchs passera en maintenance';}content.hidden=false;login.hidden=true;$('opening').textContent=data.open?'Fermer les inscriptions':'Ouvrir les inscriptions';$('opening').hidden=true;if(openingBox){openingBox.hidden=!data.is_admin;const state=data.registration_state||(!data.open?'suspended':'open');$('registrations-open').setAttribute('aria-pressed',String(data.open));$('registrations-close').setAttribute('aria-pressed',String(!data.open));$('registration-state-label').textContent=({open:'Inscriptions ouvertes',suspended:'Inscriptions suspendues',closed:'Inscriptions clôturées'})[state];}const counts=rankingCounts(data.teams);$('rankSummary').textContent=`${counts.matched} classement(s) reconnu(s) · ${counts.unlisted} absent(s) des fichiers · ${counts.conflict} incohérence(s) · ${counts.manual} manuel(s)`;$('rankSummary').classList.toggle('has-conflicts',counts.conflict>0);const paid=data.teams.reduce((n,t)=>n+Number(t.p1_paid)+Number(t.p2_paid),0);$('adminCounts').textContent=`${data.teams.length} équipe(s) · ${paid} joueur(s) payé(s) · ${paid*10} € reçus`;
  if(teamsPage)$('adminCounts').textContent=data.teams.filter(t=>!$('division').value||t.division===$('division').value).length+' équipe(s) inscrite(s)';
  const q=$('search').value.trim().toLocaleLowerCase('fr');const rankState=$('rankState').value;let rows=rankTeams(data.teams).filter(t=>(!$('division').value||t.division===$('division').value)&&(!$('paid').value||($('paid').value==='partial'?(t.p1_paid!==t.p2_paid):t.payment_received===($('paid').value==='yes')))&&(!rankState||(rankState==='conflict'?hasRankingConflict(t):['p1','p2'].some(p=>t[p+'_rank_status']===rankState)))&&(!q||Object.values(t).join(' ').toLocaleLowerCase('fr').includes(q)));
  if(isRegistrationPage&&registrationTab==='paiement')rows.sort((a,b)=>(Number(a.p1_paid)+Number(a.p2_paid))-(Number(b.p1_paid)+Number(b.p2_paid))||((a.p1_first_name||'')+' / '+(a.p2_first_name||'')).localeCompare((b.p1_first_name||'')+' / '+(b.p2_first_name||''),'fr',{sensitivity:'base'}));

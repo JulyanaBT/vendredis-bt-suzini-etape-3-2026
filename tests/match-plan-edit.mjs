@@ -9,3 +9,9 @@ assert(plan[0].slot===0,'Input unchanged');
 for(const [a,b,rows] of [[plan[0],plan[2],matches],[plan[0],plan[3],matches],[plan[0],plan[1],matches.map(m=>m.id==='B'?{...m,started_at:'2026-11-06T21:00:00Z'}:m)]]){
 let blocked=false;try{exchangeMatchSlots(plan,a,b,rows);}catch{blocked=true;}assert(blocked,'Forbidden swap must be blocked');}
 console.log('PASS: arbitrary non-final swap, final protection, same draw, active matches and forced-hour positions');
+
+const bounded=plan.map(p=>p.id==='B'?{...p,slot:2,not_before_slot:2}:p.id==='TS-FINAL'?{...p,slot:3}:p);
+let minSlotMessage='';
+try{exchangeMatchSlots(bounded,bounded[0],bounded[1],bounded.map(p=>({...p,result:null})));}catch(error){minSlotMessage=error.message;}
+assert(minSlotMessage.includes('créneau 3'),'Earliest-slot constraint explains blocked exchange');
+console.log('PASS: protected earliest slot and explicit refusal reason');
