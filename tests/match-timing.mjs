@@ -67,3 +67,14 @@ assert(launchReadiness(unrelated,consentPair,{now:base+30*min}).canConfirm,'Cons
 consentPair[0].result=null;
 assert(!launchReadiness(consentPair[1],consentPair,{now:base+30*min}).allowed,'Consent cannot bypass an active match');
 console.log('PASS: scoped preapproved recovery, five-minute gap and active match safety');
+
+const firstThree=[job('EARLY-A',ids[0],ids[1],0,'DD'),job('EARLY-B',ids[0],ids[2],1,'DD')];
+firstThree[1].recovery_agreement={kind:'preapproved_slots',both_teams_agreed:true,team_ids:[ids[0]],first_slots:3};
+assert(buildTimeline(firstThree,{now:base})[1].live===base+35*min,'First-three consent retains 5 minutes');
+firstThree[0].slot=1;firstThree[1].slot=2;
+assert(buildTimeline(firstThree,{now:base})[1].live===base+35*min,'Consent follows exchange into slots 2 and 3');
+firstThree[0].slot=2;firstThree[1].slot=3;
+assert(buildTimeline(firstThree,{now:base})[1].live===base+60*min,'No waiver outside first three slots');
+firstThree[0].slot=0;firstThree[1].slot=1;firstThree[1].recovery_agreement.team_ids=[ids[3]];
+assert(buildTimeline(firstThree,{now:base})[1].live===base+60*min,'Consent cannot waive another team recovery');
+console.log('PASS: Maite first-three slot waiver, swap persistence, late and unrelated exclusions');

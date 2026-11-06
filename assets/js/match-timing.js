@@ -5,7 +5,9 @@ const same=(a,b)=>a.division===b.division&&[a.a,a.b].some(id=>id&&[b.a,b.b].incl
 const depends=(a,b)=>a.division===b.division&&(a.deps||[]).includes(b.id)&&[a.a,a.b].some(v=>v===('Vainqueur '+b.id)||v===('Perdant '+b.id));
 export function recoveryPreapproved(match,previous){
  const a=match.recovery_agreement,shared=previous&&[match.a,match.b].filter(id=>[previous.a,previous.b].includes(id));
- return !!(a?.kind==='preapproved'&&a.both_teams_agreed===true&&previous?.division===match.division&&a.previous_match_id===previous.id&&shared.length&&shared.every(id=>(a.team_ids||[]).includes(id)));
+ if(!a||a.both_teams_agreed!==true||previous?.division!==match.division||!shared?.length||!shared.every(id=>(a.team_ids||[]).includes(id)))return false;
+ if(a.kind==='preapproved_slots')return Number.isInteger(match.slot)&&Number.isInteger(previous.slot)&&match.slot>=0&&previous.slot>=0&&match.slot<3&&previous.slot<3;
+ return a.kind==='preapproved'&&a.previous_match_id===previous.id;
 }
 export function buildTimeline(matches,{now=Date.now(),start=BASE}={}){
  const courtEnd={},courtLast={},ends={},rows=[],teamLast={},remaining={DM:0,DD:0},totals={DM:0,DD:0};
