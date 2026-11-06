@@ -6,7 +6,7 @@ const job=(id,a,b,slot,division='DM')=>({id,a,b,slot,division,court:division,dep
 let ms=[job('A',ids[0],ids[1],0),job('B',ids[2],ids[3],1),job('C',ids[0],ids[2],2),job('D',ids[4],ids[5],0,'DD'),job('E',ids[6],ids[7],1,'DD')];
 let r=buildTimeline(ms,{now:base});
 assert(r.find(x=>x.id==='B').live===base+35*min,'Men: 30+5');
-assert(r.find(x=>x.id==='E').live===base+45*min,'Women: 40+5');
+assert(r.find(x=>x.id==='E').live===base+35*min,'Women: 30+5');
 assert(r.find(x=>x.id==='C').live===base+95*min,'Consecutive team: 30 minutes after previous end');
 ms=[job('A',ids[0],ids[1],0),job('B',ids[0],ids[2],1)];
 ms[0].started_at=iso(base);ms[0].result={validated_at:iso(base+35*min)};
@@ -46,7 +46,7 @@ assert(extra.live<shared.find(m=>m.id==='MAIN').end,'Borrowing must actually par
 let check=launchReadiness(extra,[done,principal,candidate],{now:base+34*min});
 assert(!check.allowed&&check.canConfirm&&check.until===base+35*min&&check.reason.includes('Reconfiguration'),'Setup warning retained');
 assert(launchReadiness(extra,[done,principal,candidate],{now:base+35*min}).allowed,'Ready borrowed court');
-const notFinished={...done,result:null};
+const notFinished={...done,started_at:iso(base+10*min),result:null};
 shared=buildTimeline([notFinished,principal,candidate],{now:base+25*min});
 assert(shared.find(m=>m.id==='EXTRA').court==='DM','No borrow when other draw forecast ends too late');
 assert(!launchReadiness(candidate,[notFinished,principal,candidate],{now:base+100*min}).allowed,'Actual other-draw completion required to launch');

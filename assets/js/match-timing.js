@@ -1,4 +1,4 @@
-export const MATCH_DURATION={DM:30,DD:40};
+export const MATCH_DURATION={DM:30,DD:30};
 export const GAP_MINUTES=5,COURT_CHANGE_MINUTES=10,CONSECUTIVE_REST_MINUTES=30;
 const MINUTE=60000,BASE=Date.parse('2026-11-06T21:00:00Z');
 const same=(a,b)=>a.division===b.division&&[a.a,a.b].some(id=>id&&[b.a,b.b].includes(id));
