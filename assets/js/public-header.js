@@ -25,7 +25,9 @@ if(mount){mount.innerHTML=`<header class="site-header"><div class="header-top"><
 }
 let footer=document.querySelector('.site-footer');if(!footer){footer=document.createElement('footer');footer.className='site-footer';document.body.append(footer);}
 const sponsors=[['Jul’Yana BT','assets/img/logo-julyana.png'],['TC Suzini','assets/img/sponsor-tc-suzini.jpeg'],['Bricorama','assets/img/sponsor-bricorama.jpeg'],['Passing Shot Kafé','assets/img/sponsor-passing-shot-kafe.jpeg'],['Ligue Guyane · Tennis et Beach Tennis','assets/img/sponsor-ligue-guyane.webp'],['Urban Jap','assets/img/sponsor-urban-jap-hd.webp']];
-footer.innerHTML=`<aside class="sponsor-strip" aria-label="Sponsors et partenaires"><div class="sponsor-grid">${sponsors.map(([name,path],i)=>`<button type="button" class="sponsor-logo" data-sponsor="${i}" aria-label="Agrandir le logo : ${name}">${path?`<img src="${url(path)}" alt="${name}">`:`<span class="sponsor-bricorama" role="img" aria-label="Bricorama"></span>`}</button>`).join('')}</div></aside>`;
+const closureHome=publicClosed&&!clubPage&&!adminPage&&isHome;
+if(closureHome)footer.classList.add("closure-sponsors");
+footer.innerHTML=`<aside class="sponsor-strip" aria-label="Sponsors et partenaires">${closureHome?'<h2>Merci à nos sponsors et partenaires 💛</h2>':''}<div class="sponsor-grid">${sponsors.map(([name,path],i)=>`<button type="button" class="sponsor-logo" data-sponsor="${i}" aria-label="Agrandir le logo : ${name}">${path?`<img src="${url(path)}" alt="${name}">`:`<span class="sponsor-bricorama" role="img" aria-label="Bricorama"></span>`}</button>`).join('')}</div></aside>`;
 footer.addEventListener('click',e=>{const button=e.target.closest('[data-sponsor]');if(!button)return;const [name,path]=sponsors[Number(button.dataset.sponsor)];let d=document.querySelector('.sponsor-dialog');if(!d){d=document.createElement('dialog');d.className='sponsor-dialog';document.body.append(d);}d.innerHTML=`<h2>${name}</h2>${path?`<img src="${url(path)}" alt="${name}">`:'<div class="sponsor-bricorama enlarged" role="img" aria-label="Bricorama"></div>'}<form method="dialog"><button>Fermer</button></form>`;d.showModal();});
 new ResizeObserver(()=>document.documentElement.style.setProperty('--sponsors-height',footer.getBoundingClientRect().height+'px')).observe(footer);
 
@@ -38,3 +40,14 @@ const switchLink=document.querySelector('.club-switch');if(switchLink)switchLink
 if(clubPage)import('./club-faq.js?v=6');
 
 if(publicClosed&&!clubPage&&!adminPage){const nav=document.querySelector('.site-nav');if(nav)nav.style.setProperty('grid-template-columns','repeat(5,minmax(0,1fr))','important');}
+
+if(publicClosed&&!clubPage&&!adminPage){const style=document.createElement('style');style.textContent=`
+.header-top{grid-template-columns:56px minmax(0,1fr) 56px!important;gap:8px!important}
+.header-top>.header-logo{width:56px;height:56px;justify-self:center}
+.header-top>.header-logo img{width:100%;height:100%;object-fit:contain}
+.closure-sponsors .sponsor-strip h2{margin:0;padding:8px 6px 4px;text-align:center;font-size:clamp(13px,3vw,18px)}
+.closure-sponsors .sponsor-grid{grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:8px;justify-items:stretch}
+.closure-sponsors .sponsor-logo{width:100%;height:56px;min-width:0}
+.closure-sponsors .sponsor-logo img{max-height:100%;max-width:100%;object-fit:contain}
+@media(max-width:600px){.closure-sponsors .sponsor-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:4px}.closure-sponsors .sponsor-logo{height:44px}}
+`;document.head.append(style);}
