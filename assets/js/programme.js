@@ -470,6 +470,15 @@ function render(){
  if(d.count<=6){
  const pools=[d.pool_a,...(d.count===6?[d.pool_b]:[])];
  if(!pools[0]?.length){panel.append(note('Poules à venir','La composition des poules sera affichée après le tirage.'));return;}
+ if(document.body.dataset.closure==='true'){
+ pools.forEach((pool,i)=>{
+  const box=el('section','','programme-pool');
+  box.append(el('h2',pools.length===1?'Poule unique':'Poule '+String.fromCharCode(65+i)));
+  panel.append(box);
+  matches.filter(m=>m.phase==='poules'&&pool.includes(m.a)&&pool.includes(m.b)).forEach(m=>panel.append(card(m,matches.findIndex(x=>x.id===m.id))));
+  panel.append(table(i?d.standings_b:d.standings_a,'Classement final'));
+ });return;
+ }
  pools.forEach((pool,i)=>{const box=el('section','','programme-pool');box.append(el('h2',pools.length===1?'Poule unique':'Poule '+String.fromCharCode(65+i)));const list=el('ol');pool.forEach(id=>{const li=el('li');li.append(teamLabel(id));list.append(li);});box.append(list);panel.append(box,table(i?d.standings_b:d.standings_a,'Classement provisoire'));matches.filter(m=>m.phase==='poules'&&pool.includes(m.a)&&pool.includes(m.b)).forEach(m=>panel.append(card(m,matches.findIndex(x=>x.id===m.id))));});
  }
  return;
